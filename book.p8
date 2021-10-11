@@ -42,32 +42,40 @@ piglet said.
 
 
 
-
+last_page = 0
 current_page = 1
 
 function _init()
   reading=false
-  tb_init(0, { pages[current_page] })
+--  tb_init(0, { pages[current_page] })
 end
   
 
 function _update()
-  local last_page = current_page
-  if btnp(➡️) or btnp(❎) then
-    current_page += 1
+  if reading then
+    if (tb_update()) return
   end
-  if btnp(⬅️) or btnp(4) then
-    current_page -= 1
-  end
-  current_page = clamp(current_page, 1, #pages)
   if last_page != current_page then
+    last_page = current_page
     tb_init(0, { pages[current_page] })
+    return 
+  else
+  if reading or te_is_complete() then
+    if btnp(➡️) or btnp(❎) then
+      current_page += 1
+    end
+    if btnp(⬅️) or btnp(4) then
+      current_page -= 1
+    end
+    if current_page > #pages 
+    or current_page < 1 then
+      sfx(1)
+    end
+    current_page = clamp(current_page, 1, #pages)
   end
-  if reading then 
-    tb_update()
---  else
---    tb_init(0, { " blah " })
   end
+  
+  
 end
 
 function draw_page(page)
@@ -99,11 +107,20 @@ function tb_init(voice,string) -- this function starts and defines a text box.
 	x=0, -- x coordinate
 	y=64, -- y coordginate
 	w=127, -- text box width
-	h=21, -- text box height
+	h=60, -- text box height
 	col1=0, -- background color
-	col2=0, -- border color
+	col2=-1, -- border color (< 0 for no border)
 	col3=7, -- text color
 	}
+end
+
+function tb_next_btnp()
+  return btnp(5) or btnp(1) or btnp(0) or btnp(4)
+end
+
+function te_is_complete()
+  if (te == nil) return true
+  return #te.str == te.i and te.char == #te.str[te.i]
 end
 
 function tb_update()  -- this function handles the text box on every frame update.
@@ -114,8 +131,11 @@ function tb_update()  -- this function handles the text box on every frame updat
 			tb.cur=0	-- reset the buffer.
 			if (ord(tb.str[tb.i],tb.char)!=32) sfx(tb.voice) -- play the voice sound effect.
 		end
-		if (btnp(5)) tb.char=#tb.str[tb.i] -- advance to the last character, to speed up the message.
-	elseif btnp(5) then -- if already on the last message character and button ❎/x is pressed:
+		if tb_next_btnp() then 
+		  tb.char=#tb.str[tb.i] -- advance to the last character, to speed up the message.
+		  return true -- return true if you eat a button press
+		end
+	elseif tb_next_btnp() then -- if already on the last message character and button ❎/x is pressed:
 		if #tb.str>tb.i then -- if the number of strings to disay is larger than the current index (this means that there's another message to display next):
 			tb.i+=1 -- increase the index, to display the next message on tb.str
 			tb.cur=0 -- reset the buffer.
@@ -123,14 +143,20 @@ function tb_update()  -- this function handles the text box on every frame updat
 		else -- if there are no more messages to display:
 			reading=false -- set reading to false. this makes sure the text box isn't drawn on screen and can be used to resume normal gameplay.
 		end
+		return true
 	end
+	return false
 end
 
 function tb_draw() -- this function draws the text box.
 	if reading then -- only draw the text box if reading is true, that is, if a text box has been called and tb_init() has already happened.
 		rectfill(tb.x,tb.y,tb.x+tb.w,tb.y+tb.h,tb.col1) -- draw the background.
+		if tb.col2 >= 0 then
 		rect(tb.x,tb.y,tb.x+tb.w,tb.y+tb.h,tb.col2) -- draw the border.
 		print(sub(tb.str[tb.i],1,tb.char),tb.x+2,tb.y+2,tb.col3) -- draw the text.
+  else
+		print(sub(tb.str[tb.i],1,tb.char),tb.x,tb.y,tb.col3) -- draw the text.  
+  end
 	end
 end
 __gfx__
@@ -269,3 +295,4 @@ e03f3f3f3f3f3f3f3f3f3f3f3f3f3fe2e03f3f3f3f3f3f3f3f3f3f3f3f3f3fe2e03f3f3f3f3f3f3f
 f0f1f1f1f1f1f1f1f1f1f1f1f1f1f1f2f0f1f1f1f1f1f1f1f1f1f1f1f1f1f1f2f0f1f1f1f1f1f1f1f1f1f1f1f1f1f1f2f0f1f1f1f1f1f1f1f1f1f1f1f1f1f1f2f0f1f1f1f1f1f1f1f1f1f1f1f1f1f1f2f0f1f1f1f1f1f1f1f1f1f1f1f1f1f1f2f0f1f1f1f1f1f1f1f1f1f1f1f1f1f1f2f0f1f1f1f1f1f1f1f1f1f1f1f1f1f1f2
 __sfx__
 000100001b02000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+001000001e05000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

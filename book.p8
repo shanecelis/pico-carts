@@ -1,8 +1,8 @@
 pico-8 cartridge // http://www.pico-8.com
 version 33
 __lua__
--- book of pooh
--- by shane celis for ryland
+-- winnie the pooh: sweet bouncin'
+-- by shane celis for my five-year-old daughter ryland von hunter
 
 pages = { 
 

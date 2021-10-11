@@ -8,7 +8,7 @@ pages = {
 
 [[
 winnie the pooh: 
-search for honey
+sweet bouncin'
 
 by shane celis
 (c) 2021/10/11
@@ -35,7 +35,7 @@ piglet said.
 
 [[
 "eeyore, have you got any honey
-down there?"
+in there?"
 
 "well, thank you for asking how
 i've been. that means a lot.
@@ -43,7 +43,7 @@ i've been well," eeyore said.
 
 "so no honey then?"
 
-"nope."
+"no."
 ]],
 
 [[
@@ -69,14 +69,14 @@ that wheelbarrow, no."
 and queens? or knights and
 woozles?" roo asked.
 
-"i would love too but my tummy
+"i would love to but my tummy
 won't let me until it's had a
 small smackerel of something."
 ]],
 
 [[
-"perhaps, i'll have to get some
-honey the hard way," pooh 
+perhaps, i'll have to get some
+honey the hard way, pooh 
 thought to himself.
 ]],
 
@@ -93,7 +93,7 @@ for: honeeeey.
 ]],
 
 [[
-"hey there, pooh, ya, buddy boy,
+"hey there, pooh, buddy boy,
 whatcha up to?" tigger asked.
 
 "oh, just thinking very 
@@ -108,7 +108,7 @@ of course!" tigger said.
 before pooh had a chance to 
 explain that his bounces were
 probably not going to dislodge
-that hive tigger had already
+that hive, tigger had already
 bounced that hive right out of
 the tree.
 ]],

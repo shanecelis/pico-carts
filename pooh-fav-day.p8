@@ -97,7 +97,8 @@ yuk tiggers hat hunny
 -- p13
 [[
 ino waw a hunny tree is
-tel my folo my
+tel me 
+folo me
 
 
 
@@ -105,12 +106,12 @@ tel my folo my
 
 -- p14
 [[
-yum yum yum sed pooh
+
 ]],
 
 -- p15
 [[
-
+yum yum yum sed pooh
 ]],
 
 -- p16

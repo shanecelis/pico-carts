@@ -399,7 +399,15 @@ function anim_map(records)
   end
 end
 
-
+function show_sprites(n)
+  local f = fget(n)
+  print("sprite "..n)
+  print("flag "..f)
+  print("sprites in animation:")
+  for s in all(animated_sprites[f]) do
+    print("  "..s)
+  end
+end
 -->8
 
 

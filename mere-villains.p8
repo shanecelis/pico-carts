@@ -202,9 +202,9 @@ function tb_next_btnp()
   return btnp(5) or btnp(1) or btnp(0) or btnp(4)
 end
 
-function te_is_complete()
-  if (te == nil) return true
-  return #te.str == te.i and te.char == #te.str[te.i]
+function tb_is_complete()
+  if (tb == nil) return true
+  return #tb.str == tb.i and tb.char == #tb.str[tb.i]
 end
 
 function tb_update()  -- this function handles the text box on every frame update.
@@ -252,21 +252,22 @@ records = nil
 frame = 0
 
 function page_change(page)
-  if page ==8 then
-    music(00) -- starts music
-  elseif page >8 then
- -- cep playing for ever
-  elseif page== 3 then 
-  --sfx(3)
-  music(1) 
-  else
-  music(-1)
-  -- stop music after
-  --rpoot all uv it on page(3)
-  -- whatever i want in my
-  -- comments
- --stert  page--(8) music
-  end end
+--  if page ==8 then
+--    music(00) -- starts music
+--  elseif page >8 then
+-- -- cep playing for ever
+--  elseif page== 3 then 
+--  --sfx(3)
+--  music(1) 
+--  else
+--  music(-1)
+--  -- stop music after
+--  --rpoot all uv it on page(3)
+--  -- whatever i want in my
+--  -- comments
+-- --stert  page--(8) music
+--  end 
+end
   
 function sprite_change(number)
   if number == 220 then
@@ -281,7 +282,6 @@ function _init()
   reading=false
 --  tb_init(0, { pages[current_page] })
   scan_sprites()
-  
 end
 
 
@@ -300,7 +300,7 @@ function _update()
     page_change(current_page - 1)
     return 
   else
-  if reading or te_is_complete() then
+  if reading or tb_is_complete() then
     if btnp(➡️) or btnp(❎) then
       current_page += 1
     end

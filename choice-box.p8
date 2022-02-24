@@ -102,7 +102,7 @@ function textbox:draw() -- this function draws the text box.
 end
 -->8
 -- choice box
-choicebox = textbox:new(voice, string)
+choicebox = textbox:new()
 function choicebox:new(o, voice, header, choices)
   o = o or textbox:new(o, voice, {header})
   setmetatable(o, self)

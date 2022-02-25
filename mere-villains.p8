@@ -16,7 +16,7 @@ start_page = 0
 
 pages = { 
 -- title
-[[
+  [0] = [[
 mere villains
 
 by shane celis
@@ -25,27 +25,26 @@ by shane celis
 hit ➡️ or ❎ to go to next
 page.
 ]],
-
 -- p1
-{
-"are you a good merekat?",
-"yes", 2,
-"no", 3,
-"cat", 4
+-- {
+-- "are you a good merekat?",
+-- "yes", 2,
+-- "no", 3,
+-- "cat", 4
+-- },
+
+
+
+
+
+
+
+
+
+{ text = [[Are you a good merekat?]];
+ choices = { ["yes"] = 2;
+              ["no"] = 3 }
 },
-
-
-
-
-
-
-
-
-
---{ text = [[Are you a good merekat?]];
---  choices = { ["yes"] = 2;
---               ["no"] = 3 }
---},
 --
 	
 -- p2
@@ -64,140 +63,140 @@ Ick!
 meow!
 ]],
 
--- p5
-[[
+-- -- p5
+-- [[
 
-]],
+-- ]],
 
--- p6
-[[
+-- -- p6
+-- [[
 
-]],
+-- ]],
 
--- p7
-[[
+-- -- p7
+-- [[
 
-]],
+-- ]],
 
--- p8
-[[
+-- -- p8
+-- [[
 
-]],
+-- ]],
 
--- p9
-[[
+-- -- p9
+-- [[
 
-]],
+-- ]],
 
--- p10
-[[
+-- -- p10
+-- [[
 
-]],
+-- ]],
 
--- p11
-[[
+-- -- p11
+-- [[
 
-]],
+-- ]],
 
--- p12
-[[
+-- -- p12
+-- [[
 
-]],
+-- ]],
 
--- p13
-[[
+-- -- p13
+-- [[
 
-]],
+-- ]],
 
--- p14
-[[
+-- -- p14
+-- [[
 
-]],
+-- ]],
 
--- p15
-[[
+-- -- p15
+-- [[
 
-]],
+-- ]],
 
--- p16
-[[
+-- -- p16
+-- [[
 
-]],
+-- ]],
 
--- p17
-[[
+-- -- p17
+-- [[
 
-]],
+-- ]],
 
--- p18
-[[
+-- -- p18
+-- [[
 
-]],
+-- ]],
 
--- p19
-[[
+-- -- p19
+-- [[
 
-]],
+-- ]],
 
--- p20
-[[
+-- -- p20
+-- [[
 
-]],
+-- ]],
 
--- p21
-[[
+-- -- p21
+-- [[
 
-]],
+-- ]],
 
--- p22
-[[
+-- -- p22
+-- [[
 
-]],
+-- ]],
 
--- p23
-[[
+-- -- p23
+-- [[
 
-]],
+-- ]],
 
--- p24
-[[
+-- -- p24
+-- [[
 
-]],
+-- ]],
 
--- p25
-[[
+-- -- p25
+-- [[
 
-]],
+-- ]],
 
--- p26
-[[
+-- -- p26
+-- [[
 
-]],
+-- ]],
 
--- p27
-[[
+-- -- p27
+-- [[
 
-]],
+-- ]],
 
--- p28
-[[
+-- -- p28
+-- [[
 
-]],
+-- ]],
 
--- p29
-[[
+-- -- p29
+-- [[
 
-]],
+-- ]],
 
--- p30
-[[
+-- -- p30
+-- [[
 
-]],
+-- ]],
 
--- p31
-[[
+-- -- p31
+-- [[
 
-]]
+-- ]]
 
 } 
 
@@ -238,7 +237,6 @@ function textbox:next_btnp()
 end
 
 function textbox:is_complete()
-  if (self == nil) return true
   return #self.str == self.i and self.char == #self.str[self.i]
 end
 
@@ -281,8 +279,8 @@ end
 -->8
 -- book code
 
-last_page = 0
-current_page = start_page + 1
+last_page = -1
+current_page = start_page
 records = nil
 frame = 0
 
@@ -320,14 +318,23 @@ function _init()
   scan_sprites()
 end
 
+function get_keys(t)
+  local keys = {}
+  for key,_ in pairs(t) do
+    add(keys, key)
+  end
+  return keys
+end
+
 function _update()
   frame += 1
   if (tb and tb:update()) return
+
+  local p = pages[current_page]
   if last_page != current_page then
     last_page = current_page
     if type(pages[current_page]) == 'table' then
-      local p = pages[current_page]
-      tb = choicebox:new(nil, 0, p[text], p[choices])
+      tb = choicebox:new(nil, 0, p.text, get_keys(p.choices))
     else
       tb = textbox:new(nil, 0, { pages[current_page] })
     end
@@ -336,24 +343,33 @@ function _update()
     page_change(current_page - 1)
     return 
   else
-  if reading or tb:is_complete() then
+  local result = tb:is_complete()
+  if result then
     if btnp(➡️) or btnp(❎) then
-      current_page += 1
+      printh("got forward")
+      if type(result) == 'number' then
+        current_page = p.choices[tb.choices[result]]
+      elseif type(result) == 'function' then
+        result()
+      else
+        printh("go forward")
+        current_page += 1
+      end
     end
-    if btnp(⬅️) or btnp(4) then
+    if btnp(⬅️) then
       current_page -= 1
     end
-    if current_page > #pages 
-    or current_page < 1 then
+    if current_page > #pages
+    or current_page < 0 then
       sfx(1)
     end
-    current_page = clamp(current_page, 1, #pages)
+    current_page = clamp(current_page, 0, #pages)
   end
   end
 end
 
 function draw_page(page)
-  local i = page - 1
+  local i = page
 		map((i % 8) * 16,flr(i / 8) * 8, 
 		0,0, 
 		16, 8)
@@ -515,6 +531,7 @@ function choicebox:new(o, voice, header, choices)
   self.header = header
   self.choices = choices
   self.choice = 1
+  self.canceled = false
   self:update_strings()
   return o
 end
@@ -523,8 +540,18 @@ function choicebox:update_strings()
   local str = self.header
   local sep
   for i = 1, #self.choices do
-    if (i == self.choice) sep="> " else sep="  "
-    str = str .. "\n" .. sep .. self.choices[i]
+    if i == self.choice then
+      if self.last_choice == nil then
+        sep=">"
+      elseif self.canceled then
+        sep=" "
+      else
+        sep="."
+      end
+    else
+      sep=" "
+    end
+    str = str .. "\n" .. sep .. " " .. self.choices[i]
   end
   self.str = { str }
 end
@@ -533,22 +560,32 @@ function choicebox:update()
   if not textbox.is_complete(self) then
     return textbox.update(self)
   else
-    if btnp(5) or btnp(4) then
+    if self.last_choice ~= nil then
+      return false
+    elseif btnp(5) or btnp(4) or btnp(1) then
+      printh("last choice set")
       self.last_choice = self.choice
-      return true
-    else
-      if (btnp(3) or btnp(1)) self.choice += 1
-      if (btnp(2) or btnp(0)) self.choice -= 1
-      self.choice = mod1(self.choice, #self.choices)
       self:update_strings()
       return true
+    elseif btnp(0) then
+      self.canceled = true
+      self:update_strings()
+      return false
+    elseif self.last_choice == nil then
+      local result = false;
+      if (btnp(3)) self.choice += 1; result = true
+      if (btnp(2)) self.choice -= 1; result = true
+      self.choice = mod1(self.choice, #self.choices)
+      self:update_strings()
+      return result
+    else
+      return false
     end
-    return false
   end
 end
 
 function choicebox:is_complete()
-  return textbox.is_complete(self) and self.last_choice
+  return textbox.is_complete(self) and (self.last_choice or self.canceled)
 end
 
 __gfx__

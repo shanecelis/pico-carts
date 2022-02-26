@@ -14,7 +14,111 @@ start_page = 0
 --          ["no"] = 3 }
 -- }
 
-pages = { 
+function goto_page(n)
+  return function()
+    current_page = n
+  end
+end
+
+_pages = {}
+
+page = {
+  text = "",
+  scene = nil,
+  choices = nil,
+  bgcolor = nil,
+  index = nil,
+  nextpage = 1,
+  prevpage = -1,
+}
+
+function page:new(o, text)
+  o = o or {}
+  setmetatable(o, self)
+  self.__index = self
+  -- does this do what I want?
+  self.text = text or self.text
+  if not self.index then
+    add(_pages, self)
+    self.index = #_pages
+    self.scene = self.scene or self.index
+  else
+    add(_pages, self, self.index)
+  end
+  return o
+end
+
+function page:next()
+  if self.choices then
+    local result = self.tb:is_complete()
+    if result then
+      if type(result) == 'number' then
+        local action = self.choices[self.tb.choices[result]]
+        if type(action) == 'number' then
+          return _pages[action]
+        end
+        -- elseif type(action) == 'function' then
+        --   result()
+      else
+        assert(false, "No choice reported.")
+      end
+    else
+      return nil
+    end
+  else
+    if type(self.nextpage) == 'number' then
+      return _pages[self.index + self.nextpage]
+    elseif type(self.nextpage) == 'function' then
+      return self.nextpage(self)
+    else
+      return self.nextpage
+    end
+  end
+end
+
+function page:prev()
+  return _pages[self.index + self.prevpage]
+end
+
+function page:draw()
+  cls(self.bgcolor)
+  if (self.scene) draw_page(self.scene)
+  if self.text then
+    if self.tb == nil then
+      if self.choices then
+        self.tb = choicebox:new(nil, 0, self.text, self.choices)
+      else
+        self.tb = textbox:new(nil, 0, { self.text })
+      end
+    end
+    self.tb:draw()
+  end
+end
+
+function page:update()
+  if (self.tb and self.tb:update()) return
+
+  local result = true
+  if (self.tb) result = self.tb:is_complete()
+  local new_page = nil
+  if result then
+    if btnp(➡️) or btnp(❎) then
+      new_page = self:next()
+      if (not new_page) sfx(1)
+    end
+    if btnp(⬅️) then
+      new_page = self:prev()
+      if (not new_page) sfx(1)
+    end
+    if (new_page) _current_page = new_page
+  end
+end
+
+_current_page = page:new(nil, "test page")
+page:new(nil, "next page")
+page:new(nil, "last page")
+
+pages = {
 -- title
   [0] = [[
 mere villains
@@ -32,15 +136,6 @@ page.
 -- "no", 3,
 -- "cat", 4
 -- },
-
-
-
-
-
-
-
-
-
 { text = [[Are you a good merekat?]];
  choices = { ["yes"] = 2;
               ["no"] = 3 }
@@ -51,154 +146,28 @@ page.
 [[
 Glad to meet you.
 ]],
+-- goto_page(5),
 
 -- p3
 [[
 Ick!
 ]],
 
+-- goto_page(5),
 
 -- p4
 [[
 meow!
 ]],
 
--- -- p5
--- [[
+-- goto_page(5),
+-- p5
+[[
+So there we were.
 
--- ]],
+]],
+}
 
--- -- p6
--- [[
-
--- ]],
-
--- -- p7
--- [[
-
--- ]],
-
--- -- p8
--- [[
-
--- ]],
-
--- -- p9
--- [[
-
--- ]],
-
--- -- p10
--- [[
-
--- ]],
-
--- -- p11
--- [[
-
--- ]],
-
--- -- p12
--- [[
-
--- ]],
-
--- -- p13
--- [[
-
--- ]],
-
--- -- p14
--- [[
-
--- ]],
-
--- -- p15
--- [[
-
--- ]],
-
--- -- p16
--- [[
-
--- ]],
-
--- -- p17
--- [[
-
--- ]],
-
--- -- p18
--- [[
-
--- ]],
-
--- -- p19
--- [[
-
--- ]],
-
--- -- p20
--- [[
-
--- ]],
-
--- -- p21
--- [[
-
--- ]],
-
--- -- p22
--- [[
-
--- ]],
-
--- -- p23
--- [[
-
--- ]],
-
--- -- p24
--- [[
-
--- ]],
-
--- -- p25
--- [[
-
--- ]],
-
--- -- p26
--- [[
-
--- ]],
-
--- -- p27
--- [[
-
--- ]],
-
--- -- p28
--- [[
-
--- ]],
-
--- -- p29
--- [[
-
--- ]],
-
--- -- p30
--- [[
-
--- ]],
-
--- -- p31
--- [[
-
--- ]]
-
-} 
 
 -->8
 -- text box code
@@ -316,6 +285,11 @@ function _init()
   tb=nil
 --  tb_init(0, { pages[current_page] })
   scan_sprites()
+  -- for k,v in pairs({ ['a']= 1; 3,4}) do
+  --   print("k" ..k)
+  --   print("v" ..v)
+  -- end
+  -- stop()
 end
 
 function get_keys(t)
@@ -328,71 +302,38 @@ end
 
 function _update()
   frame += 1
-  if (tb and tb:update()) return
 
-  local p = pages[current_page]
-  if last_page != current_page then
-    last_page = current_page
-    if type(pages[current_page]) == 'table' then
-      tb = choicebox:new(nil, 0, p.text, get_keys(p.choices))
-    else
-      tb = textbox:new(nil, 0, { pages[current_page] })
-    end
-    records = nil
-    my_draw()
-    page_change(current_page - 1)
-    return 
-  else
-  local result = tb:is_complete()
-  if result then
-    if btnp(➡️) or btnp(❎) then
-      printh("got forward")
-      if type(result) == 'number' then
-        current_page = p.choices[tb.choices[result]]
-      elseif type(result) == 'function' then
-        result()
-      else
-        printh("go forward")
-        current_page += 1
-      end
-    end
-    if btnp(⬅️) then
-      current_page -= 1
-    end
-    if current_page > #pages
-    or current_page < 0 then
-      sfx(1)
-    end
-    current_page = clamp(current_page, 0, #pages)
-  end
-  end
+  _current_page:update()
+  return nil
 end
 
 function draw_page(page)
   local i = page
-		map((i % 8) * 16,flr(i / 8) * 8, 
-		0,0, 
-		16, 8)
+  map(
+    (i % 8) * 16,flr(i / 8) * 8,
+    0,0,
+    16, 8)
   if records == nil then
-		  records = anim_scan_map((i % 8) * 16,flr(i / 8) * 8, 
-		  0,0, 
-		  16, 8)
-		end
-		
-		--print(pages[page], 0, 64)
+    records = anim_scan_map(
+      (i % 8) * 16,flr(i / 8) * 8,
+      0,0,
+      16, 8)
+  end
+
+  --print(pages[page], 0, 64)
 end
 
 function my_draw()
   cls()
   draw_page(current_page)
-  
 end
   
 function _draw()
-  if (tb) tb:draw()
-  if records ~= nil and frame % 20 == 0 then 
-		  anim_map(records)
-		end
+  _current_page:draw()
+  -- if (tb) tb:draw()
+  -- if records ~= nil and frame % 20 == 0 then
+	-- 	  anim_map(records)
+	-- end
 end
 
 function clamp(x, a, b)

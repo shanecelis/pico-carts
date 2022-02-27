@@ -20,6 +20,63 @@ function goto_page(n)
   end
 end
 
+book = {
+  current_page = nil,
+  last_page_add = nil,
+}
+
+function book:new(o, pages)
+  o = o or {}
+  setmetatable(o, self)
+  self.__index = self
+  for k, page in ipairs(pages) do
+    o:add_page(k, page)
+  end
+  return o
+end
+
+function book:set_page(p, set_prevpage)
+  if self.current_page ~= p then
+    if self.current_page then
+      self.current_page:active(false)
+      if (set_prevpage and not p.prevpage) p.prevpage = self.current_page
+    end
+    self.current_page = p
+    p:active(true)
+  end
+end
+
+function book:add_page(k, v)
+  if (v == nil) v = k; k = #self + 1
+  local o, p
+  if type(v) == 'string' then
+    o = { text = v }
+  elseif type(v) == 'table' then
+    if getmetatable(v) == page then
+      p = v
+    else
+      o = v
+    end
+  else
+    error("Expect string or table but got type " .. type(v) .. " for value " .. v)
+
+    -- assert(getmetatable(v) == page, "It should be a page but was " .. type(v) .. " key " .. k)
+    -- p = v
+  end
+  p = p or page:new(o)
+  if self.last_page_add then
+    -- p.prevpage = self.last_page_add
+    if (not self.last_page_add.nextpage) self.last_page_add.nextpage = p
+  end
+  if (not p.scene) p.scene = k
+  if (not self.current_page) self:set_page(p)
+  self.last_page_add = p
+  self[k] = p
+  -- rawset(self, k, p)
+  assert(p.book == nil, "Page in some other book already.")
+  p.book = self
+end
+
 _pages = {}
 
 page = {
@@ -28,24 +85,33 @@ page = {
   choices = nil,
   bgcolor = nil,
   index = nil,
-  nextpage = 1,
-  prevpage = -1,
+  nextpage = nil,
+  prevpage = nil,
+  book = nil,
 }
 
 function page:new(o, text)
   o = o or {}
+  o.text = text or o.text
+  -- if not o.index then
+  --   add(_pages, o)
+  --   o.index = #_pages
+  --   o.scene = o.scene or o.index
+  -- else
+  --   add(_pages, o, o.index)
+  -- end
   setmetatable(o, self)
   self.__index = self
   -- does this do what I want?
-  self.text = text or self.text
-  if not self.index then
-    add(_pages, self)
-    self.index = #_pages
-    self.scene = self.scene or self.index
-  else
-    add(_pages, self, self.index)
-  end
   return o
+end
+
+function page:active(yes)
+  -- printh("active " .. yes)
+  if yes and self.choices and self.tb then
+  printh("reset ")
+    self.tb:reset()
+  end
 end
 
 function page:next()
@@ -55,7 +121,7 @@ function page:next()
       if type(result) == 'number' then
         local action = self.choices[self.tb.choices[result]]
         if type(action) == 'number' then
-          return _pages[action]
+          return self.book[action]
         end
         -- elseif type(action) == 'function' then
         --   result()
@@ -67,7 +133,7 @@ function page:next()
     end
   else
     if type(self.nextpage) == 'number' then
-      return _pages[self.index + self.nextpage]
+      return self.book[self.nextpage]
     elseif type(self.nextpage) == 'function' then
       return self.nextpage(self)
     else
@@ -77,16 +143,23 @@ function page:next()
 end
 
 function page:prev()
-  return _pages[self.index + self.prevpage]
+
+  if type(self.prevpage) == 'number' then
+    return self.book[self.prevpage]
+  elseif type(self.prevpage) == 'function' then
+    return self.prevpage(self)
+  else
+    return self.prevpage
+  end
 end
 
 function page:draw()
   cls(self.bgcolor)
   if (self.scene) draw_page(self.scene)
   if self.text then
-    if self.tb == nil then
+    if not self.tb then
       if self.choices then
-        self.tb = choicebox:new(nil, 0, self.text, self.choices)
+        self.tb = choicebox:new(nil, 0, self.text, get_keys(self.choices))
       else
         self.tb = textbox:new(nil, 0, { self.text })
       end
@@ -102,25 +175,34 @@ function page:update()
   if (self.tb) result = self.tb:is_complete()
   local new_page = nil
   if result then
-    if btnp(➡️) or btnp(❎) then
+    local set_prevpage = false
+    if btnp(➡️) then
       new_page = self:next()
+      set_prevpage = true
       if (not new_page) sfx(1)
     end
     if btnp(⬅️) then
       new_page = self:prev()
       if (not new_page) sfx(1)
     end
-    if (new_page) _current_page = new_page
+    if (new_page) self.book:set_page(new_page, set_prevpage)
   end
 end
 
-_current_page = page:new(nil, "test page")
-page:new(nil, "next page")
-page:new(nil, "last page")
+-- _pages = {
+-- page:new(nil, "test page"),
+-- page:new({ text = [[Are you a good merekat?]];
+--  choices = { ["yes"] = 3;
+--               ["no"] = 4 }
+-- }),
+-- page:new(nil, "next page"),
+-- page:new(nil, "last page"),
+-- }
+
 
 pages = {
 -- title
-  [0] = [[
+  [[
 mere villains
 
 by shane celis
@@ -136,29 +218,37 @@ page.
 -- "no", 3,
 -- "cat", 4
 -- },
-{ text = [[Are you a good merekat?]];
- choices = { ["yes"] = 2;
-              ["no"] = 3 }
+{ text = [[are you a good merekat?]];
+  choices = {
+    ["yes"] = 3,
+    ["no"] = 4
+  }
 },
 --
 	
 -- p2
-[[
+{text = [[
 Glad to meet you.
 ]],
+nextpage = 6
+},
 -- goto_page(5),
 
 -- p3
-[[
+{text = [[
 Ick!
 ]],
+nextpage = 6
+},
 
 -- goto_page(5),
 
 -- p4
-[[
+{text = [[
 meow!
 ]],
+nextpage = 6
+},
 
 -- goto_page(5),
 -- p5
@@ -168,6 +258,7 @@ So there we were.
 ]],
 }
 
+_current_book = book:new(nil, pages)
 
 -->8
 -- text box code
@@ -189,11 +280,11 @@ textbox={ -- table containing all properties of a text box. i like to work with 
 
 function textbox:new(o, voice, strings)
   o = o or {}
+  o.str = strings
+  o.voice = voice
   -- o = o or {}
   setmetatable(o, self)
   self.__index = self
-  self.str = strings
-  self.voice = voice
   return o
 end
 
@@ -207,6 +298,12 @@ end
 
 function textbox:is_complete()
   return #self.str == self.i and self.char == #self.str[self.i]
+end
+
+function textbox:reset()
+  self.i=1
+  self.cur=0
+  self.char=0
 end
 
 function textbox:update()  -- this function handles the text box on every frame update.
@@ -289,6 +386,8 @@ function _init()
   --   print("k" ..k)
   --   print("v" ..v)
   -- end
+  -- b = book:new{"hi"}
+  -- b[2] = "what"
   -- stop()
 end
 
@@ -303,7 +402,7 @@ end
 function _update()
   frame += 1
 
-  _current_page:update()
+  _current_book.current_page:update()
   return nil
 end
 
@@ -325,11 +424,11 @@ end
 
 function my_draw()
   cls()
-  draw_page(current_page)
+  draw_page(current_book.current_page)
 end
   
 function _draw()
-  _current_page:draw()
+  _current_book.current_page:draw()
   -- if (tb) tb:draw()
   -- if records ~= nil and frame % 20 == 0 then
 	-- 	  anim_map(records)
@@ -467,15 +566,23 @@ end
 choicebox = textbox:new()
 function choicebox:new(o, voice, header, choices)
   o = o or textbox:new(o, voice, {header})
+  o.header = header
+  o.choices = choices
+  o.choice = 1
+  o.canceled = false
+  o.last_choice = nil
   setmetatable(o, self)
   self.__index = self
-  self.header = header
-  self.choices = choices
-  self.choice = 1
-  self.canceled = false
-  self:update_strings()
+  o:update_strings()
   return o
 end
+
+function choicebox:reset()
+  self.last_choice = nil
+  self.canceled = false
+  self:update_strings()
+end
+
 
 function choicebox:update_strings()
   local str = self.header

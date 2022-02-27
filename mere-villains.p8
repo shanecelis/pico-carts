@@ -5,20 +5,6 @@ __lua__
 -- by shane celis
 
 start_page = 0
--- { "are you a good merekat?",
---   "yes", 2,
---   "no", 3 }
-
--- p1 = { text = [[are you a good merekat?]];
---        choices = { ["yes"] = 2,
---          ["no"] = 3 }
--- }
-
-function goto_page(n)
-  return function()
-    current_page = n
-  end
-end
 
 book = {
   current_page = nil,
@@ -29,6 +15,7 @@ function book:new(o, pages)
   o = o or {}
   setmetatable(o, self)
   self.__index = self
+  if (pages[0]) o:add_page(0, pages[0])
   for k, page in ipairs(pages) do
     o:add_page(k, page)
   end
@@ -50,7 +37,7 @@ function book:add_page(k, v)
   if (v == nil) v = k; k = #self + 1
   local o, p
   if type(v) == 'string' then
-    o = { text = v }
+    o = { v }
   elseif type(v) == 'table' then
     if getmetatable(v) == page then
       p = v
@@ -78,9 +65,24 @@ function book:add_page(k, v)
 end
 
 _pages = {}
+plist = {
+  keys = {},
+  hash = {},
+}
+function plist:new(o)
+  o = o or {}
+  setmetatable(o, self)
+  self.__index = self
+  for i = 1, #o, 2 do
+    add(o.keys, o[i])
+    o.hash[o[i]] = o[i + 1]
+  end
+  return o
+end
+
+-- write an iterator for the plist
 
 page = {
-  text = "",
   scene = nil,
   choices = nil,
   bgcolor = nil,
@@ -90,19 +92,10 @@ page = {
   book = nil,
 }
 
-function page:new(o, text)
+function page:new(o)
   o = o or {}
-  o.text = text or o.text
-  -- if not o.index then
-  --   add(_pages, o)
-  --   o.index = #_pages
-  --   o.scene = o.scene or o.index
-  -- else
-  --   add(_pages, o, o.index)
-  -- end
   setmetatable(o, self)
   self.__index = self
-  -- does this do what I want?
   return o
 end
 
@@ -156,12 +149,12 @@ end
 function page:draw()
   cls(self.bgcolor)
   if (self.scene) draw_page(self.scene)
-  if self.text then
+  if #self > 0 then
     if not self.tb then
       if self.choices then
-        self.tb = choicebox:new(nil, 0, self.text, get_keys(self.choices))
+        self.tb = choicebox:new(nil, 0, self, get_keys(self.choices))
       else
-        self.tb = textbox:new(nil, 0, { self.text })
+        self.tb = textbox:new(nil, 0, self)
       end
     end
     self.tb:draw()
@@ -199,10 +192,9 @@ end
 -- page:new(nil, "last page"),
 -- }
 
-
 pages = {
 -- title
-  [[
+[0] = [[
 mere villains
 
 by shane celis
@@ -212,49 +204,39 @@ hit ➡️ or ❎ to go to next
 page.
 ]],
 -- p1
--- {
--- "are you a good merekat?",
--- "yes", 2,
--- "no", 3,
--- "cat", 4
--- },
-{ text = [[are you a good merekat?]];
-  choices = {
-    ["yes"] = 3,
-    ["no"] = 4
-  }
+{[[are you a good merekat?]],
+[[or a badkat?]],
+choices = {
+  -- "yes",  3,
+  -- "no",   4,
+  -- "meow", 5,
+  ["yes"] = 2,
+  ["no"] = 3,
+  ["meow"] = 4,
+}
 },
---
-	
 -- p2
-{text = [[
+{[[
 Glad to meet you.
 ]],
-nextpage = 6
+[[we're buddies.]],
+nextpage = 5
 },
--- goto_page(5),
-
 -- p3
-{text = [[
+{[[
 Ick!
 ]],
-nextpage = 6
+nextpage = 5
 },
-
--- goto_page(5),
-
 -- p4
-{text = [[
+{[[
 meow!
 ]],
-nextpage = 6
+nextpage = 5
 },
-
--- goto_page(5),
 -- p5
 [[
 So there we were.
-
 ]],
 }
 
@@ -345,8 +327,6 @@ end
 -->8
 -- book code
 
-last_page = -1
-current_page = start_page
 records = nil
 frame = 0
 
@@ -378,8 +358,6 @@ function sprite_change(number)
 end
 
 function _init()
-  reading=false
-  tb=nil
 --  tb_init(0, { pages[current_page] })
   scan_sprites()
   -- for k,v in pairs({ ['a']= 1; 3,4}) do
@@ -429,7 +407,6 @@ end
   
 function _draw()
   _current_book.current_page:draw()
-  -- if (tb) tb:draw()
   -- if records ~= nil and frame % 20 == 0 then
 	-- 	  anim_map(records)
 	-- end
@@ -564,10 +541,10 @@ end
 -->8
 -- choice box
 choicebox = textbox:new()
-function choicebox:new(o, voice, header, choices)
-  o = o or textbox:new(o, voice, {header})
-  o.header = header
+function choicebox:new(o, voice, strings, choices)
+  o = o or textbox:new(o, voice, strings)
   o.choices = choices
+  o.header = strings[#strings]
   o.choice = 1
   o.canceled = false
   o.last_choice = nil
@@ -601,7 +578,8 @@ function choicebox:update_strings()
     end
     str = str .. "\n" .. sep .. " " .. self.choices[i]
   end
-  self.str = { str }
+  self.str[#self.str] = str
+  -- self.str = { str }
 end
 
 function choicebox:update()

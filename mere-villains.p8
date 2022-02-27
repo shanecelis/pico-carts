@@ -65,20 +65,38 @@ function book:add_page(k, v)
 end
 
 _pages = {}
+
 plist = {
-  keys = {},
-  hash = {},
+  -- keys = {},
+  -- hash = {},
 }
-function plist:new(o)
+function plist:new(o, list)
   o = o or {}
+  o.keys = {}
+  o.hash = {}
   setmetatable(o, self)
-  self.__index = self
-  for i = 1, #o, 2 do
-    add(o.keys, o[i])
-    o.hash[o[i]] = o[i + 1]
+  -- self.__index = self
+  for i = 1, #list, 2 do
+    add(o.keys, list[i])
+    o.hash[list[i]] = list[i + 1]
   end
   return o
 end
+function plist.__index(t,k)
+  return rawget(t, 'hash')[k] or rawget(t, k)
+end
+function plist:__len()
+  return #self.keys
+end
+function plist.__pairs(t)
+  local i = 0
+  return function()
+    i += 1
+    local key = t.keys[i]
+    if (key ~= nil) return key, t.hash[key]
+  end
+end
+
 
 -- write an iterator for the plist
 
@@ -94,6 +112,7 @@ page = {
 
 function page:new(o)
   o = o or {}
+  if (o.choices ~= nil) o.choices = plist:new(nil, o.choices)
   setmetatable(o, self)
   self.__index = self
   return o
@@ -207,12 +226,12 @@ page.
 {[[are you a good merekat?]],
 [[or a badkat?]],
 choices = {
-  -- "yes",  3,
-  -- "no",   4,
-  -- "meow", 5,
-  ["yes"] = 2,
-  ["no"] = 3,
-  ["meow"] = 4,
+  "yes",  3,
+  "no",   4,
+  "meow", 5,
+  -- ["yes"] = 2,
+  -- ["no"] = 3,
+  -- ["meow"] = 4,
 }
 },
 -- p2
@@ -366,6 +385,10 @@ function _init()
   -- end
   -- b = book:new{"hi"}
   -- b[2] = "what"
+  l = plist:new(nil, {1,2,3,4})
+  for k,v in pairs(l) do print("k " .. k .." v " .. v) end
+  assert(l[1] == 2)
+  assert(#l == 2)
   -- stop()
 end
 

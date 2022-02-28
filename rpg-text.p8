@@ -198,8 +198,8 @@ function message:draw(x, y)
 
   -- this is the dot
   if self.i>=#fragments then
-    print(self.next_message.char, x+self.spacing.letter+_x+cos(msg_sin), y+_y+sin(msg_sin), self.next_message.color)
-    msg_sin+=0.05
+    local _t = -0.05 * self.t
+    print(self.next_message.char, x+self.spacing.letter+_x+cos(_t), y+_y+sin(_t), self.next_message.color)
     if msg_btnp then
       sfx(1)
       self.cur+=1
@@ -519,7 +519,9 @@ end
 -->8
 --sample
 function _init()
-  m = message:new { 'a' }
+  m = message:new {
+  'this is a $c14pink cat$cxx',
+  }
   msg_set(1)
 end
 

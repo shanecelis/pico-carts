@@ -66,16 +66,12 @@ end
 
 _pages = {}
 
-plist = {
-  -- keys = {},
-  -- hash = {},
-}
+plist = {}
 function plist:new(o, list)
   o = o or {}
   o.keys = {}
   o.hash = {}
   setmetatable(o, self)
-  -- self.__index = self
   for i = 1, #list, 2 do
     add(o.keys, list[i])
     o.hash[list[i]] = list[i + 1]
@@ -85,8 +81,8 @@ end
 function plist.__index(t,k)
   return rawget(t, 'hash')[k] or rawget(t, k)
 end
-function plist:__len()
-  return #self.keys
+function plist.__len(t)
+  return #t.keys
 end
 function plist.__pairs(t)
   local i = 0
@@ -224,11 +220,10 @@ page.
 ]],
 -- p1
 {[[are you a good merekat?]],
-[[or a badkat?]],
 choices = {
-  "yes",  3,
-  "no",   4,
-  "meow", 5,
+  "yes",  2,
+  "no",   3,
+  "meow", 4,
   -- ["yes"] = 2,
   -- ["no"] = 3,
   -- ["meow"] = 4,

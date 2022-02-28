@@ -37,10 +37,48 @@ __lua__
 ]]--
 --==configurations==--
 
+-- local m = msg:new(nil, { "Some messages." })
+-- m:update()
+-- m:draw()
+-- m:is_complete()
+
 --[[
   configure your defaults
   here
 --]]
+message = {
+  color = {
+    foreground = 15,
+    highlight = nil,
+    outline = 3
+  },
+  spacing = {
+    letter = 4,
+    newline = 5
+  },
+  sound = {
+    blip = 0,
+    next_message = 1
+  },
+  next_message = {
+    button = 5,
+    char = '.',
+    color = '9'
+  }
+}
+
+function message:new(o)
+  o = o or {}
+  setmetatable(o, self)
+  if (o.color) setmetatable(o.color, self.color); self.color.__index = self.color
+  if (o.spacing) setmetatable(o.spacing, self.spacing); self.spacing.__index = self.spacing
+  if (o.sound) setmetatable(o.sound, self.sound); self.sound.__index = self.sound
+  if (o.next_message) setmetatable(o.next_message, self.next_message); self.next_message.__index = self.next_message
+  self.__index = self
+  return o
+end
+
+
 msg_cnf = {
   --default color 1
   15,
@@ -179,6 +217,7 @@ function msg_set(id)
   --reset index counter
   msg_i=1
   local __id=0
+  -- Eek. This is per character.
   for i=1,#msg_ary[id] do
     --add characters
     add(msg_str, {
@@ -224,20 +263,15 @@ function msgparse()
       for j=i,#msg_str do
         if c=='c' then
           msg_str[j]._c=val or msg_cnf[1]
-        end
-        if c=='b' then
+        elseif c=='b' then
           msg_str[j]._b=val or nil
-        end
-        if c=='f' then
+        elseif c=='f' then
           msg_str[j]._upd=msg_fx[val] or function() end
-        end
-        if c=='d' then
+        elseif c=='d' then
           msg_str[j]._del=val or 0
-        end
-        if c=='o' then
+        elseif c=='o' then
           msg_str[j]._o=val or msg_cnf[3]
-        end
-        if c=='i' then
+        elseif c=='i' then
           msg_str[i+4]._img=val or nil
         end
       end
@@ -351,6 +385,19 @@ end
 function _draw()
   cls()
   msg_draw(4, 4)
+end
+
+function dump(o)
+   if type(o) == 'table' then
+      local s = '{ '
+      for k,v in pairs(o) do
+         if type(k) ~= 'number' then k = '"'..k..'"' end
+         s = s .. '['..k..'] = ' .. dump(v) .. ','
+      end
+      return s .. '} '
+   else
+      return tostring(o)
+   end
 end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

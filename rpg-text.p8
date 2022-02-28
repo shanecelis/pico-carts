@@ -63,7 +63,7 @@ message = {
   next_message = {
     button = 5,
     char = '.',
-    color = '9'
+    color = 9
   }
 }
 
@@ -75,7 +75,145 @@ function message:new(o)
   if (o.sound) setmetatable(o.sound, self.sound); self.sound.__index = self.sound
   if (o.next_message) setmetatable(o.next_message, self.next_message); self.next_message.__index = self.next_message
   self.__index = self
+  o.fragments = {}
+  for k,v in ipairs(o) do
+    add(o.fragments, o:split(v))
+  end
+  o.i = 1 -- where we our in our
+  o.cur = 1 -- current string
+  o.msg_btnp = false
+  o.t = 0
+
   return o
+end
+
+function message:split(string)
+  local fragments={}
+  -- Eek. This is per character.
+  for i=1,#string do
+    --add characters
+    add(fragments,
+        -- we should just index the config for all these default values
+        {
+
+          --color
+          _c=msg_cnf[1],
+          --bg color
+          _b=msg_cnf[2],
+          --outline color
+          _o=msg_cnf[3],
+
+          --character
+          c=sub(string, i, i),
+          --draw_x and draw_y
+          _dx=0,
+          _dy=0,
+          --fx value
+          _fxv=0,
+          --image to draw
+          _img=nil,
+          --extra delay
+          _del=0,
+          --update function for fx
+          _upd=function() end,
+          _id=i - 1
+    })
+  end
+  msgparse(fragments)
+  return fragments
+end
+
+function message:update()
+  self.msg_btnp = btnp(self.next_message.button)
+  self.t += 1
+  local fragments = self.fragments[self.cur]
+
+  if (not fragments) return
+  if self.msg_btnp then
+    self.i=#fragments
+  end
+  if (self.i > #fragments) return
+  --like seriously, its just
+  --vital function stuff.
+  if fragments[self.i].skp then self.i+=1 end
+  local delay = msg_del
+  if (self.i <= #fragments) delay += fragments[self.i]._del
+
+  if self.t >= delay then
+    self.i+=1
+    sfx(0)
+    self.t=0
+  end
+
+end
+
+function message:draw(x, y)
+  local fragments = self.fragments[self.cur]
+  if (not fragments) return
+  --loop...
+  --i mean, hey... if you want
+  --to keep reading, go ahead.
+  local _x=0
+  local _y=0
+  for i = 1, self.i do
+    if not fragments[i] then break end
+    if not fragments[i].skp then
+      --i wont try and stop you.
+      _x+=self.spacing.letter
+      if fragments[i]._b and fragments[i]._b != 16 then
+        rectfill(x+_x, y+_y-1, x+_x+self.spacing.letter,y+_y+5, fragments[i]._b)
+      end
+
+      if fragments[i]._img then
+        spr(fragments[i]._img, x+_x+fragments[i]._dx, y+fragments[i]._dy+_y)
+      end
+      --you're probably getting
+      --bored now, right?
+      if fragments[i]._o and fragments[i]._o != 16 then
+        local __x=x+_x+fragments[i]._dx
+        local __y=y+fragments[i]._dy+_y
+        for i4=1,3 do
+          for j4=1,3 do
+            print(fragments[i].c, __x-2+i4, __y-2+j4, fragments[i]._o)
+          end
+        end
+      end
+
+      --yep, not much here...
+      print(fragments[i].c, x+_x+fragments[i]._dx, y+fragments[i]._dy+_y, fragments[i]._c)
+      if fragments[i]._un == 1 then
+        line(x+_x, y+_y+5, x+_x+self.spacing.letter, y+_y+5)
+      end
+
+      if fragments[i].c == '\n' then
+        _x=0
+        _y+=self.spacing.newline
+      end
+
+    else
+      --why am ☉ even trying
+      --to get you to not read it?
+    end
+  end
+
+  -- this is the dot
+  if self.i>=#fragments then
+    print(self.next_message.char, x+self.spacing.letter+_x+cos(msg_sin), y+_y+sin(msg_sin), self.next_message.color)
+    msg_sin+=0.05
+    if msg_btnp then
+      sfx(1)
+      self.cur+=1
+      fragments = self.fragments[self.cur]
+      if (not fragments) return
+    end
+  end
+  --i mean, its not like
+  --i care.
+  for ii=1,#fragments do
+    fragments[ii]._upd(ii, ii/3)
+  end
+
+  --enjoy the script :)--
 end
 
 
@@ -100,9 +238,9 @@ msg_cnf = {
   --skip text/fast finish
   --button 8
   5,
-  --next action character
+  --next action character 9
   '.',
-  --next action character color
+  --next action character color 10
   9
 }
 
@@ -145,7 +283,7 @@ msg_cur=1
           character)
   --]]
 msg_fx = {
-  --$f01
+  --$f0
   function(i, fxv)
     --floaty effect
     --[[
@@ -203,6 +341,8 @@ msg_ary={
   ''
 }
 
+
+
 --string storage--
 msg_str={}
 
@@ -245,11 +385,11 @@ function msg_set(id)
     })
     __id+=1
   end
-  msgparse()
+  msgparse(msg_str)
 end
 
 --parse entire message :u
-function msgparse()
+function msgparse(msg_str)
   for i=1,#msg_str do
     if not msg_str[i+1] then return end
     local t=msg_str[i].c
@@ -379,12 +519,18 @@ end
 -->8
 --sample
 function _init()
+  m = message:new { 'a' }
   msg_set(1)
 end
 
 function _draw()
   cls()
   msg_draw(4, 4)
+  m:draw(4, 40)
+end
+
+function _update()
+  m:update()
 end
 
 function dump(o)

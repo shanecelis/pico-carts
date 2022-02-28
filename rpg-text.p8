@@ -34,12 +34,12 @@ __lua__
 	 16 to set it to nil and
 	 remove it.
 ]]--
-  --==configurations==--
-  
-  --[[
-   configure your defaults
-   here
-  --]]
+--==configurations==--
+
+--[[
+  configure your defaults
+  here
+--]]
 ★msg_cnf = {
 	--default color 1
 	15,
@@ -67,9 +67,9 @@ __lua__
 	9
 }
 
-  --[[
-   standard variables,dont edit
-  --]]
+--[[
+  standard variables,dont edit
+--]]
 ★msg_i=1
 ★msg_t=0
 ★msg_del=1
@@ -106,250 +106,250 @@ __lua__
           character)
   --]]
 ★msg_fx = {
-	--$f01
-	function(i, fxv)
-		--floaty effect
-		--[[
-			first, we get the self
-			value (i) by using
-			local self=★msg_str[i].
-			
-		 self._fxv = fx value
-		 self._dy = draw y, adds
-		 to the already rendering
-		 y position.
-	 --]]
-		local self=★msg_str[i]
-	 self._dy=sin(self._fxv+fxv)
-	 self._fxv+=0.05
-	end,
-	--$f02
- function(i, fxv)
-		--floaty effect 2
-		--[[
-		 this time with random x
-		 locations.
-	 --]]
-		local self=★msg_str[i]
-	 self._dy=sin(self._fxv+fxv)
-	 self._dx=rnd(4)-rnd(2)
-	 self._fxv+=0.05
-	end
-	
+  --$f01
+  function(i, fxv)
+    --floaty effect
+    --[[
+      first, we get the self
+      value (i) by using
+      local self=★msg_str[i].
+
+      self._fxv = fx value
+      self._dy = draw y, adds
+      to the already rendering
+      y position.
+    --]]
+    local self=★msg_str[i]
+    self._dy=sin(self._fxv+fxv)
+    self._fxv+=0.05
+  end,
+  --$f02
+  function(i, fxv)
+    --floaty effect 2
+    --[[
+      this time with random x
+      locations.
+    --]]
+    local self=★msg_str[i]
+    self._dy=sin(self._fxv+fxv)
+    self._dx=rnd(4)-rnd(2)
+    self._fxv+=0.05
+  end
+
 }
 
-  --[[
-   store your messages here
-   in this variable. make sure
-   to comment the number to 
-   avoid confusion. empty text
-   will end the text
-   displaying. when you press
-   the configured 'next' key,
-   it auto-continues to the
-   next string.
-  --]]
+--[[
+  store your messages here
+  in this variable. make sure
+  to comment the number to
+  avoid confusion. empty text
+  will end the text
+  displaying. when you press
+  the configured 'next' key,
+  it auto-continues to the
+  next string.
+--]]
 ★msg_ary={
- 'this is a $c14pink cat$c15 ',
- 'this is plain ',
-	--1
-	'$c09welcome$cxx to the text demo!',
-	--2
- 'you can draw sprites\n$i01   like this, and you can\n\nadd a delay$d04...$dxxlike this!',
- --3
- 'looking for $d08$f01spooky$fxx$dxx effects?$d30\n$dxxhmm, how about some\n$oxx$o16$c01$b10highlighting$bxx',
- --
- '$o16$u1underlining?$u0$d30$oxx $dxx geeze, you\'re\na $f02hard one to please!',
- --5
- ''
+  'this is a $c14pink cat$c15 ',
+  'this is plain ',
+  --1
+  '$c09welcome$cxx to the text demo!',
+  --2
+  'you can draw sprites\n$i01   like this, and you can\n\nadd a delay$d04...$dxxlike this!',
+  --3
+  'looking for $d08$f01spooky$fxx$dxx effects?$d30\n$dxxhmm, how about some\n$oxx$o16$c01$b10highlighting$bxx',
+  --
+  '$o16$u1underlining?$u0$d30$oxx $dxx geeze, you\'re\na $f02hard one to please!',
+  --5
+  ''
 }
 
-	--string storage--
+--string storage--
 ★msg_str={}
 
-	--function to set message
-	--id=index in ★msg_ary
+--function to set message
+--id=index in ★msg_ary
 function msg_set(id)
-	--sine variable
-	★msg_sin=0
-	★msg_cur=id
-	--reset message string
-	★msg_str={}
-	--reset index counter
-	★msg_i=1
-	local __id=0
-	for i=1,#★msg_ary[id] do
-		--add characters
-		add(★msg_str, {
-		 --character
-		 c=sub(★msg_ary[id], i, i),
-		 --color
-		 _c=★msg_cnf[1],
-		 --bg color
-		 _b=★msg_cnf[2],
-		 --outline color
-		 _o=★msg_cnf[3],
-		 --draw_x and draw_y
-		 _dx=0,
-		 _dy=0,
-		 --fx value
-		 _fxv=0,
-		 --image to draw
-		 _img=nil,
-		 --extra delay
-		 _del=0,
-		 
-		 --update function for fx
-		 _upd=function() end,
-		 _id=__id
-		})
-		__id+=1
-	end
-	msgparse()
+  --sine variable
+  ★msg_sin=0
+  ★msg_cur=id
+  --reset message string
+  ★msg_str={}
+  --reset index counter
+  ★msg_i=1
+  local __id=0
+  for i=1,#★msg_ary[id] do
+    --add characters
+    add(★msg_str, {
+          --character
+          c=sub(★msg_ary[id], i, i),
+          --color
+          _c=★msg_cnf[1],
+          --bg color
+          _b=★msg_cnf[2],
+          --outline color
+          _o=★msg_cnf[3],
+          --draw_x and draw_y
+          _dx=0,
+          _dy=0,
+          --fx value
+          _fxv=0,
+          --image to draw
+          _img=nil,
+          --extra delay
+          _del=0,
+
+          --update function for fx
+          _upd=function() end,
+          _id=__id
+    })
+    __id+=1
+  end
+  msgparse()
 end
 
 --parse entire message :u
 function msgparse()
-	for i=1,#★msg_str do
-		if not ★msg_str[i+1] then return end
-		local t=★msg_str[i].c
-		local c=★msg_str[i+1].c
-		if t=='$' and (c=='c' or c=='b' or c=='f' or c=='d' or c=='o' or c=='i') then
-			★msg_str[i].skp=true
-			★msg_str[i+1].skp=true
-			★msg_str[i+2].skp=true
-			★msg_str[i+3].skp=true
-			local val=tonum(★msg_str[i+2].c..★msg_str[i+3].c)
-			for j=i,#★msg_str do
-			 if c=='c' then
-			 	★msg_str[j]._c=val or ★msg_cnf[1]
-			 end
-			 if c=='b' then
-			 	★msg_str[j]._b=val or nil
-			 end
-			 if c=='f' then
-			 	★msg_str[j]._upd=★msg_fx[val] or function() end
-			 end
-			 if c=='d' then
-			 	★msg_str[j]._del=val or 0
-			 end
-			 if c=='o' then
-			 	★msg_str[j]._o=val or ★msg_cnf[3]
-			 end
-			 if c=='i' then
-			 	★msg_str[i+4]._img=val or nil
-			 end
-			end
-		end
-		
-		
-		if t=='$' and c=='u' then
-			★msg_str[i].skp=true
-			★msg_str[i+1].skp=true
-			★msg_str[i+2].skp=true
-			for j=i,#★msg_str do
-			 ★msg_str[j]._un=tonum(★msg_str[i+2].c) or 0
-			end
-		end
-	end
+  for i=1,#★msg_str do
+    if not ★msg_str[i+1] then return end
+    local t=★msg_str[i].c
+    local c=★msg_str[i+1].c
+    if t=='$' and (c=='c' or c=='b' or c=='f' or c=='d' or c=='o' or c=='i') then
+      ★msg_str[i].skp=true
+      ★msg_str[i+1].skp=true
+      ★msg_str[i+2].skp=true
+      ★msg_str[i+3].skp=true
+      local val=tonum(★msg_str[i+2].c..★msg_str[i+3].c)
+      for j=i,#★msg_str do
+        if c=='c' then
+          ★msg_str[j]._c=val or ★msg_cnf[1]
+        end
+        if c=='b' then
+          ★msg_str[j]._b=val or nil
+        end
+        if c=='f' then
+          ★msg_str[j]._upd=★msg_fx[val] or function() end
+        end
+        if c=='d' then
+          ★msg_str[j]._del=val or 0
+        end
+        if c=='o' then
+          ★msg_str[j]._o=val or ★msg_cnf[3]
+        end
+        if c=='i' then
+          ★msg_str[i+4]._img=val or nil
+        end
+      end
+    end
+
+
+    if t=='$' and c=='u' then
+      ★msg_str[i].skp=true
+      ★msg_str[i+1].skp=true
+      ★msg_str[i+2].skp=true
+      for j=i,#★msg_str do
+        ★msg_str[j]._un=tonum(★msg_str[i+2].c) or 0
+      end
+    end
+  end
 end
- --function to draw msg
+--function to draw msg
 function msg_draw(x, y)
- --return if text is empty
-	if ★msg_ary[★msg_cur] == '' then return end
-	--set a btnp value
-	if not btn(★msg_cnf[8]) then ★msg_btnp=false end
-	--loop...
-	while ★msg_i<#★msg_str do
-		--idk why you're trying to
-		--read this
-		if btnp(★msg_cnf[8]) then
-			★msg_i=#★msg_str-1
-			★msg_btnp=true
-		end
-		--like seriously, its just
-		--vital function stuff.
-	 ★msg_t+=1
-	 if ★msg_str[★msg_i].skp then ★msg_i+=1 end
-	 if ★msg_t>=★msg_del+★msg_str[★msg_i]._del then
- 	 ★msg_i+=1
- 		sfx(0)
- 		★msg_t=0
- 	end
-		break;
-	end
-	 --i mean, hey... if you want
-	 --to keep reading, go ahead.
-	local i=1
-	local _x=0
-	local _y=0
-	while i<★msg_i do
-		if not ★msg_str[i] then return end
-	 if not ★msg_str[i].skp then
-	 --i wont try and stop you.	
-	 	_x+=★msg_cnf[4]
-	 	if ★msg_str[i]._b and ★msg_str[i]._b != 16 then
-	 		rectfill(x+_x, y+_y-1, x+_x+★msg_cnf[4], y+_y+5, ★msg_str[i]._b)
-	 	end
-	 	
-	 	if ★msg_str[i]._img then
-	 		spr(★msg_str[i]._img, x+_x+★msg_str[i]._dx, y+★msg_str[i]._dy+_y)
-	 	end
-	 	--you're probably getting
-	 	--bored now, right?
-	 	if ★msg_str[i]._o and ★msg_str[i]._o != 16 then
-	 		local __x=x+_x+★msg_str[i]._dx
-	 		local __y=y+★msg_str[i]._dy+_y
-	 		for i4=1,3 do
-	 			for j4=1,3 do
-	 				print(★msg_str[i].c, __x-2+i4, __y-2+j4, ★msg_str[i]._o)
-	 		 end
-	 		end
-	 	end
-	 	
-	 	--yep, not much here...
-	 	print(★msg_str[i].c, x+_x+★msg_str[i]._dx, y+★msg_str[i]._dy+_y, ★msg_str[i]._c)
-	 	if ★msg_str[i]._un == 1 then
-	 		line(x+_x, y+_y+5, x+_x+★msg_cnf[4], y+_y+5)
-	 	end
-	 	
-	 	if ★msg_str[i].c == '\n' then
-	 		_x=0
-	 		_y+=★msg_cnf[5]
-	 	end
-	 else
-	 	--why am ☉ even trying
-	  --to get you to not read it?
-	 end
-	 i+=1
-	end
-	
-	if ★msg_i>=#★msg_str then
-		print(★msg_cnf[9], x+★msg_cnf[4]+_x+cos(★msg_sin), y+_y+sin(★msg_sin), ★msg_cnf[10])
-		★msg_sin+=0.05
-		if btnp(★msg_cnf[8]) and ★msg_btnp != true then
-			sfx(1)
-			★msg_cur+=1
-			msg_set(★msg_cur)
-		end
-	end
-	 --i mean, its not like
-	 --i care.
-	for ii=1,#★msg_str do
-	 ★msg_str[ii]._upd(ii, ii/3)
-	end
-	
-	--enjoy the script :)--
+  --return if text is empty
+  if ★msg_ary[★msg_cur] == '' then return end
+  --set a btnp value
+  if not btn(★msg_cnf[8]) then ★msg_btnp=false end
+  --loop...
+  while ★msg_i<#★msg_str do
+    --idk why you're trying to
+    --read this
+    if btnp(★msg_cnf[8]) then
+      ★msg_i=#★msg_str-1
+      ★msg_btnp=true
+    end
+    --like seriously, its just
+    --vital function stuff.
+    ★msg_t+=1
+    if ★msg_str[★msg_i].skp then ★msg_i+=1 end
+    if ★msg_t>=★msg_del+★msg_str[★msg_i]._del then
+      ★msg_i+=1
+      sfx(0)
+      ★msg_t=0
+    end
+    break;
+  end
+  --i mean, hey... if you want
+  --to keep reading, go ahead.
+  local i=1
+  local _x=0
+  local _y=0
+  while i<★msg_i do
+    if not ★msg_str[i] then return end
+    if not ★msg_str[i].skp then
+      --i wont try and stop you.
+      _x+=★msg_cnf[4]
+      if ★msg_str[i]._b and ★msg_str[i]._b != 16 then
+        rectfill(x+_x, y+_y-1, x+_x+★msg_cnf[4], y+_y+5, ★msg_str[i]._b)
+      end
+
+      if ★msg_str[i]._img then
+        spr(★msg_str[i]._img, x+_x+★msg_str[i]._dx, y+★msg_str[i]._dy+_y)
+      end
+      --you're probably getting
+      --bored now, right?
+      if ★msg_str[i]._o and ★msg_str[i]._o != 16 then
+        local __x=x+_x+★msg_str[i]._dx
+        local __y=y+★msg_str[i]._dy+_y
+        for i4=1,3 do
+          for j4=1,3 do
+            print(★msg_str[i].c, __x-2+i4, __y-2+j4, ★msg_str[i]._o)
+          end
+        end
+      end
+
+      --yep, not much here...
+      print(★msg_str[i].c, x+_x+★msg_str[i]._dx, y+★msg_str[i]._dy+_y, ★msg_str[i]._c)
+      if ★msg_str[i]._un == 1 then
+        line(x+_x, y+_y+5, x+_x+★msg_cnf[4], y+_y+5)
+      end
+
+      if ★msg_str[i].c == '\n' then
+        _x=0
+        _y+=★msg_cnf[5]
+      end
+    else
+      --why am ☉ even trying
+      --to get you to not read it?
+    end
+    i+=1
+  end
+
+  if ★msg_i>=#★msg_str then
+    print(★msg_cnf[9], x+★msg_cnf[4]+_x+cos(★msg_sin), y+_y+sin(★msg_sin), ★msg_cnf[10])
+    ★msg_sin+=0.05
+    if btnp(★msg_cnf[8]) and ★msg_btnp != true then
+      sfx(1)
+      ★msg_cur+=1
+      msg_set(★msg_cur)
+    end
+  end
+  --i mean, its not like
+  --i care.
+  for ii=1,#★msg_str do
+    ★msg_str[ii]._upd(ii, ii/3)
+  end
+
+  --enjoy the script :)--
 end
 -->8
 --sample
 function _init()
-	msg_set(1)
+  msg_set(1)
 end
 
 function _draw()
-cls()
-	msg_draw(4, 4)
+  cls()
+  msg_draw(4, 4)
 end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

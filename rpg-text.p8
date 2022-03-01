@@ -94,7 +94,7 @@ message = {
       fragment.dx = rnd(4) - 2
     end
   },
-  delay = 4/30,
+  delay = 1/30,
 }
 
 function message:new(o)
@@ -139,66 +139,22 @@ end
 function fragment:update()
 end
 
--- We should be able to write a fragment that is longer than one character
-function message:new_split(string)
-  local fragments={}
-  -- Eek. This is per character.
-  -- for i=1,#string do
-  --add characters
-  add(fragments,
-      fragment:new
-      -- we should just index the config for all these default values
-      { color = {},
-        --character
-        c=string
-  })
-  -- end
-  self:parse(fragments)
-  return fragments
-end
-
-function message:split(string)
-  local fragments={}
-  -- Eek. This is per character.
-  for i=1,#string do
-    --add characters
-    add(fragments,
-        fragment:new
-        -- we should just index the config for all these default values
-        { color = {},
-          --character
-          c=sub(string, i, i),
-    })
-  end
-  self:parse(fragments)
-  local accum = 0
-  for k,f in ipairs(fragments) do
-    if not f.skp then
-      accum += f.delay or self.delay
-      f.delay_accum = accum
-    end
-  end
-  return fragments
-end
-
 --parse entire message :u
 function message:parse(string)
   chars = {}
   for i=1,#string do
-    add(chars, { c=sub(string, i, i), _action = nil, skp = false, fragment_index = nil })
+    add(chars, { c=sub(string, i, i), _action = nil, skip = false, fragment_index = nil })
   end
   for i=1,#chars - 1 do
     local t=chars[i].c
     local c=chars[i+1].c
     if t=='$' and (c=='c' or c=='b' or c=='f' or c=='d' or c=='o' or c=='i') then
-      chars[i].skp=true
-      chars[i+1].skp=true
-      chars[i+2].skp=true
-      chars[i+3].skp=true
-    do
+      chars[i].skip=true
+      chars[i+1].skip=true
+      chars[i+2].skip=true
+      chars[i+3].skip=true
       local val=tonum(chars[i+2].c..chars[i+3].c)
       chars[i+3]._action = function(fragments, k)
-        printh("c" .. c .. " val " .. (val or 'nil'))
         if c == 'i' then
           fragments[k].image=val
         else
@@ -211,24 +167,24 @@ function message:parse(string)
               fragments[j].update=self.effects[val]
             elseif c=='d' then
               -- delay is in terms of frames (could be 60 though &shrug;)
-              if (val) val /= 30
-              fragments[j].delay=val
+              local t = val
+              if (t) t /= 30
+              fragments[j].delay=t
             elseif c=='o' then
               fragments[j].color.outline=val
             end
           end
         end
       end
-      end
     elseif t == '$' and c == '$' then
       -- $$ becomes $
-      chars[i+1].skp = true
+      chars[i+1].skip = true
     end
 
     if t=='$' and c=='u' then
-      chars[i].skp=true
-      chars[i+1].skp=true
-      chars[i+2].skp=true
+      chars[i].skip=true
+      chars[i+1].skip=true
+      chars[i+2].skip=true
 
       local val = tonum(chars[i+2].c)
       chars[i+2]._action = function(fragments, k)
@@ -240,7 +196,7 @@ function message:parse(string)
   end
   local fragments = {}
   for char in all(chars) do
-    if not char.skp then
+    if not char.skip then
       add(fragments, fragment:new { color = {}, c = char.c })
     end
     char.fragment_index = #fragments
@@ -253,7 +209,7 @@ function message:parse(string)
 
   local accum = 0
   for k,f in ipairs(fragments) do
-    if not f.skp then
+    if not f.skip then
       accum += f.delay or self.delay
       f.delay_accum = accum
     end
@@ -284,13 +240,12 @@ function message:update()
   if (self.i > #fragments) return
   --like seriously, its just
   --vital function stuff.
-  -- if fragments[self.i].skp then self.i+=1 end
   local delay = self.delay
   -- if (self.i <= #fragments) delay += fragments[self.i].delay
 
   if time() - self.istart > fragments[self.i].delay_accum then
     self.i+=1
-    if (self.i <= #fragments and not fragments[self.i].skp) sfx(self.sound.blip)
+    if (self.i <= #fragments) sfx(self.sound.blip)
   end
 
 end
@@ -305,44 +260,41 @@ function message:draw(x, y)
   local _y=0
   for i = 1, self.i do
     if not fragments[i] then break end
-    if not fragments[i].skp then
-      --i wont try and stop you.
-      -- local str = sub(fragments[i].c, 1, self.i)
-      local str = fragments[i].c
-      local highlight = fragments[i].color.highlight
-      if highlight and highlight ~= 16 then
-        rectfill(x+_x-1, y+_y-1, x+_x+self.spacing.letter-1,y+_y+5, highlight)
-      end
+    --i wont try and stop you.
+    -- local str = sub(fragments[i].c, 1, self.i)
+    local str = fragments[i].c
+    local highlight = fragments[i].color.highlight
+    if highlight and highlight ~= 16 then
+      rectfill(x+_x-1, y+_y-1, x+_x+self.spacing.letter-1,y+_y+5, highlight)
+    end
 
-      if fragments[i].image then
-        spr(fragments[i].image, x+_x+fragments[i].dx, y+fragments[i].dy+_y)
-      end
-      --you're probably getting
-      --bored now, right?
-      local outline = fragments[i].color.outline
-      if outline and outline ~= 16 then
-        local __x=x+_x+fragments[i].dx
-        local __y=y+_y+fragments[i].dy
-        for i4=1,3 do
-          for j4=1,3 do
-            print(str, __x-2+i4, __y-2+j4, outline)
-          end
+    if fragments[i].image then
+      spr(fragments[i].image, x+_x+fragments[i].dx, y+fragments[i].dy+_y)
+    end
+    --you're probably getting
+    --bored now, right?
+    local outline = fragments[i].color.outline
+    if outline and outline ~= 16 then
+      local __x=x+_x+fragments[i].dx
+      local __y=y+_y+fragments[i].dy
+      for i4=1,3 do
+        for j4=1,3 do
+          print(str, __x-2+i4, __y-2+j4, outline)
         end
       end
+    end
 
-      --yep, not much here...
-      print(str, x+_x+fragments[i].dx, y+fragments[i].dy+_y, fragments[i].color.foreground)
-      if fragments[i].underline == 1 then
-        line(x+_x, y+_y+5, x+_x+self.spacing.letter, y+_y+5)
-      end
+    --yep, not much here...
+    print(str, x+_x+fragments[i].dx, y+fragments[i].dy+_y, fragments[i].color.foreground)
+    if fragments[i].underline == 1 then
+      line(x+_x, y+_y+5, x+_x+self.spacing.letter, y+_y+5)
+    end
 
-      _x+=self.spacing.letter
-      -- split by the newlines too?
-      if fragments[i].c == '\n' then
-        _x=0
-        _y+=self.spacing.newline
-      end
-
+    _x+=self.spacing.letter
+    -- split by the newlines too?
+    if fragments[i].c == '\n' then
+      _x=0
+      _y+=self.spacing.newline
     end
   end
 
@@ -396,7 +348,7 @@ msg_cnf = {
 --]]
 msg_i=1
 msg_t=0
-msg_del=4
+msg_del=1
 msg_cur=1
   --==edit special fx here==--
   --[[
@@ -475,7 +427,7 @@ msg_fx = {
 --]]
 msg_ary={
   'this is\nplain',
-  'this $f02is a$fxx $c14pink cat$c15',
+  'this $f02is a$fxx $d08$c14pink cat$c15',
   '$c09welcome$cxx to the text demo!',
   'you can draw sprites\n$i01   like this, and you can\nadd a delay$d08...$dxxlike this!',
   'looking for $d08$f01spooky$fxx$dxx effects?$d30\n$dxxhmm, how about some\n$oxx$o16$c01$b10highlighting$bxx',

@@ -7,7 +7,7 @@ __lua__
 --[[
     text codes:
 
-    $u1 = underline text (0 for
+   $u1 = underline text (0 for
            no underline)
 
    $b## = border color, ##= a
@@ -54,7 +54,7 @@ message = {
   },
   spacing = {
     letter = 4,
-    newline = 5
+    newline = 7
   },
   sound = {
     blip = 0,
@@ -156,7 +156,7 @@ function message:parse(fragments)
         if c=='c' then
           fragments[j].color.foreground=val
         elseif c=='b' then
-          fragments[j].color.background=val
+          fragments[j].color.highlight=val
         elseif c=='f' then
           fragments[j].update=self.effects[val]
         elseif c=='d' then
@@ -169,27 +169,34 @@ function message:parse(fragments)
       end
     end
 
-
     if t=='$' and c=='u' then
       fragments[i].skp=true
       fragments[i+1].skp=true
       fragments[i+2].skp=true
       for j=i,#fragments do
-        fragments[j].underline=tonum(msg_str[i+2].c)
+        fragments[j].underline=tonum(fragments[i+2].c)
       end
     end
   end
 end
 
+function message:is_complete()
+  return self.cur > #self.fragments
+end
+
 function message:update()
-  self.msg_btnp = btnp(self.next_message.button)
   self.t += 1
   local fragments = self.fragments[self.cur]
-
   if (not fragments) return
-  if self.msg_btnp then
-    self.i=#fragments
+  if btnp(self.next_message.button) then
+    if self.i <= #fragments then
+      self.i=#fragments
+    else
+      self.cur += 1
+      self.i = 1
+    end
   end
+
   if (self.i > #fragments) return
   --like seriously, its just
   --vital function stuff.
@@ -220,7 +227,7 @@ function message:draw(x, y)
       _x+=self.spacing.letter
       local highlight = fragments[i].color.highlight
       if highlight and highlight != 16 then
-        rectfill(x+_x, y+_y-1, x+_x+self.spacing.letter,y+_y+5, highlight)
+        rectfill(x+_x-1, y+_y-1, x+_x+self.spacing.letter-1,y+_y+5, highlight)
       end
 
       if fragments[i].image then
@@ -387,17 +394,12 @@ msg_fx = {
   next string.
 --]]
 msg_ary={
-  'this $f02is a$fxx $c14pink cat$c15 ',
-  'this is plain ',
-  --1
-  '$c09welcome$cxx to the text demo!',
-  --2
-  'you can draw sprites\n$i01   like this, and you can\n\nadd a delay$d04...$dxxlike this!',
-  --3
+  -- 'this $f02is a$fxx $c14pink cat$c15 ',
+  -- 'this is plain ',
+  -- '$c09welcome$cxx to the text demo!',
+  -- 'you can draw sprites\n$i01   like this, and you can\n\nadd a delay$d04...$dxxlike this!',
   'looking for $d08$f01spooky$fxx$dxx effects?$d30\n$dxxhmm, how about some\n$oxx$o16$c01$b10highlighting$bxx',
-  --
   '$o16$u1underlining?$u0$d30$oxx $dxx geeze, you\'re\na $f02hard one to please!',
-  --5
   ''
 }
 
@@ -579,9 +581,10 @@ end
 -->8
 --sample
 function _init()
-  m = message:new {
-  'this $f02is a$fxx $c14pink cat$cxx',
-  }
+  -- m = message:new {
+  -- 'this $f02is a$fxx $c14pink cat$cxx',
+  -- }
+  m = message:new(msg_ary)
   msg_set(1)
 end
 
@@ -589,6 +592,10 @@ function _draw()
   cls()
   msg_draw(4, 4)
   m:draw(4, 40)
+  if m:is_complete() then
+    print('done', 8, 40)
+  end
+  -- print('this', 8, 4)
 end
 
 function _update()

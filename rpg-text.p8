@@ -50,7 +50,7 @@ message = {
   color = {
     foreground = 15,
     highlight = nil,
-    outline = 3
+    outline = 1
   },
   spacing = {
     letter = 4,
@@ -87,40 +87,87 @@ function message:new(o)
   return o
 end
 
+fragment = {
+  color = message.color,
+  c = nil,
+  dx = 0,
+  dy = 0,
+  fxv = 0,
+  delay = 0,
+  id = nil,
+  image = nil,
+  underline = nil
+}
+function fragment.new(class, o)
+  o = o or {}
+  if (o.color) setmetatable(o.color, message.color); message.color.__index = message.color
+  setmetatable(o, class)
+  class.__index = class
+  return o
+end
+
+function fragment:update()
+end
+
+
 function message:split(string)
   local fragments={}
   -- Eek. This is per character.
   for i=1,#string do
     --add characters
     add(fragments,
+        fragment:new
         -- we should just index the config for all these default values
-        {
-
-          --color
-          _c=msg_cnf[1],
-          --bg color
-          _b=msg_cnf[2],
-          --outline color
-          _o=msg_cnf[3],
-
+        { color = {},
           --character
           c=sub(string, i, i),
-          --draw_x and draw_y
-          _dx=0,
-          _dy=0,
-          --fx value
-          _fxv=0,
-          --image to draw
-          _img=nil,
-          --extra delay
-          _del=0,
           --update function for fx
-          _upd=function() end,
-          _id=i - 1
+          id=i - 1
     })
   end
-  msgparse(fragments)
+  self:parse(fragments)
   return fragments
+end
+
+--parse entire message :u
+function message:parse(fragments)
+  for i=1,#fragments do
+    if not fragments[i+1] then return end
+    local t=fragments[i].c
+    local c=fragments[i+1].c
+    if t=='$' and (c=='c' or c=='b' or c=='f' or c=='d' or c=='o' or c=='i') then
+      fragments[i].skp=true
+      fragments[i+1].skp=true
+      fragments[i+2].skp=true
+      fragments[i+3].skp=true
+      local val=tonum(fragments[i+2].c..fragments[i+3].c)
+      for j=i,#fragments do
+        if c=='c' then
+          fragments[j].color.foreground=val
+        elseif c=='b' then
+          fragments[j].color.background=val
+        elseif c=='f' then
+          fragments[j].update=msg_fx[val]
+        elseif c=='d' then
+          fragments[j].delay=val
+        elseif c=='o' then
+          fragments[j].color.outline=val
+        elseif c=='i' then
+          fragments[i+4].image=val
+        end
+      end
+    end
+
+
+    if t=='$' and c=='u' then
+      fragments[i].skp=true
+      fragments[i+1].skp=true
+      fragments[i+2].skp=true
+      for j=i,#fragments do
+        fragments[j].underline=tonum(msg_str[i+2].c)
+      end
+    end
+  end
 end
 
 function message:update()
@@ -137,7 +184,7 @@ function message:update()
   --vital function stuff.
   if fragments[self.i].skp then self.i+=1 end
   local delay = msg_del
-  if (self.i <= #fragments) delay += fragments[self.i]._del
+  if (self.i <= #fragments) delay += fragments[self.i].delay
 
   if self.t >= delay then
     self.i+=1
@@ -160,28 +207,30 @@ function message:draw(x, y)
     if not fragments[i].skp then
       --i wont try and stop you.
       _x+=self.spacing.letter
-      if fragments[i]._b and fragments[i]._b != 16 then
-        rectfill(x+_x, y+_y-1, x+_x+self.spacing.letter,y+_y+5, fragments[i]._b)
+      local highlight = fragments[i].color.highlight
+      if highlight and highlight != 16 then
+        rectfill(x+_x, y+_y-1, x+_x+self.spacing.letter,y+_y+5, highlight)
       end
 
-      if fragments[i]._img then
-        spr(fragments[i]._img, x+_x+fragments[i]._dx, y+fragments[i]._dy+_y)
+      if fragments[i].image then
+        spr(fragments[i].image, x+_x+fragments[i].dx, y+fragments[i].dy+_y)
       end
       --you're probably getting
       --bored now, right?
-      if fragments[i]._o and fragments[i]._o != 16 then
-        local __x=x+_x+fragments[i]._dx
-        local __y=y+fragments[i]._dy+_y
+      local outline = fragments[i].color.outline
+      if outline and outline != 16 then
+        local __x=x+_x+fragments[i].dx
+        local __y=y+_y+fragments[i].dy
         for i4=1,3 do
           for j4=1,3 do
-            print(fragments[i].c, __x-2+i4, __y-2+j4, fragments[i]._o)
+            print(fragments[i].c, __x-2+i4, __y-2+j4, outline)
           end
         end
       end
 
       --yep, not much here...
-      print(fragments[i].c, x+_x+fragments[i]._dx, y+fragments[i]._dy+_y, fragments[i]._c)
-      if fragments[i]._un == 1 then
+      print(fragments[i].c, x+_x+fragments[i].dx, y+fragments[i].dy+_y, fragments[i].color.foreground)
+      if fragments[i].underline == 1 then
         line(x+_x, y+_y+5, x+_x+self.spacing.letter, y+_y+5)
       end
 
@@ -210,7 +259,7 @@ function message:draw(x, y)
   --i mean, its not like
   --i care.
   for ii=1,#fragments do
-    fragments[ii]._upd(ii, ii/3)
+    fragments[ii]:update(ii, ii/3)
   end
 
   --enjoy the script :)--

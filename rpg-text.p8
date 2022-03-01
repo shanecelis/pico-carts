@@ -3,7 +3,6 @@ version 33
 __lua__
 --https://www.lexaloffle.com/bbs/?tid=33645
 --shooting's ultimate text
--- is used as my signature.
 --[[
     text codes:
 
@@ -22,6 +21,7 @@ __lua__
           needed, use $f##
           and create a custom
           fx for it.
+   $i## = display sprite inline
 
    $f## = special effects
 
@@ -35,13 +35,31 @@ __lua__
    16 to set it to nil and
    remove it.
 ]]--
+--[[
+todo
+====
+* remove skip elements
+* generalize fragment to hold whole string not just one character
+* generalize framework so that all outline, highlight, and such are just effects
+
+changes
+=======
+* use's lua's oo system instead of a 'msg_' prefix
+* draw(x,y) lines up with print(s,x,y)
+* fragment class only hold items changed from default
+* parsing happens once
+* many messages may be used at the same time
+* buttons and timing are handled in _update() instead of _draw()
+*
+
+motivation
+==========
+
+shooting's ultimate text library is awesome first of all, so why change it? there were a few
+reasons: i wanted to integrate it with my code that has a particular style.
+
+]]--
 --==configurations==--
-
--- local m = msg:new(nil, { "Some messages." })
--- m:update()
--- m:draw()
--- m:is_complete()
-
 --[[
   configure your defaults
   here
@@ -73,7 +91,6 @@ message = {
     function(fragment, fxv)
       local t = 1.5 * time()
       fragment.dy=sin(t+fxv)
-      -- fragment.dx=rnd(4)-rnd(2) -- [0, 3.9] - [0, 1.9]
       fragment.dx = rnd(4) - 2
     end
   },
@@ -90,12 +107,12 @@ function message:new(o)
   self.__index = self
   o.fragments = {}
   for k,v in ipairs(o) do
-    add(o.fragments, o:split(v))
+    -- add(o.fragments, o:split(v))
+    add(o.fragments, o:parse(v))
   end
-  o.istart = nil
+  o.istart = nil -- when we started displaying the ith message
   o.i = 1 -- where we our in our
   o.cur = 1 -- current string
-  o.t = 0 -- the time, what frame
   return o
 end
 
@@ -110,6 +127,7 @@ fragment = {
   underline = nil,
   delay_accum = 0
 }
+
 function fragment.new(class, o)
   o = o or {}
   if (o.color) setmetatable(o.color, message.color); message.color.__index = message.color
@@ -164,45 +182,83 @@ function message:split(string)
 end
 
 --parse entire message :u
-function message:parse(fragments)
-  for i=1,#fragments do
-    if not fragments[i+1] then return end
-    local t=fragments[i].c
-    local c=fragments[i+1].c
+function message:parse(string)
+  chars = {}
+  for i=1,#string do
+    add(chars, { c=sub(string, i, i), _action = nil, skp = false, fragment_index = nil })
+  end
+  for i=1,#chars - 1 do
+    local t=chars[i].c
+    local c=chars[i+1].c
     if t=='$' and (c=='c' or c=='b' or c=='f' or c=='d' or c=='o' or c=='i') then
-      fragments[i].skp=true
-      fragments[i+1].skp=true
-      fragments[i+2].skp=true
-      fragments[i+3].skp=true
-      local val=tonum(fragments[i+2].c..fragments[i+3].c)
-      for j=i,#fragments do
-        if c=='c' then
-          fragments[j].color.foreground=val
-        elseif c=='b' then
-          fragments[j].color.highlight=val
-        elseif c=='f' then
-          fragments[j].update=self.effects[val]
-        elseif c=='d' then
-          -- delay is in terms of frames (could be 60 though &shrug;)
-          if (val) val /= 30
-          fragments[j].delay=val
-        elseif c=='o' then
-          fragments[j].color.outline=val
-        elseif c=='i' then
-          fragments[i+4].image=val
+      chars[i].skp=true
+      chars[i+1].skp=true
+      chars[i+2].skp=true
+      chars[i+3].skp=true
+    do
+      local val=tonum(chars[i+2].c..chars[i+3].c)
+      chars[i+3]._action = function(fragments, k)
+        printh("c" .. c .. " val " .. (val or 'nil'))
+        if c == 'i' then
+          fragments[k].image=val
+        else
+          for j=k,#fragments do
+            if c=='c' then
+              fragments[j].color.foreground=val
+            elseif c=='b' then
+              fragments[j].color.highlight=val
+            elseif c=='f' then
+              fragments[j].update=self.effects[val]
+            elseif c=='d' then
+              -- delay is in terms of frames (could be 60 though &shrug;)
+              if (val) val /= 30
+              fragments[j].delay=val
+            elseif c=='o' then
+              fragments[j].color.outline=val
+            end
+          end
         end
       end
+      end
+    elseif t == '$' and c == '$' then
+      -- $$ becomes $
+      chars[i+1].skp = true
     end
 
     if t=='$' and c=='u' then
-      fragments[i].skp=true
-      fragments[i+1].skp=true
-      fragments[i+2].skp=true
-      for j=i,#fragments do
-        fragments[j].underline=tonum(fragments[i+2].c)
+      chars[i].skp=true
+      chars[i+1].skp=true
+      chars[i+2].skp=true
+
+      local val = tonum(chars[i+2].c)
+      chars[i+2]._action = function(fragments, k)
+        for j=k,#fragments do
+          fragments[j].underline=val
+        end
       end
     end
   end
+  local fragments = {}
+  for char in all(chars) do
+    if not char.skp then
+      add(fragments, fragment:new { color = {}, c = char.c })
+    end
+    char.fragment_index = #fragments
+  end
+  for char in all(chars) do
+    if char._action then
+      char._action(fragments, char.fragment_index + 1)
+    end
+  end
+
+  local accum = 0
+  for k,f in ipairs(fragments) do
+    if not f.skp then
+      accum += f.delay or self.delay
+      f.delay_accum = accum
+    end
+  end
+  return fragments
 end
 
 function message:is_complete()
@@ -211,7 +267,6 @@ end
 
 function message:update()
   if (not self.istart) self.istart = time()
-  self.t += 1
   local fragments = self.fragments[self.cur]
   if (not fragments) return
   if btnp(self.next_message.button) then
@@ -233,11 +288,9 @@ function message:update()
   local delay = self.delay
   -- if (self.i <= #fragments) delay += fragments[self.i].delay
 
-  -- if self.t >= delay then
   if time() - self.istart > fragments[self.i].delay_accum then
     self.i+=1
-    if (self.i < #fragments and not fragments[self.i].skp) sfx(self.sound.blip)
-    self.t=0
+    if (self.i <= #fragments and not fragments[self.i].skp) sfx(self.sound.blip)
   end
 
 end
@@ -309,6 +362,7 @@ function message:draw(x, y)
   --enjoy the script :)--
 end
 
+-->8
 
 msg_cnf = {
   --default color 1
@@ -423,7 +477,7 @@ msg_ary={
   'this is\nplain',
   'this $f02is a$fxx $c14pink cat$c15',
   '$c09welcome$cxx to the text demo!',
-  'you can draw sprites\n$i01   like this, and you can\nadd a delay$d04...$dxxlike this!',
+  'you can draw sprites\n$i01   like this, and you can\nadd a delay$d08...$dxxlike this!',
   'looking for $d08$f01spooky$fxx$dxx effects?$d30\n$dxxhmm, how about some\n$oxx$o16$c01$b10highlighting$bxx',
   '$o16$u1underlining?$u0$d30$oxx $dxx geeze, you\'re\na $f02hard one to please!',
 }
@@ -616,7 +670,7 @@ end
 
 function _draw()
   cls()
-  -- msg_draw(4, 4)
+  msg_draw(4, 4)
   m:draw(4, 40)
   -- print(msg_ary[1], 4, 40, 3)
   -- print('this is\n plain', 4, 50, 3)

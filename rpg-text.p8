@@ -192,6 +192,7 @@ function message:update()
     if self.i <= #fragments then
       self.i=#fragments
     else
+      sfx(self.sound.next_message)
       self.cur += 1
       self.i = 1
     end
@@ -206,7 +207,7 @@ function message:update()
 
   if self.t >= delay then
     self.i+=1
-    sfx(0)
+    sfx(self.sound.blip)
     self.t=0
   end
 
@@ -266,13 +267,7 @@ function message:draw(x, y)
   -- this is the dot
   if self.i>=#fragments then
     local _t = -0.05 * self.t
-    print(self.next_message.char, x+self.spacing.letter+_x+cos(_t), y+_y+sin(_t), self.next_message.color)
-    if msg_btnp then
-      sfx(1)
-      self.cur+=1
-      fragments = self.fragments[self.cur]
-      if (not fragments) return
-    end
+    print(self.next_message.char, x+self.spacing.letter+_x+cos(_t)-1, y+_y+sin(_t), self.next_message.color)
   end
   --i mean, its not like
   --i care.
@@ -394,13 +389,12 @@ msg_fx = {
   next string.
 --]]
 msg_ary={
-  -- 'this $f02is a$fxx $c14pink cat$c15 ',
-  -- 'this is plain ',
-  -- '$c09welcome$cxx to the text demo!',
-  -- 'you can draw sprites\n$i01   like this, and you can\n\nadd a delay$d04...$dxxlike this!',
+  'this $f02is a$fxx $c14pink cat$c15',
+  'this is plain',
+  '$c09welcome$cxx to the text demo!',
+  'you can draw sprites\n$i01   like this, and you can\nadd a delay$d04...$dxxlike this!',
   'looking for $d08$f01spooky$fxx$dxx effects?$d30\n$dxxhmm, how about some\n$oxx$o16$c01$b10highlighting$bxx',
   '$o16$u1underlining?$u0$d30$oxx $dxx geeze, you\'re\na $f02hard one to please!',
-  ''
 }
 
 
@@ -419,6 +413,7 @@ function msg_set(id)
   --reset index counter
   msg_i=1
   local __id=0
+  if (id > #msg_ary) return
   -- Eek. This is per character.
   for i=1,#msg_ary[id] do
     --add characters
@@ -493,7 +488,7 @@ end
 --function to draw msg
 function msg_draw(x, y)
   --return if text is empty
-  if msg_ary[msg_cur] == '' then return end
+  if (msg_cur > #msg_ary or msg_ary[msg_cur] == '') return
   --set a btnp value
   if not btn(msg_cnf[8]) then msg_btnp=false end
   --loop...

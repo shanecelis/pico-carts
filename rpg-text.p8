@@ -183,7 +183,7 @@ function message:parse(fragments)
         elseif c=='f' then
           fragments[j].update=self.effects[val]
         elseif c=='d' then
-          -- delay is in terms of frames
+          -- delay is in terms of frames (could be 60 though &shrug;)
           if (val) val /= 30
           fragments[j].delay=val
         elseif c=='o' then
@@ -256,7 +256,6 @@ function message:draw(x, y)
       --i wont try and stop you.
       -- local str = sub(fragments[i].c, 1, self.i)
       local str = fragments[i].c
-      _x+=self.spacing.letter
       local highlight = fragments[i].color.highlight
       if highlight and highlight ~= 16 then
         rectfill(x+_x-1, y+_y-1, x+_x+self.spacing.letter-1,y+_y+5, highlight)
@@ -284,6 +283,7 @@ function message:draw(x, y)
         line(x+_x, y+_y+5, x+_x+self.spacing.letter, y+_y+5)
       end
 
+      _x+=self.spacing.letter
       -- split by the newlines too?
       if fragments[i].c == '\n' then
         _x=0
@@ -298,7 +298,7 @@ function message:draw(x, y)
     -- local _t = -0.05 * self.t
     -- local _t = 1.5 * time()
     local _t = 1.6 * time()
-    print(self.next_message.char, x+self.spacing.letter+_x+cos(_t), y+_y+sin(_t), self.next_message.color)
+    print(self.next_message.char, x+_x+cos(_t), y+_y+sin(_t), self.next_message.color)
   end
   --i mean, its not like
   --i care.
@@ -420,7 +420,7 @@ msg_fx = {
   next string.
 --]]
 msg_ary={
-  'this is plain',
+  'this is\nplain',
   'this $f02is a$fxx $c14pink cat$c15',
   '$c09welcome$cxx to the text demo!',
   'you can draw sprites\n$i01   like this, and you can\nadd a delay$d04...$dxxlike this!',
@@ -616,12 +616,13 @@ end
 
 function _draw()
   cls()
-  msg_draw(4, 4)
+  -- msg_draw(4, 4)
   m:draw(4, 40)
+  -- print(msg_ary[1], 4, 40, 3)
+  -- print('this is\n plain', 4, 50, 3)
   if m:is_complete() then
     print('done', 8, 40)
   end
-  -- print('this', 8, 4)
 end
 
 function _update()

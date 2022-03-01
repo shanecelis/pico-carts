@@ -64,6 +64,18 @@ message = {
     button = 5,
     char = '.',
     color = 9
+  },
+  effects = {
+    function(fragment, fxv)
+      local t = 1.5 * time()
+      fragment.dy=sin(t+fxv)
+    end,
+    function(fragment, fxv)
+      local t = 1.5 * time()
+      fragment.dy=sin(t+fxv)
+      -- fragment.dx=rnd(4)-rnd(2) -- [0, 3.9] - [0, 1.9]
+      fragment.dx = rnd(4) - 2
+    end
   }
 }
 
@@ -109,7 +121,6 @@ end
 function fragment:update()
 end
 
-
 function message:split(string)
   local fragments={}
   -- Eek. This is per character.
@@ -147,7 +158,7 @@ function message:parse(fragments)
         elseif c=='b' then
           fragments[j].color.background=val
         elseif c=='f' then
-          fragments[j].update=msg_fx[val]
+          fragments[j].update=self.effects[val]
         elseif c=='d' then
           fragments[j].delay=val
         elseif c=='o' then
@@ -258,8 +269,8 @@ function message:draw(x, y)
   end
   --i mean, its not like
   --i care.
-  for ii=1,#fragments do
-    fragments[ii]:update(ii, ii/3)
+  for i=1,#fragments do
+    fragments[i]:update(i/3)
   end
 
   --enjoy the script :)--
@@ -376,7 +387,7 @@ msg_fx = {
   next string.
 --]]
 msg_ary={
-  'this is a $c14pink cat$c15 ',
+  'this $f02is a$fxx $c14pink cat$c15 ',
   'this is plain ',
   --1
   '$c09welcome$cxx to the text demo!',
@@ -569,7 +580,7 @@ end
 --sample
 function _init()
   m = message:new {
-  'this is a $c14pink cat$cxx',
+  'this $f02is a$fxx $c14pink cat$cxx',
   }
   msg_set(1)
 end

@@ -92,24 +92,22 @@ function effect:parse(chars, i)
     chars[i+1+j].skip=true
     arg = arg..chars[i+1+j].c
   end
-  local val=tonum(arg)
-  return val
+  return tonum(arg)
 end
 
 function effect:closure(val)
   return function(fragments, k)
     if self.isolated then
-        self:action(fragments[k], val)
+      self:action(fragments[k], val)
     else
-        for j=k,#fragments do
+      for j=k,#fragments do
         self:action(fragments[j], val)
-        end
+      end
     end
   end
 end
 
-function effect:action(fragment, val)
-end
+function effect:action(fragment, val) end
 
 message = {
   color = {
@@ -208,6 +206,7 @@ function message.new(class, o)
   o.istart = nil -- when we started displaying the ith message
   o.i = 1 -- where we our in our
   o.cur = 1 -- current string
+  o.done = false
   return o
 end
 
@@ -259,7 +258,7 @@ function message:parse(string)
   end
 
   local accum = 0
-  for k,f in ipairs(fragments) do
+  for f in all(fragments) do
     if not f.skip then
       accum += f.delay or self.delay
       f.delay_accum = accum
@@ -269,45 +268,43 @@ function message:parse(string)
 end
 
 function message:is_complete()
-  return self.cur > #self.fragments
+  return self.cur >= #self.fragments and self.i >= #self.fragments[self.cur] and self.done
 end
 
 function message:update()
   if (not self.istart) self.istart = time()
   local fragments = self.fragments[self.cur]
-  if (not fragments) return
   if btnp(self.next_message.button) then
     if self.i < #fragments then
       self.i=#fragments
-      return
-    else
+    elseif self.cur < #self.fragments then
       sfx(self.sound.next_message)
       self.cur += 1
       self.i = 1
       self.istart = time()
+    else
+      -- we must be on the last thing.
+      sfx(self.sound.next_message)
+      self.done = true
     end
   end
-
-  if (self.i > #fragments) return
   --like seriously, its just vital function stuff.
-
-  if time() - self.istart > fragments[self.i].delay_accum then
-    self.i+=1
-    if (self.i <= #fragments) sfx(self.sound.blip)
+  if time() - self.istart > fragments[self.i].delay_accum
+    and self.i < #fragments then
+      self.i+=1
+      sfx(self.sound.blip)
   end
 
 end
 
 function message:draw(x, y)
   local fragments = self.fragments[self.cur]
-  if (not fragments) return
   --i mean, hey... if you want
   --to keep reading, go ahead.
   local _x=0
   local _y=0
   for i = 1, self.i do
     local f = fragments[i]
-    if not f then break end
     --i wont try and stop you.
     -- local str = sub(f.c, 1, self.i)
     local str = f.c

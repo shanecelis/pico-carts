@@ -219,16 +219,17 @@ message = {
   delay = 1/30,
 }
 
-function message.new(class, o)
+function message.new(class, o, strings)
   o = o or {}
   setmetatable(o, class)
-  if (o.color) setmetatable(o.color, class.color); class.color.__index = class.color
+  -- if (o.color) setmetatable(o.color, class.color); class.color.__index = class.color
+  if (o.color) class.color.__index = class.color
   if (o.spacing) setmetatable(o.spacing, class.spacing); class.spacing.__index = class.spacing
   if (o.sound) setmetatable(o.sound, class.sound); class.sound.__index = class.sound
   if (o.next_message) setmetatable(o.next_message, class.next_message); class.next_message.__index = class.next_message
   class.__index = class
   o.fragments = {}
-  for k,v in ipairs(o) do
+  for k,v in ipairs(strings or o) do
     add(o.fragments, o:parse(v))
   end
   o.istart = nil -- when we started displaying the ith message
@@ -262,8 +263,8 @@ end
 function fragment:update() end
 
 function message:parse(string)
-  ctx = {}
-  chars = {}
+  -- ctx = {}
+  local chars = {}
   for i=1,#string do
     add(chars, { c=sub(string, i, i), setup = nil, skip = false, fragment_index = nil })
   end
@@ -301,20 +302,26 @@ function message:is_complete()
 end
 
 function message:update()
+  local consume = false
   if (not self.istart) self.istart = time()
   local fragments = self.fragments[self.cur]
   if btnp(self.next_message.button) then
     if self.i < #fragments then
       self.i=#fragments
+      consume=true
     elseif self.cur < #self.fragments then
       sfx(self.sound.next_message)
       self.cur += 1
       self.i = 1
       self.istart = time()
+      consume=true
     else
-      -- we must be on the last thing.
-      sfx(self.sound.next_message)
-      self.done = true
+      if not self.done then
+        -- we must be on the last thing.
+        sfx(self.sound.next_message)
+        consume=true
+        self.done = true
+      end
     end
   end
   --like seriously, its just vital function stuff.
@@ -323,6 +330,7 @@ function message:update()
       self.i+=1
       sfx(self.sound.blip)
   end
+  return consume
 end
 
 function message:draw(x, y)
@@ -383,4 +391,85 @@ function message:draw(x, y)
   end
 
   --enjoy the script :)--
+end
+
+
+-- choice box
+message_choice = message:new({ choices = {} })
+function message_choice:new(o, strings, choices)
+  o = o or message:new(o, strings)
+  o.choices = choices or o.choices
+  if strings then
+  o.header = strings[#strings]
+  else
+  o.header = o[#o]
+  end
+  o.choice = 1
+  o.canceled = false
+  o.last_choice = nil
+  setmetatable(o, self)
+  self.__index = self
+  o:update_strings()
+  return o
+end
+
+function message_choice:reset()
+  self.last_choice = nil
+  self.canceled = false
+  self:update_strings()
+end
+
+
+function message_choice:update_strings()
+  local str = self.header
+  local sep
+  for i = 1, #self.choices do
+    if i == self.choice then
+      if self.last_choice == nil then
+        sep=">"
+      elseif self.canceled then
+        sep=" "
+      else
+        sep="."
+      end
+    else
+      sep=" "
+    end
+    str = str .. "\n" .. sep .. " " .. self.choices[i]
+  end
+  self.fragments[#self.fragments] = self:parse(str)
+  -- self.str[#self.str] = str
+  -- self.str = { str }
+end
+
+function message_choice:update()
+  if not message.is_complete(self) then
+    return message.update(self)
+  else
+    if self.last_choice ~= nil then
+      return false
+    elseif btnp(5) or btnp(4) or btnp(1) then
+      printh("last choice set")
+      self.last_choice = self.choice
+      self:update_strings()
+      return true
+    elseif btnp(0) then
+      self.canceled = true
+      self:update_strings()
+      return false
+    elseif self.last_choice == nil then
+      local result = false;
+      if (btnp(3)) self.choice += 1; result = true
+      if (btnp(2)) self.choice -= 1; result = true
+      self.choice = mod1(self.choice, #self.choices)
+      self:update_strings()
+      return result
+    else
+      return false
+    end
+  end
+end
+
+function message_choice:is_complete()
+  return message.is_complete(self) and (self.last_choice or self.canceled)
 end

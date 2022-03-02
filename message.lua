@@ -39,6 +39,7 @@ todo
 * remove skip elements
 * generalize fragment to hold whole string not just one character
 * generalize framework so that all outline, highlight, and such are just effects
+* highlighting obscured by outline (probably an ordering issue)
 
 changes
 =======
@@ -62,6 +63,51 @@ reasons: i wanted to integrate it with my code that has a particular style.
   configure your defaults
   here
 --]]
+
+effect = {
+  sigil = 'c',
+  arg_count = 2,
+  val = nil,
+  isolated = false,
+}
+
+function effect.new(class, o)
+  o = o or {}
+  setmetatable(o, class)
+  class.__index = class
+  return o
+end
+
+function effect:parse(chars, i)
+  assert(chars[i+0].c == '$', "wrong start")
+  assert(chars[i+1].c == self.sigil, "wrong sigil")
+  chars[i].skip=true
+  chars[i+1].skip=true
+
+  local arg = ""
+  for j=1, self.arg_count do
+    chars[i+1+j].skip=true
+    arg = arg..chars[i+1+j].c
+  end
+  local val=tonum(arg)
+  return val
+end
+
+function effect:closure(val)
+  return function(fragments, k)
+    if self.isolated then
+        self:action(fragments[k], val)
+    else
+        for j=k,#fragments do
+        self:action(fragments[j], val)
+        end
+    end
+  end
+end
+
+function effect:action(fragment, val)
+  fragment.color.foreground=val
+end
 message = {
   color = {
     foreground = 15,
@@ -92,6 +138,62 @@ message = {
       fragment.dx = rnd(4) - 2
     end
   },
+  _effects = {
+    c = effect:new(), -- color
+    b = effect:new{ sigil = 'b',
+                     action = function(self, fragment, val) fragment.color.highlight=val end
+                   },
+
+    o = effect:new{ sigil = 'o',
+                     action = function(self, fragment, val) fragment.color.outline=val end
+                   },
+
+    d = effect:new{ sigil = 'd',
+                     action = function(self, fragment, val) fragment.delay=val end,
+                     parse = function(self, chars, i)
+                       local val = effect.parse(self, chars, i)
+                       if (val) val /= 30
+                       return val
+                       end
+    },
+
+    f = effect:new{ sigil = 'f',
+                    parent = nil,
+                    action = function(self, fragment, val) fragment.update = self.subeffects[val] end,
+
+                    subeffects = {
+                      function(fragment, fxv)
+                        local t = 1.5 * time()
+                        fragment.dy=sin(t+fxv)
+                      end,
+                      function(fragment, fxv)
+                        local t = 1.5 * time()
+                        fragment.dy=sin(t+fxv)
+                        fragment.dx = rnd(4) - 2
+                      end
+                    },
+    },
+
+    u = effect:new{ sigil = 'u',
+                    arg_count = 1,
+                    action = function(self, fragment, val) fragment.underline=val end
+                   },
+
+    i = effect:new{ sigil = 'i',
+                    isolated = true,
+                    action = function(self, fragment, val) fragment.image=val end
+                   },
+    ['$'] = effect:new {
+      sigil = '$',
+      arg_count = 0,
+      parse = function(self, chars, i) chars[i].skip=true end,
+      action = function(self, fragment, val) end,
+    },
+    -- effect:new{ sigil = nil,
+    --                  action = function(self, fragment, val) fragment.color.outline=val end
+    --                };
+
+  },
   delay = 1/30,
 }
 
@@ -102,12 +204,14 @@ function message:new(o)
   if (o.spacing) setmetatable(o.spacing, self.spacing); self.spacing.__index = self.spacing
   if (o.sound) setmetatable(o.sound, self.sound); self.sound.__index = self.sound
   if (o.next_message) setmetatable(o.next_message, self.next_message); self.next_message.__index = self.next_message
+  if (o.sound) setmetatable(o.sound, self.sound); self.sound.__index = self.sound
   self.__index = self
   o.fragments = {}
   for k,v in ipairs(o) do
     -- add(o.fragments, o:split(v))
     add(o.fragments, o:parse(v))
   end
+  o._effects.f.parent = o
   o.istart = nil -- when we started displaying the ith message
   o.i = 1 -- where we our in our
   o.cur = 1 -- current string
@@ -126,6 +230,7 @@ fragment = {
   delay_accum = 0
 }
 
+
 function fragment.new(class, o)
   o = o or {}
   if (o.color) setmetatable(o.color, message.color); message.color.__index = message.color
@@ -137,59 +242,63 @@ end
 function fragment:update()
 end
 
---parse entire message :u
 function message:parse(string)
   chars = {}
+  local colorfx = effect:new()
   for i=1,#string do
     add(chars, { c=sub(string, i, i), action = nil, skip = false, fragment_index = nil })
   end
   for i=1,#chars - 1 do
     local t=chars[i].c
     local c=chars[i+1].c
-    if t=='$' and (c=='c' or c=='b' or c=='f' or c=='d' or c=='o' or c=='i') then
-      chars[i].skip=true
-      chars[i+1].skip=true
-      chars[i+2].skip=true
-      chars[i+3].skip=true
-      local val=tonum(chars[i+2].c..chars[i+3].c)
-      chars[i+3].action = function(fragments, k)
-        if c == 'i' then
-          fragments[k].image=val
-        else
-          for j=k,#fragments do
-            if c=='c' then
-              fragments[j].color.foreground=val
-            elseif c=='b' then
-              fragments[j].color.highlight=val
-            elseif c=='f' then
-              fragments[j].update=self.effects[val]
-            elseif c=='d' then
-              -- delay is in terms of frames (could be 60 though &shrug;)
-              local t = val
-              if (t) t /= 30
-              fragments[j].delay=t
-            elseif c=='o' then
-              fragments[j].color.outline=val
-            end
-          end
-        end
-      end
-    elseif t == '$' and c == '$' then
-      -- $$ becomes $
-      chars[i+1].skip = true
-    end
+    local fx = self._effects[c]
+    if t=='$' and fx then -- (c=='c') then -- or c=='b' or c=='f' or c=='d' or c=='o' or c=='i') then
+      -- chars[i].skip=true
+      -- chars[i+1].skip=true
+      chars[i].action = fx:closure(fx:parse(chars, i))
 
-    if t=='$' and c=='u' then
-      chars[i].skip=true
-      chars[i+1].skip=true
-      chars[i+2].skip=true
 
-      local val = tonum(chars[i+2].c)
-      chars[i+2].action = function(fragments, k)
-        for j=k,#fragments do
-          fragments[j].underline=val
-        end
-      end
+    --   chars[i+2].skip=true
+    --   chars[i+3].skip=true
+    --   local val=tonum(chars[i+2].c..chars[i+3].c)
+    --   chars[i+3].action = function(fragments, k)
+    --     if c == 'i' then
+    --       fragments[k].image=val
+    --     else
+    --       for j=k,#fragments do
+    --         if c=='c' then
+    --           fragments[j].color.foreground=val
+    --         elseif c=='b' then
+    --           fragments[j].color.highlight=val
+    --         elseif c=='f' then
+    --           fragments[j].update=self.effects[val]
+    --         elseif c=='d' then
+    --           -- delay is in terms of frames (could be 60 though &shrug;)
+    --           local t = val
+    --           if (t) t /= 30
+    --           fragments[j].delay=t
+    --         elseif c=='o' then
+    --           fragments[j].color.outline=val
+    --         end
+    --       end
+    --     end
+    --   end
+    -- elseif t == '$' and c == '$' then
+    --   -- $$ becomes $
+    --   chars[i+1].skip = true
+    -- end
+
+    -- if t=='$' and c=='u' then
+    --   chars[i].skip=true
+    --   chars[i+1].skip=true
+    --   chars[i+2].skip=true
+
+    --   local val = tonum(chars[i+2].c)
+    --   chars[i+2].action = function(fragments, k)
+    --     for j=k,#fragments do
+    --       fragments[j].underline=val
+    --     end
+    --   end
     end
   end
   local fragments = {}

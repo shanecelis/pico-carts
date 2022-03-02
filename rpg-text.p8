@@ -115,7 +115,8 @@ msg_fx = {
   next string.
 --]]
 msg_ary={
-  'this is\nplain',
+  'this is $s. plain',
+  'this is money $$ ',
   'this $f02is a$fxx $d08$c14pink cat$c15',
   '$c09welcome$cxx to the text demo!',
   'you can draw sprites\n$i01   like this, and you can\nadd a delay$d08...$dxxlike this!',
@@ -312,16 +313,15 @@ end
 function _draw()
   cls()
   msg_draw(4, 4)
-  m:draw(4, 40)
-  -- print(msg_ary[1], 4, 40, 3)
-  -- print('this is\n plain', 4, 50, 3)
   if m:is_complete() then
     print('done', 8, 40)
+  else
+    m:draw(4, 40)
   end
 end
 
 function _update()
-  m:update()
+  if (not m:is_complete()) m:update()
 end
 
 function dump(o)

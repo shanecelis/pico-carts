@@ -37,20 +37,21 @@
 --[[
 todo
 ====
-* remove skip elements
-* generalize fragment to hold whole string not just one character
-* generalize framework so that all outline, highlight, and such are just effects
-* highlighting obscured by outline (probably an ordering issue)
+* DONE remove skip elements
+* TODO generalize fragment to hold whole string not just one character
+* DONE generalize framework so that all outline, highlight, and such are just effects
+* DONE highlighting obscured by outline (probably an ordering issue)
+* TODO effect could do processing
 
 changes
 =======
-* use's lua's oo system instead of a 'msg_' prefix
+* use a lua oo system instead of a 'msg_' prefix
 * draw(x,y) lines up with print(s,x,y)
 * fragment class only hold items changed from default
 * parsing happens once
-* many messages may be used at the same time
+* many message instances may be used at the same time
 * buttons and timing are handled in _update() instead of _draw()
-*
+* TODO make underline take a color
 
 motivation
 ==========
@@ -98,16 +99,16 @@ end
 function effect:closure(val)
   return function(fragments, k)
     if self.isolated then
-      self:action(fragments[k], val)
+      self:setup(fragments[k], val)
     else
       for j=k,#fragments do
-        self:action(fragments[j], val)
+        self:setup(fragments[j], val)
       end
     end
   end
 end
 
-function effect:action(fragment, val) end
+function effect:setup(fragment, val) end
 
 message = {
   color = {
@@ -130,16 +131,16 @@ message = {
   },
   effects = {
     c = effect:new{ sigil = 'c',
-                    action = function(self, fragment, val) fragment.color.foreground=val end
+                    setup = function(self, fragment, val) fragment.color.foreground=val end
     },
     b = effect:new{ sigil = 'b',
-                    action = function(self, fragment, val) fragment.color.highlight=val end
+                    setup = function(self, fragment, val) fragment.color.highlight=val end
     },
     o = effect:new{ sigil = 'o',
-                     action = function(self, fragment, val) fragment.color.outline=val end
+                     setup = function(self, fragment, val) fragment.color.outline=val end
                    },
     d = effect:new{ sigil = 'd',
-                     action = function(self, fragment, val) fragment.delay=val end,
+                     setup = function(self, fragment, val) fragment.delay=val end,
                      parse = function(self, chars, i)
                        local val = effect.parse(self, chars, i)
                        if (val) val /= 30
@@ -148,7 +149,7 @@ message = {
     },
     f = effect:new{ sigil = 'f',
                     parent = nil,
-                    action = function(self, fragment, val) fragment.update = self.subeffects[val] end,
+                    setup = function(self, fragment, val) fragment.update = self.subeffects[val] end,
 
                     subeffects = {
                       function(fragment, fxv)
@@ -166,7 +167,7 @@ message = {
                     parent = nil,
                     isolated = true,
                     arg_count = 0,
-                    action = function(self, fragment, val)
+                    setup = function(self, fragment, val)
                       fragment.update = function(fragment, fxv)
                         local t = 1.6 * time()
                         fragment.dy=sin(t+fxv)
@@ -176,12 +177,39 @@ message = {
     },
     u = effect:new{ sigil = 'u',
                     arg_count = 1,
-                    action = function(self, fragment, val) fragment.underline=val end
+                    setup = function(self, fragment, val) fragment.underline=val end
                    },
     i = effect:new{ sigil = 'i',
                     isolated = true,
-                    action = function(self, fragment, val) fragment.image=val end
+                    setup = function(self, fragment, val) fragment.image=val end
                    },
+    -- prompt
+    -- imagine a menu that looked like this;
+    --
+    -- would you like?
+    -- $p> eggs
+    -- $p> bacon
+    -- $p> ham
+
+    -- p = effect:new{ sigil = 'p',
+    --                 arg_count = 0,
+    --                 replacement = ' ',
+    --                 isolated = true,
+    --                 setup = function(self, fragment, val)
+    --                   fragment.orig = fragment.c
+    --                   fragment.prompt = true
+    --                 end,
+    --                 closure = function(self, fragments, k)
+    --                   local c = effect.closure(self, fragments, k)
+
+    --                   local i = 1
+    --                   for f in all(fragments) do
+    --                     if f.prompt then
+    --                       f.prompt = 1
+    --                     end
+    --                   end
+    --                 end
+    -- },
     ['$'] = effect:new {
       sigil = '$',
       arg_count = 0,
@@ -234,14 +262,15 @@ end
 function fragment:update() end
 
 function message:parse(string)
+  ctx = {}
   chars = {}
   for i=1,#string do
-    add(chars, { c=sub(string, i, i), action = nil, skip = false, fragment_index = nil })
+    add(chars, { c=sub(string, i, i), setup = nil, skip = false, fragment_index = nil })
   end
   for i=1,#chars - 1 do
     local fx = self.effects[chars[i+1].c]
     if chars[i].c=='$' and fx then
-      chars[i].action = fx:closure(fx:parse(chars, i))
+      chars[i].setup = fx:closure(fx:parse(chars, i))
     end
   end
   local fragments = {}
@@ -252,8 +281,8 @@ function message:parse(string)
     char.fragment_index = #fragments
   end
   for char in all(chars) do
-    if char.action then
-      char.action(fragments, char.fragment_index + 1)
+    if char.setup then
+      char.setup(fragments, char.fragment_index + 1)
     end
   end
 
@@ -294,7 +323,6 @@ function message:update()
       self.i+=1
       sfx(self.sound.blip)
   end
-
 end
 
 function message:draw(x, y)

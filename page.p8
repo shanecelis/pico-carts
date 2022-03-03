@@ -5,11 +5,11 @@ book = {
   current_page = nil,
   last_page_add = nil,
 }
+book.__index = book
 
 function book:new(o, pages)
   o = o or {}
   setmetatable(o, self)
-  self.__index = self
   if (pages[0]) o:add_page(0, pages[0])
   for k, page in ipairs(pages) do
     o:add_page(k, page)
@@ -70,11 +70,19 @@ page = {
   prevpage = nil,
   book = nil,
 }
+page.__index = page
 
 message_config = {
+  color = { foreground = 7,
+            outline = nil,
+  },
   last_press = false,
   next_message = {
     button = 1,
+    char = nil,
+  },
+  sound = {
+    next_message = nil,
   },
 }
 
@@ -82,7 +90,6 @@ function page:new(o)
   o = o or {}
   if (o.choices ~= nil) o.choices = plist:new(nil, o.choices)
   setmetatable(o, self)
-  self.__index = self
   return o
 end
 
@@ -91,7 +98,7 @@ function page:active(yes)
   -- if yes and self.choices and self.tb then
   if yes and self.choices and self.m then
   printh("reset ")
-    self.m:reset()
+    --self.m:reset()
   end
 end
 
@@ -149,7 +156,7 @@ function page:draw()
       end
     end
     -- self.tb:draw()
-    self.m:draw(0, 64)
+    self.m:draw(5, 64)
   end
 end
 

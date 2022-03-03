@@ -4,30 +4,26 @@ __lua__
 -- mere villains
 -- by shane celis
 
-
 pages = {
 -- title
 [0] = [[
-mere villains
+$r2mere villains$rx
 
 by shane celis
 (c) 2022/02/17
 
-hit ➡️ or ❎ to go to next
+hit ➡️  to go to next
 page.
 ]],
-[[ junk page ]],
+-- [[ junk page ]],
 -- p1
--- {[[are you a good merekat?]],
--- choices = {
---   "yes",  2,
---   "no",   3,
---   "meow", 4,
---   -- ["yes"] = 2,
---   -- ["no"] = 3,
---   -- ["meow"] = 4,
--- }
--- },
+{[[what are you?]],[[are you a $f02good$fxx merekat?]],
+choices = {
+  "yes",  2,
+  "no",   3,
+  "meow", 4,
+}
+},
 -- p2
 {[[
 Glad to meet you.
@@ -49,7 +45,11 @@ nextpage = 5
 },
 -- p5
 [[
-So there we were.
+so there we were.
+]],
+
+[[
+buck naked.
 ]],
 }
 
@@ -63,7 +63,6 @@ So there we were.
 
 _current_book = book:new(nil, pages)
 records = nil
-frame = 0
 
 function page_change(page)
 --  if page ==8 then
@@ -110,17 +109,14 @@ end
 
 function get_keys(t)
   local keys = {}
-  for key,_ in pairs(t) do
-    add(keys, key)
+  for k,_ in pairs(t) do
+    add(keys, k)
   end
   return keys
 end
 
 function _update()
-  frame += 1
-
   _current_book.current_page:update()
-  return nil
 end
 
 function draw_page(page)
@@ -157,19 +153,17 @@ end
 -->8
 -- sprite flag animation
 function set_default(t, d)
-  local mt = {__index = function() return d end }
-  setmetatable(t, mt)
+  setmetatable(t, {__index = function() return d end })
 end
 
 function scan_sprites() 
   animated_sprites = {}
 --  set_default(animated_sprites, {})
-  for i = 1, 255, 1
-  do
+  for i = 1, 255 do
     local flag = fget(i)
     if flag ~= 0 then
       local sprites = animated_sprites[flag]
-      if sprites == nil then
+      if not sprites then
         sprites = {}
         animated_sprites[flag] = sprites
       end
@@ -191,12 +185,12 @@ end
 
 function anim_scan_map(cx, cy, sx, sy, cw, ch)
   local records = {}
-  for i = cx, cx + cw, 1 do
-    for j = cy, cy + ch, 1 do
+  for i = cx, cx + cw do
+    for j = cy, cy + ch do
       local s = mget(i, j)
       local f = fget(s)
       local sprites = animated_sprites[f]
-      if sprites ~= nil then
+      if sprites then
         add(records, { x = i - cx + sx,
         y = j - cy + sy,
         f = f,
@@ -208,13 +202,11 @@ function anim_scan_map(cx, cy, sx, sy, cw, ch)
 end
 
 function anim_map(records)
-  for i = 1, #records, 1 do
+  for i = 1, #records do
     local r = records[i]
     local sprites = animated_sprites[r.f]
     r.index += 1
-    if r.index > #sprites then
-      r.index = 1
-    end
+    if (r.index > #sprites) r.index = 1
     rectfill(r.x * 8, r.y * 8, r.x * 8 + 7, r.y * 8 + 7, 0)
     spr(sprites[r.index], r.x * 8, r.y * 8)
 --spr(sprites[r.index], 0, 0)
@@ -240,14 +232,14 @@ end
 -- commands
 function clear_page(i)
   if i == "all" then
-    for n = 0, 31, 1 do
+    for n = 0, 31 do
       clear_page(n)
     end
   else
-  map_set((i % 8) * 16 + 1,
-  flr(i / 8) * 8 + 1, 
-		13, 5, 0)
-		end
+    map_set((i % 8) * 16 + 1,
+    flr(i / 8) * 8 + 1,
+      13, 5, 0)
+	end
 end
 
 function clear_page(i)
@@ -267,12 +259,12 @@ function clear_page(i)
 end
 
 function clear_sprite(n, c)
-  for k = 1, c or 1, 1 do
+  for k = 1, c or 1 do
   local m = n + k - 1
   local x = (m % 16) * 8
   local y = flr(m / 16) * 8
-  for i = x, x + 8, 1 do
-    for j = y, y + 8, 1 do
+  for i = x, x + 8 do
+    for j = y, y + 8 do
       sset(i, j, 0)
       fset(m, 0)
     end
@@ -281,8 +273,8 @@ function clear_sprite(n, c)
 end
 
 function map_set(cx, cy, cw, ch, v)
-  for i = cx, cx + cw, 1 do
-    for j = cy, cy + ch, 1 do
+  for i = cx, cx + cw do
+    for j = cy, cy + ch do
       mset(i, j, v)
     end
   end

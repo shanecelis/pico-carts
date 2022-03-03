@@ -84,7 +84,7 @@ end
 
 function effect:parse(chars, i)
   assert(chars[i+0].c == '$', "wrong start")
-  assert(chars[i+1].c == self.sigil, "wrong sigil")
+  if (self.sigil) assert(chars[i+1].c == self.sigil, "wrong sigil")
   chars[i].skip=true
   chars[i+1].skip=true
 
@@ -143,8 +143,8 @@ message = {
                      setup = function(self, fragment, val) fragment.delay=val end,
                      parse = function(self, chars, i)
                        local val = effect.parse(self, chars, i)
-                       if (val) val /= 30
-                       return val
+                       -- if (val) val /= 30
+                       return val and val/30 or nil
                      end
     },
     f = effect:new{ sigil = 'f',
@@ -183,6 +183,14 @@ message = {
                     isolated = true,
                     setup = function(self, fragment, val) fragment.image=val end
                    },
+    r = effect:new{ arg_count = 1,
+                    setup = function(self, fragment, val)
+                      fragment.update = val and function(fragment, fxv)
+                        local t = val * time() + fxv
+                        fragment.color.foreground = t % 16
+                      end
+    end,
+                  },
     -- prompt
     -- imagine a menu that looked like this;
     --
@@ -219,16 +227,24 @@ message = {
   delay = 1/30,
   last_press = true,
 }
+message.__index = message
+
+function clone(o)
+  local c = {}
+  for k,v in pairs(o) do
+    c[k] = v
+  end
+  return c
+end
 
 function message.new(class, o, strings)
-  o = o or {}
-  setmetatable(o, class)
-  -- if (o.color) setmetatable(o.color, class.color); class.color.__index = class.color
-  if (o.color) class.color.__index = class.color
+  o = o and clone(o) or {}
+  -- if (o.color) setmetatable(o.color, { __index = class.color })
+  -- if (o.color) class.color.__index = class.color
   if (o.spacing) setmetatable(o.spacing, class.spacing); class.spacing.__index = class.spacing
   if (o.sound) setmetatable(o.sound, class.sound); class.sound.__index = class.sound
   if (o.next_message) setmetatable(o.next_message, class.next_message); class.next_message.__index = class.next_message
-  class.__index = class
+  setmetatable(o, class)
   o.fragments = {}
   for k,v in ipairs(strings or o) do
     add(o.fragments, o:parse(v))
@@ -241,7 +257,7 @@ function message.new(class, o, strings)
 end
 
 fragment = {
-  color = message.color,
+  color = {},
   c = nil,
   dx = 0,
   dy = 0,
@@ -249,15 +265,15 @@ fragment = {
   delay = nil,
   image = nil,
   underline = nil,
-  delay_accum = 0
+  delay_accum = 0,
 }
+fragment.__index = fragment
 
 
-function fragment.new(class, o)
+function fragment.new(class, o, message_instance)
   o = o or {}
-  if (o.color) setmetatable(o.color, message.color); message.color.__index = message.color
+  if (o.color) setmetatable(o.color, { __index = (message_instance or message).color })
   setmetatable(o, class)
-  class.__index = class
   return o
 end
 
@@ -278,7 +294,7 @@ function message:parse(string)
   local fragments = {}
   for char in all(chars) do
     if not char.skip then
-      add(fragments, fragment:new { color = {}, c = char.c })
+      add(fragments, fragment:new({ color = {}, c = char.c }, self))
     end
     char.fragment_index = #fragments
   end
@@ -384,7 +400,7 @@ function message:draw(x, y)
   end
 
   -- this is the dot
-  if self.i>=#fragments then
+  if self.i>=#fragments and self.next_message.char then
     local _t = 1.6 * time()
     print(self.next_message.char, x+_x+cos(_t), y+_y+sin(_t), self.next_message.color)
   end
@@ -397,11 +413,15 @@ function message:draw(x, y)
   --enjoy the script :)--
 end
 
+function message:reset()
+end
+
 
 -- choice box
 message_choice = message:new({ choices = {} })
+message_choice.__index = message_choice
 function message_choice:new(o, strings, choices)
-  o = o or message:new(o, strings)
+  o = message:new(o, strings)
   o.choices = choices or o.choices
   if strings then
   o.header = strings[#strings]
@@ -412,7 +432,6 @@ function message_choice:new(o, strings, choices)
   o.canceled = false
   o.last_choice = nil
   setmetatable(o, self)
-  self.__index = self
   o:update_strings()
   return o
 end
@@ -441,9 +460,11 @@ function message_choice:update_strings()
     end
     str = str .. "\n" .. sep .. " " .. self.choices[i]
   end
-  self.fragments[#self.fragments] = self:parse(str)
-  -- self.str[#self.str] = str
-  -- self.str = { str }
+  local c = #self.fragments
+  self.fragments[c] = self:parse(str)
+  if self.cur == c then
+    self.i = min(self.i, #self.fragments[c])
+  end
 end
 
 function message_choice:update()
@@ -453,7 +474,6 @@ function message_choice:update()
     if self.last_choice ~= nil then
       return false
     elseif btnp(5) or btnp(4) or btnp(1) then
-      printh("last choice set")
       self.last_choice = self.choice
       self:update_strings()
       return true
@@ -462,12 +482,16 @@ function message_choice:update()
       self:update_strings()
       return false
     elseif self.last_choice == nil then
-      local result = false;
-      if (btnp(3)) self.choice += 1; result = true
-      if (btnp(2)) self.choice -= 1; result = true
-      self.choice = mod1(self.choice, #self.choices)
-      self:update_strings()
-      return result
+      local _choice = self.choice
+      if (btnp(3)) _choice += 1
+      if (btnp(2)) _choice -= 1
+      local _choice = mod1(_choice, #self.choices)
+      if _choice ~= self.choice then
+        self.choice = _choice
+        self:update_strings()
+        return true
+      end
+      return false
     else
       return false
     end

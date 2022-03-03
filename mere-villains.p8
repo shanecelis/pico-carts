@@ -82,64 +82,25 @@ function page_change(page)
 --  end 
 end
   
-function sprite_change(number)
-  if number == 220 then
-    --sfx(6)
-    music(2)
-  elseif number == 154 then
-    sfx(9)
-  end
-end
+-- function sprite_change(number)
+--   if number == 220 then
+--     --sfx(6)
+--     music(2)
+--   elseif number == 154 then
+--     sfx(9)
+--   end
+-- end
 
 function _init()
---  tb_init(0, { pages[current_page] })
   scan_sprites()
-  -- for k,v in pairs({ ['a']= 1; 3,4}) do
-  --   print("k" ..k)
-  --   print("v" ..v)
-  -- end
-  -- b = book:new{"hi"}
-  -- b[2] = "what"
-  l = plist:new(nil, {1,2,3,4})
-  for k,v in pairs(l) do print("k " .. k .." v " .. v) end
-  assert(l[1] == 2)
-  assert(#l == 2)
   -- stop()
-end
-
-function get_keys(t)
-  local keys = {}
-  for k,_ in pairs(t) do
-    add(keys, k)
-  end
-  return keys
 end
 
 function _update()
   _current_book.current_page:update()
 end
 
-function draw_page(page)
-  local i = page
-  map(
-    (i % 8) * 16,flr(i / 8) * 8,
-    0,0,
-    16, 8)
-  if records == nil then
-    records = anim_scan_map(
-      (i % 8) * 16,flr(i / 8) * 8,
-      0,0,
-      16, 8)
-  end
 
-  --print(pages[page], 0, 64)
-end
-
-function my_draw()
-  cls()
-  draw_page(current_book.current_page)
-end
-  
 function _draw()
   _current_book.current_page:draw()
   -- if records ~= nil and frame % 20 == 0 then

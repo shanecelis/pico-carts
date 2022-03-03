@@ -98,7 +98,7 @@ function page:active(yes)
   -- if yes and self.choices and self.tb then
   if yes and self.choices and self.m then
   printh("reset ")
-    --self.m:reset()
+    self.m:reset()
   end
 end
 
@@ -142,9 +142,30 @@ function page:prev()
   end
 end
 
+function get_keys(t)
+  local keys = {}
+  for k,_ in pairs(t) do
+    add(keys, k)
+  end
+  return keys
+end
+
+function page:draw_scene(i)
+  map((i % 8) * 16, flr(i / 8) * 8,
+      0,            0,
+      16,           8)
+  -- if records == nil then
+  --   records = anim_scan_map(
+  --     (i % 8) * 16,flr(i / 8) * 8,
+  --     0,0,
+  --     16, 8)
+  -- end
+end
+
+
 function page:draw()
   cls(self.bgcolor)
-  if (self.scene) draw_page(self.scene)
+  if (self.scene) self:draw_scene(self.scene)
   if #self > 0 then
     if not self.m then
       if self.choices then

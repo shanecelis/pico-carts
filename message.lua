@@ -217,6 +217,7 @@ message = {
     },
   },
   delay = 1/30,
+  last_press = true,
 }
 
 function message.new(class, o, strings)
@@ -298,7 +299,9 @@ function message:parse(string)
 end
 
 function message:is_complete()
-  return self.cur >= #self.fragments and self.i >= #self.fragments[self.cur] and self.done
+  local done = self.done
+  if (not self.last_press) done = true
+  return self.cur >= #self.fragments and self.i >= #self.fragments[self.cur] and done
 end
 
 function message:update()
@@ -311,11 +314,11 @@ function message:update()
       consume=true
     elseif self.cur < #self.fragments then
       sfx(self.sound.next_message)
-      self.cur += 1
       self.i = 1
+      self.cur += 1
       self.istart = time()
       consume=true
-    else
+    elseif self.last_press then
       if not self.done then
         -- we must be on the last thing.
         sfx(self.sound.next_message)
@@ -340,6 +343,7 @@ function message:draw(x, y)
   local _x=0
   local _y=0
   for i = 1, self.i do
+    assert(self.i <= #fragments, "outside of fragments i " .. self.i .. " #f " .. #fragments)
     local f = fragments[i]
     --i wont try and stop you.
     -- local str = sub(f.c, 1, self.i)

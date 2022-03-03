@@ -71,6 +71,13 @@ page = {
   book = nil,
 }
 
+message_config = {
+  last_press = false,
+  next_message = {
+    button = 1,
+  },
+}
+
 function page:new(o)
   o = o or {}
   if (o.choices ~= nil) o.choices = plist:new(nil, o.choices)
@@ -81,19 +88,20 @@ end
 
 function page:active(yes)
   -- printh("active " .. yes)
-  if yes and self.choices and self.tb then
+  -- if yes and self.choices and self.tb then
+  if yes and self.choices and self.m then
   printh("reset ")
-    self.tb:reset()
+    self.m:reset()
   end
 end
 
 function page:next()
   if self.choices then
     -- local result = self.tb:is_complete()
-    local result = self.tb:is_complete()
+    local result = self.m:is_complete()
     if result then
       if type(result) == 'number' then
-        local action = self.choices[self.tb.choices[result]]
+        local action = self.choices[self.m.choices[result]]
         if type(action) == 'number' then
           return self.book[action]
         end
@@ -131,13 +139,13 @@ function page:draw()
   cls(self.bgcolor)
   if (self.scene) draw_page(self.scene)
   if #self > 0 then
-    if not self.tb then
+    if not self.m then
       if self.choices then
-        self.tb = choicebox:new(nil, 0, self, get_keys(self.choices))
-        self.m = message_choice:new(nil, self, get_keys(self.choices))
+        -- self.tb = choicebox:new(nil, 0, self, get_keys(self.choices))
+        self.m = message_choice:new(message_config, self, get_keys(self.choices))
       else
-        self.m = message:new(nil, self)
-        self.tb = textbox:new(nil, 0, self)
+        self.m = message:new(message_config, self)
+        -- self.tb = textbox:new(nil, 0, self)
       end
     end
     -- self.tb:draw()

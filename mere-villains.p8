@@ -16,17 +16,18 @@ by shane celis
 hit ➡️ or ❎ to go to next
 page.
 ]],
+[[ junk page ]],
 -- p1
-{[[are you a good merekat?]],
-choices = {
-  "yes",  2,
-  "no",   3,
-  "meow", 4,
-  -- ["yes"] = 2,
-  -- ["no"] = 3,
-  -- ["meow"] = 4,
-}
-},
+-- {[[are you a good merekat?]],
+-- choices = {
+--   "yes",  2,
+--   "no",   3,
+--   "meow", 4,
+--   -- ["yes"] = 2,
+--   -- ["no"] = 3,
+--   -- ["meow"] = 4,
+-- }
+-- },
 -- p2
 {[[
 Glad to meet you.
@@ -223,6 +224,18 @@ function anim_map(records)
 end
 
 
+function dump(o)
+   if type(o) == 'table' then
+      local s = '{ '
+      for k,v in pairs(o) do
+         if type(k) ~= 'number' then k = '"'..k..'"' end
+         s = s .. '['..k..'] = ' .. dump(v) .. ','
+      end
+      return s .. '} '
+   else
+      return tostring(o)
+   end
+end
 -->8
 -- commands
 function clear_page(i)

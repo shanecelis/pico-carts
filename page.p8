@@ -4,12 +4,13 @@ __lua__
 book = {
   current_page = nil,
   last_page_add = nil,
+  page_class = page, -- this is nil currently bah!
 }
-book.__index = book
 
 function book:new(o, pages)
   o = o or {}
   setmetatable(o, self)
+  self.__index = self
   if (pages[0]) o:add_page(0, pages[0])
   for k, page in ipairs(pages) do
     o:add_page(k, page)
@@ -45,7 +46,9 @@ function book:add_page(k, v)
     -- assert(getmetatable(v) == page, "it should be a page but was " .. type(v) .. " key " .. k)
     -- p = v
   end
-  p = p or page:new(o)
+  o.index = k
+  p = p or self.page_class:new(o)
+  -- p = p or page:new(o)
   if self.last_page_add then
     -- p.prevpage = self.last_page_add
     if (not self.last_page_add.nextpage) self.last_page_add.nextpage = p
@@ -70,7 +73,8 @@ page = {
   prevpage = nil,
   book = nil,
 }
-page.__index = page
+
+book.page_class = page
 
 message_config = {
   color = { foreground = 7,
@@ -90,6 +94,7 @@ function page:new(o)
   o = o or {}
   if (o.choices ~= nil) o.choices = plist:new(nil, o.choices)
   setmetatable(o, self)
+  self.__index = self
   return o
 end
 
@@ -201,6 +206,81 @@ function page:update()
   end
   if (new_page) self.book:set_page(new_page, set_prevpage)
 end
+
+cardinal_page = page:new{
+  row = 1, -- [1, row_count]
+  column = 1,
+  column_count = 8,
+  row_count = 4,
+  directions = {"north", "south", "east", "west" },
+}
+
+function cardinal_page:new(o)
+  o = page.new(self, o)
+  o.column, o.row = o:from_index(o.index)
+  return o
+end
+
+
+function cardinal_page:draw()
+  cls(self.bgcolor)
+  if (self.scene) self:draw_scene(self.scene)
+  if #self > 0 then
+    if not self.m then
+      if false and self.choices then
+        self.m = message_choice:new(message_config, self, get_keys(self.choices))
+      else
+        self.m = message_choice:new(message_config, self, self.directions)
+      end
+    end
+    self.m:draw(5, 64)
+  end
+end
+
+function cardinal_page:to_index(c, r)
+  return (r - 1) * self.column_count + c - 1
+end
+
+function cardinal_page:from_index(i)
+  local c = mod1(i + 1, self.column_count)
+  local r = flr(i / self.column_count) + 1
+  return c, r
+end
+
+function cardinal_page:update()
+
+  if (self.m and self.m:update()) return
+
+  local result = false
+  -- if (self.tb) result = self.tb:is_complete()
+
+  if (self.m) result = self.m:is_complete()
+  if result then
+
+    local r = self.row
+    local c = self.column
+    if result == 1 then
+      r -= 1
+    elseif result == 2 then
+      r += 1
+    elseif result == 3 then
+      c += 1
+    elseif result == 4 then
+      c -= 1
+    else
+    end
+    new_page = self.book[self:to_index(c, r)]
+    local set_prevpage = false
+    if new_page then
+      self.book:set_page(new_page, set_prevpage)
+    else
+      sfx(1)
+    end
+    self.m:reset()
+ end
+end
+
+
 
 -- _pages = {
 -- page:new(nil, "test page"),

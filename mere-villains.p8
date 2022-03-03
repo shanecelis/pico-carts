@@ -61,7 +61,8 @@ buck naked.
 #include message.lua
 -- book code
 
-_current_book = book:new(nil, pages)
+_current_book = book:new({ page_class = cardinal_page }, pages)
+-- _current_book = book:new(nil, pages)
 records = nil
 
 function page_change(page)

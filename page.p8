@@ -168,19 +168,17 @@ function page:update()
   -- if (self.tb) result = self.tb:is_complete()
   if (self.m) result = self.m:is_complete()
   local new_page = nil
-  if result then
-    local set_prevpage = false
-    if btnp(➡️) then
-      new_page = self:next()
-      set_prevpage = true
-      if (not new_page) sfx(1)
-    end
-    if btnp(⬅️) then
-      new_page = self:prev()
-      if (not new_page) sfx(1)
-    end
-    if (new_page) self.book:set_page(new_page, set_prevpage)
+  local set_prevpage = false
+  if result and btnp(➡️) then
+    new_page = self:next()
+    set_prevpage = true
+    if (not new_page) sfx(1)
   end
+  if btnp(⬅️) then
+    new_page = self:prev()
+    if (not new_page) sfx(1)
+  end
+  if (new_page) self.book:set_page(new_page, set_prevpage)
 end
 
 -- _pages = {

@@ -4,35 +4,67 @@ __lua__
 -- winnie the pooh: sweet bouncin'
 -- by shane celis for my five-year-old daughter ryland von hunter
 
+extra_pages = {200, 201}
 pages = { 
-
+  [0] =
 [[
 winnie the pooh: 
 sweet bouncin'
 
-by shane celis
-(c) 2021/10/11
+by shane celis (c) 2022/03/04
 
-for ryland von hunter
+for $o07$r2ryland von hunter$rx$oxx's
+6th birthday
 
-hit ➡️ or ❎ to go to next
-page.
+hit ➡️ to go to next page.
 ]],
-
+{
 [[
-pooh awoke to a rumbly in his
-tummy. "oh bother, i must find
-something to eat."
+pooh awoke and thought, what
+should i do?
 ]],
-
 [[
+think, think, think. i know. i'll
+ask$d08$ o14you$oxx,$dxx the reader.
+]],
+choices = {
+  "visit eeyore", 3,
+  "visit piglet", 2,
+}
+},
+-- p2
+{[[
+"hi piglet, i just came by
+because, well, i don't know why.
+do you remember why, dear
+reader?"
+]],
+choices = {
+  "i need honey", 200,
+  "listen to my poem", 201,
+  "go home", 1,
+},
+},
+[200] = {[[
 "say piglet, you wouldn't happen
 to have any honey, would you?"
 
 "oh, d-d-dear me, no, pooh,"
 piglet said.
 ]],
+},
+[201] = {[[
+"a rum tum tiddle tiddle,
+i seem to be in a bit of a
+pickle but its rather safe to
+say, it feels like a rather
+pickely day"]],
+[[
+"oh, pooh bear, that is a very
+nice poem."
+]]},
 
+-- p3
 [[
 "eeyore, have you got any honey
 in there?"
@@ -46,11 +78,13 @@ i've been well," eeyore said.
 "no."
 ]],
 
+-- p4
 [[
 "rabbit will surely have some
 honey for his dear friend pooh."
 ]],
 
+-- p5
 [[
 "rabbit, say, have you had 
 any breakfast yet?"
@@ -64,6 +98,7 @@ for lunch then? hmm?"
 that wheelbarrow, no."
 ]],
 
+-- p6
 [[
 "hey, pooh, want to play kings
 and queens? or knights and
@@ -74,12 +109,14 @@ won't let me until it's had a
 small smackerel of something."
 ]],
 
+-- p7
 [[
 perhaps, i'll have to get some
 honey the hard way, pooh 
 thought to himself.
 ]],
 
+-- p8
 [[
 "i seem to have stumbled upon
 the very thing i was looking
@@ -88,10 +125,12 @@ for: honeeeey.
 "but how to get it."
 ]],
 
+-- p9
 [[
 "think, think, think."
 ]],
 
+-- p10
 [[
 "hey there, pooh, buddy boy,
 whatcha up to?" tigger asked.
@@ -104,6 +143,7 @@ honey," pooh answered.
 of course!" tigger said.
 ]],
 
+-- p11
 [[
 before pooh had a chance to 
 explain that his bounces were
@@ -113,6 +153,7 @@ bounced that hive right out of
 the tree.
 ]],
 
+-- p12
 [[
 pooh tried to thank tigger 
 between mouth fulls of honey.
@@ -124,6 +165,8 @@ tigger to do it. t-t-f-n, ta
 ta for now." and tigger left.
 ]],
 
+
+-- p13
 [[
 pooh rubbed the honey off his
 cheeks and said, "well, that
@@ -132,6 +175,7 @@ and then some. perhaps i'll go
 and play nights and wagons."
 ]],
 
+-- p14
 [[
 and so pooh did.
 
@@ -149,7 +193,15 @@ the end.
 -- book code
 
 --_current_book = book:new({ page_class = cardinal_page }, pages)
- _current_book = book:new(nil, pages)
+_current_book = book:new({}, pages)
+for i in all(extra_pages) do
+  local p = _current_book:add_page(i, pages[i])
+  if i > 100 then
+    local default_page = flr(i/100)
+    if (not p.scene or p.scene == i) p.scene = default_page
+    if (not p.nextpage) p.nextpage = default_page
+  end
+end
 --records = nil
 
 function page_change(page)

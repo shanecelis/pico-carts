@@ -5,6 +5,19 @@ book = {
   current_page = nil,
   last_page_add = nil,
   page_class = page, -- this is nil currently bah!
+  message_config = {
+    color = { foreground = 7,
+              outline = nil,
+    },
+    last_press = false,
+    next_message = {
+      button = 1,
+      char = nil,
+    },
+    sound = {
+      next_message = nil,
+    },
+  }
 }
 
 function book:new(o, pages)
@@ -60,6 +73,7 @@ function book:add_page(k, v)
   -- rawset(self, k, p)
   assert(p.book == nil, "page in some other book already.")
   p.book = self
+  return p
 end
 
 _pages = {}
@@ -75,20 +89,6 @@ page = {
 }
 
 book.page_class = page
-
-message_config = {
-  color = { foreground = 7,
-            outline = nil,
-  },
-  last_press = false,
-  next_message = {
-    button = 1,
-    char = nil,
-  },
-  sound = {
-    next_message = nil,
-  },
-}
 
 function page:new(o)
   o = o or {}
@@ -175,9 +175,9 @@ function page:draw()
     if not self.m then
       if self.choices then
         -- self.tb = choicebox:new(nil, 0, self, get_keys(self.choices))
-        self.m = message_choice:new(message_config, self, get_keys(self.choices))
+        self.m = message_choice:new(self.book.message_config, self, get_keys(self.choices))
       else
-        self.m = message:new(message_config, self)
+        self.m = message:new(self.book.message_config, self)
         -- self.tb = textbox:new(nil, 0, self)
       end
     end

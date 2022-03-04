@@ -212,11 +212,15 @@ cardinal_page = page:new{
   column = 1,
   column_count = 8,
   row_count = 4,
-  directions = {"north", "south", "east", "west" },
+  directions = {"north", "south", "east", "west"; "north" = "n", "south" = "s", "east" = "e", "west" = "w" },
 }
 
 function cardinal_page:new(o)
   o = page.new(self, o)
+  if o.choices then
+    self.choices
+
+  end
   o.column, o.row = o:from_index(o.index)
   return o
 end
@@ -227,7 +231,7 @@ function cardinal_page:draw()
   if (self.scene) self:draw_scene(self.scene)
   if #self > 0 then
     if not self.m then
-      if false and self.choices then
+      if self.choices then
         self.m = message_choice:new(message_config, self, get_keys(self.choices))
       else
         self.m = message_choice:new(message_config, self, self.directions)

@@ -418,11 +418,30 @@ end
 
 
 -- choice box
-message_choice = message:new({ choices = {} })
+message_choice = message:new({ choices = {},
+                               result_desire = 'k', -- can return 'k'ey, 'v'alue, or 'i'ndex
+                            })
 message_choice.__index = message_choice
 function message_choice:new(o, strings, choices)
   o = message:new(o, strings)
   o.choices = choices or o.choices
+  if #o.choices == 0 then
+    error("choices must have indexed keys")
+
+    -- im here. how do we receive the choices? as a plist or no?
+    -- it's not a dictionary.
+    -- let's make it one.
+    -- local d = {}
+    -- for k,_ in pairs(o.choices) do
+      --we're doing this but we want it ordered.
+      -- d[v] = v
+      -- add(l, v)
+      -- add(l, v)
+      -- add(o.choices, k)
+    -- end
+    -- o.choices = plist:new(nil, l)
+    -- o.choices = d
+  end
   if strings then
   o.header = strings[#strings]
   else
@@ -458,12 +477,27 @@ function message_choice:update_strings()
     else
       sep=" "
     end
-    str = str .. "\n" .. sep .. " " .. self.choices[i]
+    str = str .. "\n" .. sep .. " " .. choice
   end
   local c = #self.fragments
   self.fragments[c] = self:parse(str)
   if self.cur == c then
     self.i = min(self.i, #self.fragments[c])
+  end
+end
+
+function message_choice:result(desire)
+  desire = desire or self.result_result
+  if (not self.last_choice) return nil
+  if desire == 'i' then
+    -- the index
+    local i = self.last_choice
+  elseif desire == 'k' then
+    local k self.choices[self.last_choice]
+  elseif desire == 'v' then
+    local r self.choices[-self.last_choice]
+  else
+    error("desire must be i, k, or v")
   end
 end
 
@@ -475,6 +509,7 @@ function message_choice:update()
       return false
     elseif btnp(5) or btnp(4) or btnp(1) then
       self.last_choice = self.choice
+      self.choices[self.choice]
       self:update_strings()
       return true
     elseif btnp(0) then
@@ -499,5 +534,5 @@ function message_choice:update()
 end
 
 function message_choice:is_complete()
-  return message.is_complete(self) and (self.last_choice or self.canceled)
+  return message.is_complete(self) and (self:result() or self.canceled)
 end

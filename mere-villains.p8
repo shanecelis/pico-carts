@@ -9,9 +9,6 @@ pages = {
 [0] = [[
 $r2mere villains$rx
 
-by shane celis
-(c) 2022/02/17
-
 hit ➡️  to go to next
 page.
 ]],
@@ -94,6 +91,7 @@ end
 
 function _init()
   scan_sprites()
+  l = plist:new(nil, {1, 2, 3, 4})
   -- stop()
 end
 

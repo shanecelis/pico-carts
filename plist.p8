@@ -14,8 +14,13 @@ function plist:new(o, list)
   return o
 end
 function plist.__index(t,k)
-  return rawget(t, 'hash')[k] or rawget(t, k)
+  if type(k) == 'number' then
+    return rawget(t, 'keys')[k] or rawget(t, k)
+  else
+    return rawget(t, 'hash')[k] or rawget(t, k)
+  end
 end
+-- len is for ipairs not pairs
 function plist.__len(t)
   return #t.keys
 end

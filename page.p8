@@ -207,20 +207,19 @@ function page:update()
   if (new_page) self.book:set_page(new_page, set_prevpage)
 end
 
-cardinal_page = page:new{
+cardinal_page = page:new {
   row = 1, -- [1, row_count]
   column = 1,
   column_count = 8,
   row_count = 4,
-  directions = {"north", "south", "east", "west"; "north" = "n", "south" = "s", "east" = "e", "west" = "w" },
+  directions = {"north", "south", "east", "west"; ["north"] = "n"}--, "south" = "s", "east" = "e", "west" = "w" },
 }
 
 function cardinal_page:new(o)
   o = page.new(self, o)
-  if o.choices then
-    self.choices
-
-  end
+  -- if o.choices then
+  --   self.choices
+  -- end
   o.column, o.row = o:from_index(o.index)
   return o
 end

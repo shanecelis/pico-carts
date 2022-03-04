@@ -477,7 +477,7 @@ function message_choice:update_strings()
     else
       sep=" "
     end
-    str = str .. "\n" .. sep .. " " .. choice
+    str = str .. "\n" .. sep .. " " .. self.choices[i]
   end
   local c = #self.fragments
   self.fragments[c] = self:parse(str)
@@ -486,19 +486,11 @@ function message_choice:update_strings()
   end
 end
 
-function message_choice:result(desire)
-  desire = desire or self.result_result
-  if (not self.last_choice) return nil
-  if desire == 'i' then
-    -- the index
-    local i = self.last_choice
-  elseif desire == 'k' then
-    local k self.choices[self.last_choice]
-  elseif desire == 'v' then
-    local r self.choices[-self.last_choice]
-  else
-    error("desire must be i, k, or v")
-  end
+function message_choice:result()
+  local i = self.last_choice
+  local k = self.choices[i]
+  local v = self.choices[k]
+  return i, k, v
 end
 
 function message_choice:update()
@@ -509,7 +501,6 @@ function message_choice:update()
       return false
     elseif btnp(5) or btnp(4) or btnp(1) then
       self.last_choice = self.choice
-      self.choices[self.choice]
       self:update_strings()
       return true
     elseif btnp(0) then

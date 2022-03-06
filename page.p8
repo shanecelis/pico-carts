@@ -85,6 +85,9 @@ page = {
   nextpage = nil,
   prevpage = nil,
   book = nil,
+  run_before = nil,
+  run_after = nil,
+  is_active = false
 }
 
 book.page_class = page
@@ -98,12 +101,18 @@ function page:new(o)
 end
 
 function page:active(yes)
-  -- printh("active " .. yes)
+  if self.is_active ~= yes then
+    if yes then
+      if (self.run_before) self:run_before()
+    else
+      if (self.run_after) self:run_after()
+    end
+  end
   -- if yes and self.choices and self.tb then
   if yes and self.choices and self.m then
-  printh("reset ")
     self.m:reset()
   end
+  self.is_active = yes
 end
 
 function page:next()

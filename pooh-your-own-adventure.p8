@@ -84,24 +84,22 @@ choices = {
 
 piglet beams proudly.
 ]],
--- function()
---   remember.has_haycorn = true
+[[
+"here, pooh. i want you to have
+this."
 
--- return [[
--- "here, pooh. i want you to have
--- this."
-
--- you receive a haycorn pie slice.
--- ]]
--- end,
+you receive a haycorn pie slice.
+]],
+run_after =
+function()
+  remember.has_haycorn = true
+end,
 },
   [203] = [[
-pooh begins to think very hard
-about. "it is...," pooh begins.
-and forgets what he was going
-to say.
-
-"what did you ask, piglet?"
+pooh begins to think very hard.
+"it is...," pooh begins. and
+forgets what he was going to
+say. "what did you ask, piglet?"
 
 "i don't remember, pooh."
 ]],

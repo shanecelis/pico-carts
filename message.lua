@@ -421,7 +421,7 @@ message_choice = message:new({ choices = {},
                                result_desire = 'k', -- can return 'k'ey, 'v'alue, or 'i'ndex
                             })
 function message_choice:new(o, strings, choices)
-  o = message:new(o, strings)
+  o = message.new(self, o, strings)
   o.choices = choices or o.choices
   if #o.choices == 0 then
     error("choices must have indexed keys")

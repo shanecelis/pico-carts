@@ -2,7 +2,7 @@ pico-8 cartridge // http://www.pico-8.com
 version 33
 __lua__
 book = {
-  current_page = nil,
+  _page = nil,
   last_page_add = nil,
   page_class = page, -- this is nil currently bah!
   message_config = {
@@ -33,12 +33,12 @@ function book:new(o, pages)
 end
 
 function book:set_page(p, set_prevpage)
-  if self.current_page ~= p then
-    if self.current_page then
-      self.current_page:active(false)
-      if (set_prevpage and not p.prevpage) p.prevpage = self.current_page
+  if self._page ~= p then
+    if self._page then
+      self._page:active(false)
+      if (set_prevpage and not p.prevpage) p.prevpage = self._page
     end
-    self.current_page = p
+    self._page = p
     p:active(true)
   end
 end
@@ -68,7 +68,7 @@ function book:add_page(k, v)
     if (not self.last_page_add.nextpage) self.last_page_add.nextpage = p
   end
   if (not p.scene) p.scene = k
-  if (not self.current_page) self:set_page(p)
+  if (not self._page) self:set_page(p)
   self.last_page_add = p
   self.pages[k] = p
   -- rawset(self, k, p)
@@ -118,18 +118,16 @@ end
 function page:next()
   if self.choices then
     -- local result = self.tb:is_complete()
-    local result = self.m:is_complete()
-    if result then
-      if type(result) == 'number' then
-        local action = self.choices[self.m.choices[result]]
-        if type(action) == 'number' then
-          return self.book.pages[action]
-        end
-        -- elseif type(action) == 'function' then
-        --   result()
-      else
-        assert(false, "no choice reported.")
+    local complete = self.m:is_complete()
+    local i, k, result = self.m:result()
+    if complete then
+      if type(result) == 'function' then
+        result = result(self)
       end
+      return self.book.pages[result]
+      -- else
+      --   error("no choice reported.")
+      -- end
     else
       return nil
     end
@@ -183,7 +181,7 @@ function page:draw()
     if not self.m then
       if self.choices then
         -- self.tb = choicebox:new(nil, 0, self, get_keys(self.choices))
-        self.m = message_choice:new(self.book.message_config, self, get_keys(self.choices))
+        self.m = message_choice:new(self.book.message_config, self, get_keys(self.choices), self.choices)
       else
         self.m = message:new(self.book.message_config, self)
         -- self.tb = textbox:new(nil, 0, self)
@@ -239,7 +237,7 @@ function cardinal_page:draw()
   if #self > 0 then
     if not self.m then
       if self.choices then
-        self.m = message_choice:new(message_config, self, get_keys(self.choices))
+        self.m = message_choice:new(message_config, self, get_keys(self.choices), self.choices)
       else
         self.m = message_choice:new(message_config, self, self.directions)
       end

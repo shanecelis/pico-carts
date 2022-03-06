@@ -417,29 +417,14 @@ end
 
 
 -- choice box
-message_choice = message:new({ choices = {},
-                               result_desire = 'k', -- can return 'k'ey, 'v'alue, or 'i'ndex
+message_choice = message:new({ choices = nil,
+                               choices_values = nil
                             })
-function message_choice:new(o, strings, choices)
+function message_choice:new(o, strings, choices, choices_values)
   o = message.new(self, o, strings)
   o.choices = choices or o.choices
-  if #o.choices == 0 then
-    error("choices must have indexed keys")
-
-    -- im here. how do we receive the choices? as a plist or no?
-    -- it's not a dictionary.
-    -- let's make it one.
-    -- local d = {}
-    -- for k,_ in pairs(o.choices) do
-      --we're doing this but we want it ordered.
-      -- d[v] = v
-      -- add(l, v)
-      -- add(l, v)
-      -- add(o.choices, k)
-    -- end
-    -- o.choices = plist:new(nil, l)
-    -- o.choices = d
-  end
+  o.choices_values = choices_values or o.choices_values or {}
+  assert(#o.choices ~= 0, "choices must have indexed keys")
   if strings then
   o.header = strings[#strings]
   else
@@ -486,7 +471,7 @@ end
 function message_choice:result()
   local i = self.last_choice
   local k = self.choices[i]
-  local v = self.choices[k]
+  local v = self.choices_values[k]
   return i, k, v
 end
 
@@ -522,5 +507,5 @@ function message_choice:update()
 end
 
 function message_choice:is_complete()
-  return message.is_complete(self) and (self:result() or self.canceled)
+  return message.is_complete(self) and (self.last_choice or self.canceled)
 end

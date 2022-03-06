@@ -88,7 +88,7 @@ piglet beams proudly.
 "here, pooh. i want you to have
 this."
 
-you receive a haycorn pie slice.
+you receive a haycorn pie.
 ]],
 run_after =
 function()
@@ -105,7 +105,22 @@ say. "what did you ask, piglet?"
 ]],
 
 -- p3
-[[
+{[[
+"hallo eeyore."
+]],
+choices = {
+  "any honey?", function()
+    if remember.asked_eeyore then
+      return 304
+    else
+      return 301
+    end
+  end,
+  "how are you?", 302,
+  "want some pie?", 303,
+}
+},
+[301]= {[[
 "eeyore, have you got any honey
 in there?"
 
@@ -116,7 +131,24 @@ i've been well," eeyore said.
 "so no honey then?"
 
 "no."
+]]},
+
+[302]={[[
+"i am about as well as a donkey
+can be, pooh bear. not very well
+but thank you all the same for
+asking."
 ]],
+run_after=function()
+  remember.asked_eeyore = true
+end,
+},
+[304]={[[
+"no, pooh, i don't but maybe
+rabbit does."
+
+"oh thank you, eeyore!"
+]]},
 
 -- p4
 [[
@@ -230,11 +262,12 @@ the end.
 #include plist.p8
 #include page.p8
 #include message.lua
+#include util.p8
 -- book code
 
---_current_book = book:new({ page_class = cardinal_page }, pages)
-_current_book = book:new({}, pages)
-for i, p in pairs(_current_book.pages) do
+--_book = book:new({ page_class = cardinal_page }, pages)
+_book = book:new({}, pages)
+for i, p in pairs(_book.pages) do
   if i > 100 then
     local default_page = flr(i/100)
     if (not p.scene or p.scene == i) p.scene = default_page
@@ -273,16 +306,21 @@ end
 function _init()
 --  scan_sprites()
   l = plist:new(nil, {1, 2, 3, 4})
+  printh(dump(l))
+  printh(dump(l.keys))
+  printh("count " ..#l)
+  l['a'] = 5
+  printh(dump(l))
   -- stop()
 end
 
 function _update()
-  _current_book.current_page:update()
+  _book._page:update()
 end
 
 
 function _draw()
-  _current_book.current_page:draw()
+  _book._page:draw()
   -- if records ~= nil and frame % 20 == 0 then
 	-- 	  anim_map(records)
 	-- end

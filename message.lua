@@ -227,7 +227,6 @@ message = {
   delay = 1/30,
   last_press = true,
 }
-message.__index = message
 
 function clone(o)
   local c = {}
@@ -245,6 +244,7 @@ function message.new(class, o, strings)
   if (o.sound) setmetatable(o.sound, class.sound); class.sound.__index = class.sound
   if (o.next_message) setmetatable(o.next_message, class.next_message); class.next_message.__index = class.next_message
   setmetatable(o, class)
+  class.__index = class
   o.fragments = {}
   for k,v in ipairs(strings or o) do
     add(o.fragments, o:parse(v))
@@ -267,13 +267,13 @@ fragment = {
   underline = nil,
   delay_accum = 0,
 }
-fragment.__index = fragment
 
 
 function fragment.new(class, o, message_instance)
   o = o or {}
   if (o.color) setmetatable(o.color, { __index = (message_instance or message).color })
   setmetatable(o, class)
+  class.__index = class
   return o
 end
 
@@ -398,7 +398,6 @@ function message:draw(x, y)
       _y+=self.spacing.newline
     end
   end
-
   -- this is the dot
   if self.i>=#fragments and self.next_message.char then
     local _t = 1.6 * time()
@@ -421,7 +420,6 @@ end
 message_choice = message:new({ choices = {},
                                result_desire = 'k', -- can return 'k'ey, 'v'alue, or 'i'ndex
                             })
-message_choice.__index = message_choice
 function message_choice:new(o, strings, choices)
   o = message:new(o, strings)
   o.choices = choices or o.choices
@@ -450,7 +448,6 @@ function message_choice:new(o, strings, choices)
   o.choice = 1
   o.canceled = false
   o.last_choice = nil
-  setmetatable(o, self)
   o:update_strings()
   return o
 end

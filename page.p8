@@ -17,15 +17,16 @@ book = {
     sound = {
       next_message = nil,
     },
-  }
+  },
+  pages = nil
 }
 
 function book:new(o, pages)
   o = o or {}
   setmetatable(o, self)
   self.__index = self
-  if (pages[0]) o:add_page(0, pages[0])
-  for k, page in ipairs(pages) do
+  o.pages = o.pages or {}
+  for k, page in pairs(pages) do
     o:add_page(k, page)
   end
   return o
@@ -69,14 +70,12 @@ function book:add_page(k, v)
   if (not p.scene) p.scene = k
   if (not self.current_page) self:set_page(p)
   self.last_page_add = p
-  self[k] = p
+  self.pages[k] = p
   -- rawset(self, k, p)
   assert(p.book == nil, "page in some other book already.")
   p.book = self
   return p
 end
-
-_pages = {}
 
 page = {
   scene = nil,
@@ -115,7 +114,7 @@ function page:next()
       if type(result) == 'number' then
         local action = self.choices[self.m.choices[result]]
         if type(action) == 'number' then
-          return self.book[action]
+          return self.book.pages[action]
         end
         -- elseif type(action) == 'function' then
         --   result()
@@ -127,7 +126,7 @@ function page:next()
     end
   else
     if type(self.nextpage) == 'number' then
-      return self.book[self.nextpage]
+      return self.book.pages[self.nextpage]
     elseif type(self.nextpage) == 'function' then
       return self.nextpage(self)
     else
@@ -139,7 +138,7 @@ end
 function page:prev()
 
   if type(self.prevpage) == 'number' then
-    return self.book[self.prevpage]
+    return self.book.pages[self.prevpage]
   elseif type(self.prevpage) == 'function' then
     return self.prevpage(self)
   else
@@ -182,7 +181,7 @@ function page:draw()
       end
     end
     -- self.tb:draw()
-    self.m:draw(5, 64)
+    self.m:draw(4, 64)
   end
 end
 
@@ -272,7 +271,7 @@ function cardinal_page:update()
       c -= 1
     else
     end
-    new_page = self.book[self:to_index(c, r)]
+    new_page = self.book.pages[self:to_index(c, r)]
     local set_prevpage = false
     if new_page then
       self.book:set_page(new_page, set_prevpage)
@@ -285,15 +284,6 @@ end
 
 
 
--- _pages = {
--- page:new(nil, "test page"),
--- page:new({ text = [[are you a good merekat?]];
---  choices = { ["yes"] = 3;
---               ["no"] = 4 }
--- }),
--- page:new(nil, "next page"),
--- page:new(nil, "last page"),
--- }
 
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

@@ -4,12 +4,14 @@ __lua__
 -- winnie the pooh: sweet bouncin'
 -- by shane celis for my five-year-old daughter ryland von hunter
 
-extra_pages = {200, 201}
-pages = { 
+remember = {
+  has_haycorn = false,
+
+}
+pages = {
   [0] =
 [[
-winnie the pooh: 
-sweet bouncin'
+pooh your own adventure
 
 by shane celis (c) 2022/03/04
 
@@ -21,11 +23,11 @@ hit ➡️ to go to next page.
 {
 [[
 pooh awoke and thought, what
-should i do?
+should i do today?
 ]],
 [[
 think, think, think. i know. i'll
-ask$d08$ o14you$oxx,$dxx the reader.
+ask$d16 $o14you$oxx,$dxx the reader.
 ]],
 choices = {
   "visit eeyore", 3,
@@ -54,15 +56,55 @@ piglet said.
 ]],
 },
 [201] = {[[
+"piglet, would you like to hear
+a poem?"
+
+"oh yes, pooh, that'd be
+lovely."]],
+[[
 "a rum tum tiddle tiddle,
 i seem to be in a bit of a
-pickle but its rather safe to
+$c11pickle$cxx but its rather safe to
 say, it feels like a rather
-pickely day"]],
+$c11pickely$cxx day"]],
 [[
 "oh, pooh bear, that is a very
 nice poem."
-]]},
+]],
+[[
+"do you think i could write a
+poem that nice, pooh?"
+]],
+choices = {
+  "yes", 202,
+  "no", 203,
+}},
+[202] = {[[
+"most certainly, piglet."
+
+piglet beams proudly.
+]],
+-- function()
+--   remember.has_haycorn = true
+
+-- return [[
+-- "here, pooh. i want you to have
+-- this."
+
+-- you receive a haycorn pie slice.
+-- ]]
+-- end,
+},
+  [203] = [[
+pooh begins to think very hard
+about. "it is...," pooh begins.
+and forgets what he was going
+to say.
+
+"what did you ask, piglet?"
+
+"i don't remember, pooh."
+]],
 
 -- p3
 [[
@@ -194,15 +236,14 @@ the end.
 
 --_current_book = book:new({ page_class = cardinal_page }, pages)
 _current_book = book:new({}, pages)
-for i in all(extra_pages) do
-  local p = _current_book:add_page(i, pages[i])
+for i, p in pairs(_current_book.pages) do
   if i > 100 then
     local default_page = flr(i/100)
     if (not p.scene or p.scene == i) p.scene = default_page
     if (not p.nextpage) p.nextpage = default_page
   end
 end
---records = nil
+records = nil
 
 function page_change(page)
 --  if page ==8 then

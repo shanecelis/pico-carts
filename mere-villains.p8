@@ -9,18 +9,18 @@ pages = {
 [0] = [[
 $r2mere villains$rx
 
+by shane celis (c) 2022/03/06
+
 hit ➡️  to go to next
 page.
 ]],
 -- [[ junk page ]],
 -- p1
-{[[what are you?]],[[are you a $f02good$fxx merekat?]],
-choices = {
-  "yes",  2,
-  "no",   3,
-  "meow", 4,
+{[[
+...
+]]
 }
-},
+,
 -- p2
 {[[
 Glad to meet you.
@@ -56,38 +56,12 @@ buck naked.
 #include plist.p8
 #include page.p8
 #include message.lua
+#include util.p8
 -- book code
 
-_current_book = book:new({ page_class = cardinal_page }, pages)
--- _current_book = book:new(nil, pages)
+-- _book = book:new({ page_class = cardinal_page }, pages)
+_book = book:new(nil, pages)
 records = nil
-
-function page_change(page)
---  if page ==8 then
---    music(00) -- starts music
---  elseif page >8 then
--- -- cep playing for ever
---  elseif page== 3 then 
---  --sfx(3)
---  music(1) 
---  else
---  music(-1)
---  -- stop music after
---  --rpoot all uv it on page(3)
---  -- whatever i want in my
---  -- comments
--- --stert  page--(8) music
---  end 
-end
-  
--- function sprite_change(number)
---   if number == 220 then
---     --sfx(6)
---     music(2)
---   elseif number == 154 then
---     sfx(9)
---   end
--- end
 
 function _init()
   scan_sprites()
@@ -96,12 +70,12 @@ function _init()
 end
 
 function _update()
-  _current_book.current_page:update()
+  _book._page:update()
 end
 
 
 function _draw()
-  _current_book.current_page:draw()
+  _book._page:draw()
   -- if records ~= nil and frame % 20 == 0 then
 	-- 	  anim_map(records)
 	-- end

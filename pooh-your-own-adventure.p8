@@ -276,32 +276,7 @@ for i, p in pairs(_book.pages) do
 end
 records = nil
 
-function page_change(page)
---  if page ==8 then
---    music(00) -- starts music
---  elseif page >8 then
--- -- cep playing for ever
---  elseif page== 3 then 
---  --sfx(3)
---  music(1) 
---  else
---  music(-1)
---  -- stop music after
---  --rpoot all uv it on page(3)
---  -- whatever i want in my
---  -- comments
--- --stert  page--(8) music
---  end 
-end
-  
--- function sprite_change(number)
---   if number == 220 then
---     --sfx(6)
---     music(2)
---   elseif number == 154 then
---     sfx(9)
---   end
--- end
+
 
 function _init()
 --  scan_sprites()

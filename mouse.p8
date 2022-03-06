@@ -25,56 +25,10 @@ __lua__
 --   if mouse inside the given
 --   rect area
 
-points = { list={}}
-
-function points:add(x,y,c)
-  add(self.list,{x,y,c})
-end
-
-function points:draw()
-  local p
-  for p in all(self.list) do
-    circ(p[1],p[2],1,p[3])
-  end
-end
-
-function _init()
-  mouse:enable()
-end
-
-function _update()
-  mouse:update()
-  if (mouse:clicked(1)) points:add(mouse.x,mouse.y,11)
-  if (mouse:released(1)) points:add(mouse.x,mouse.y,3)
-  if (mouse:clicked(2)) points:add(mouse.x,mouse.y,12)
-  if (mouse:released(2)) points:add(mouse.x,mouse.y,1)
-end
-
-function _draw()
-  
-  local i,c=0,0
-
-  if (mouse:pressed(1) and not mouse:clicked(1)) c=2
-  if (mouse:pressed(2) and not mouse:clicked(2)) c=5
-  cls(c)
-  print("mouse.x:  "..mouse.x,1,1,6)
-  print("mouse.y:  "..mouse.y,1,7,6)
-  
-  if (mouse:inside(40,40,88,88)) then
-    rectfill(40,40,88,88,8)
-  else
-    rect(40,40,88,88,8)
-  end
-  
-  points:draw()  
-  mouse:draw()
-  
-end
-   
 -- mouse
 --------------------------------
 mouse={  
-  enabled        = false,
+  enabled  = false,
   btnstate = {
     { false, false },
     { false, false }
@@ -86,7 +40,7 @@ function mouse:enable()
   poke(0x5f2d, 1)  
   self.enabled = true
 end
-  
+
 function mouse:disable()
   poke(0x5f2d, 0)
   self.enabled = false
@@ -94,14 +48,14 @@ end
 
 function mouse:inside(minx,miny,maxx,maxy)
   if self.x < minx or
-     self.x > maxx or
-     self.y < miny or
-     self.y > maxy then     
+    self.x > maxx or
+    self.y < miny or
+    self.y > maxy then
     return false
-	 end  
-	 return true
+  end
+  return true
 end
-  
+
 function mouse:draw()
   if (self.enabled) then
     palt(0,false)
@@ -110,7 +64,7 @@ function mouse:draw()
     palt()
   end
 end
-  
+
 function mouse:update()
 
   local mbtn
@@ -130,17 +84,17 @@ end
 function mouse:pressed(idx)
   if (self.enabled) return self.btnstate[idx][1]
   return false
-end
+  end
 
 function mouse:clicked(idx)
   if (self.enabled) return self.btnstate[idx][1] and not self.btnstate[idx][2]
   return false
-end
+  end
 
 function mouse:released(idx)
   if (self.enabled) return self.btnstate[idx][2] and not self.btnstate[idx][1]
   return false
-end
+  end
 
 
 __gfx__

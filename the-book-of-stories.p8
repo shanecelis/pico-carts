@@ -183,353 +183,47 @@ you are in poohs playroom
 } 
 
 -->8
--- text box code
---
-textbox={ -- table containing all properties of a text box. i like to work with tables, but you could use global variables if you preffer.
-  str={}, -- the strings. remember: this is the table of strings you passed to this function when you called on _update()
-  voice=voice, -- the voice. again, this was passed to this function when you called it on _update()
-  i=1, -- index used to tell what string from tb.str to read.
-  cur=0, -- buffer used to progressively show characters on the text box.
-  char=0, -- current character to be drawn on the text box.
-  x=0, -- x coordinate
-  y=64, -- y coordginate
-  w=127, -- text box width
-  h=60, -- text box height
-  col1=0, -- background color
-  col2=-1, -- border color (< 0 for no border)
-  col3=7, -- text color
-}
-
-function textbox:new(o, voice, strings)
-  o = o or {}
-  -- o = o or {}
-  setmetatable(o, self)
-  self.__index = self
-  self.str = strings
-  self.voice = voice
-  return o
-end
-
-function mod1(x, b)
-  return ((x - 1) % b ) + 1
-end
-
-function textbox:next_btnp()
-  return btnp(0) or btnp(1) or btnp(2) or btnp(3) or btnp(4) or btnp(5)
-end
-
-function textbox:is_complete()
-  if (self == nil) return true
-  return #self.str == self.i and self.char == #self.str[self.i]
-end
-
-function textbox:update()  -- this function handles the text box on every frame update.
-  if self.char<#self.str[self.i] then -- if the message has not been processed until it's last character:
-    self.cur+=0.5 -- increase the buffer. 0.5 is already max speed for this setup. if you want messages to show slower, set this to a lower number. this should not be lower than 0.1 and also should not be higher than 0.9
-    if self.cur>0.9 then -- if the buffer is larger than 0.9:
-      self.char+=1 -- set next character to be drawn.
-      self.cur=0	-- reset the buffer.
-      if (ord(self.str[self.i],self.char)!=32) sfx(self.voice) -- play the voice sound effect.
-      end
-    if self:next_btnp() then
-      self.char=#self.str[self.i] -- advance to the last character, to speed up the message.
-      return true -- return true if you eat a button press
-    end
-  elseif self:next_btnp() then -- if already on the last message character and button ❎/x is pressed:
-    if #self.str>self.i then -- if the number of strings to display is larger than the current index (this means that there's another message to display next):
-      self.i+=1 -- increase the index, to display the next message on self.str
-      self.cur=0 -- reset the buffer.
-      self.char=0 -- reset the character position.
-    else -- if there are no more messages to display:
-      -- reading=false -- set reading to false. this makes sure the text box isn't drawn on screen and can be used to resume normal gameplay.
-    end
-  end
-  return false
-end
-
-function textbox:draw() -- this function draws the text box.
-  -- if reading then -- only draw the text box if reading is true, that is, if a text box has been called and tb_init() has already happened.
-	rectfill(self.x,self.y,self.x+self.w,self.y+self.h,self.col1) -- draw the background.
-	if self.col2 >= 0 then
-	  rect(self.x,self.y,self.x+self.w,self.y+self.h,self.col2) -- draw the border.
-	  print(sub(self.str[self.i],1,self.char),self.x+2,self.y+2,self.col3) -- draw the text.
-	else
-	  print(sub(self.str[self.i],1,self.char),self.x,self.y,self.col3) -- draw the text.
-	end
-  -- end
-end
-
--->8
+#include text-box.p8
+#include plist.p8
+#include page.p8
+#include message.lua
+#include util.p8
 -- book code
 
-last_page = 0
-current_page = start_page + 1
-records = nil
-frame = 0
-
-function page_change(page)
---  if page ==8 then
---    music(00) -- starts music
---  elseif page >8 then
--- -- cep playing for ever
---  elseif page== 3 then 
---  --sfx(3)
---  music(1) 
---  else
---  music(-1)
---  -- stop music after
---  --rpoot all uv it on page(3)
---  -- whatever i want in my
---  -- comments
--- --stert  page--(8) music
---  end 
-end
-  
-function sprite_change(number)
-  if number == 220 then
-    --sfx(6)
-    music(2)
-  elseif number == 154 then
-    sfx(9)
+--_book = book:new({ page_class = cardinal_page }, pages)
+_book = book:new({}, pages)
+for i, p in pairs(_book.pages) do
+  if i > 100 then
+    local default_page = flr(i/100)
+    if (not p.scene or p.scene == i) p.scene = default_page
+    if (not p.nextpage) p.nextpage = default_page
   end
 end
+records = nil
+
+
 
 function _init()
-  reading=false
-  tb=nil
---  tb_init(0, { pages[current_page] })
-  scan_sprites()
+--  scan_sprites()
+  l = plist:new(nil, {1, 2, 3, 4})
+  printh(dump(l))
+  printh(dump(l.keys))
+  printh("count " ..#l)
+  l['a'] = 5
+  printh(dump(l))
+  -- stop()
 end
 
 function _update()
-  frame += 1
-  if (tb and tb:update()) return
-  if last_page != current_page then
-    last_page = current_page
-    if type(pages[current_page]) == 'table' then
-      local p = pages[current_page]
-      tb = choicebox:new(nil, 0, p[text], p[choices])
-    else
-      tb = textbox:new(nil, 0, { pages[current_page] })
-    end
-    records = nil
-    my_draw()
-    page_change(current_page - 1)
-    return 
-  else
-  if reading or tb:is_complete() then
-    if btnp(➡️) or btnp(❎) then
-      current_page += 1
-    end
-    if btnp(⬅️) or btnp(4) then
-      current_page -= 1
-    end
-    if current_page > #pages 
-    or current_page < 1 then
-      sfx(1)
-    end
-    current_page = clamp(current_page, 1, #pages)
-  end
-  end
+  _book._page:update()
 end
 
-function draw_page(page)
-  local i = page - 1
-		map((i % 8) * 16,flr(i / 8) * 8, 
-		0,0, 
-		16, 8)
-  if records == nil then
-		  records = anim_scan_map((i % 8) * 16,flr(i / 8) * 8, 
-		  0,0, 
-		  16, 8)
-		end
-		
-		--print(pages[page], 0, 64)
-end
 
-function my_draw()
-  cls()
-  draw_page(current_page)
-  
-end
-  
 function _draw()
-  if (tb) tb:draw()
-  if records ~= nil and frame % 20 == 0 then 
-		  anim_map(records)
-		end
-end
-
-function clamp(x, a, b)
-  return max(a, min(b,x))
-end
--->8
--- sprite flag animation
-function set_default(t, d)
-  local mt = {__index = function() return d end }
-  setmetatable(t, mt)
-end
-
-function scan_sprites() 
-  animated_sprites = {}
---  set_default(animated_sprites, {})
-  for i = 1, 255, 1
-  do
-    local flag = fget(i)
-    if flag ~= 0 then
-      local sprites = animated_sprites[flag]
-      if sprites == nil then
-        sprites = {}
-        animated_sprites[flag] = sprites
-      end
-      add(sprites, i)
---      print("found one")
-    end
---    print("hi")
-  end
-end
-
-function reverse_lookup(t, v)
-  for k,value in pairs(t) do
-    if value == v then
-      return k
-    end
-  end
-  return nil
-end
-
-function anim_scan_map(cx, cy, sx, sy, cw, ch)
-  local records = {}
-  for i = cx, cx + cw, 1 do
-    for j = cy, cy + ch, 1 do
-      local s = mget(i, j)
-      local f = fget(s)
-      local sprites = animated_sprites[f]
-      if sprites ~= nil then
-        add(records, { x = i - cx + sx,
-        y = j - cy + sy,
-        f = f,
-        index = reverse_lookup(sprites, s) })
-      end
-    end
-  end
-  return records
-end
-
-function anim_map(records)
-  for i = 1, #records, 1 do
-    local r = records[i]
-    local sprites = animated_sprites[r.f]
-    r.index += 1
-    if r.index > #sprites then
-      r.index = 1
-    end
-    rectfill(r.x * 8, r.y * 8, r.x * 8 + 7, r.y * 8 + 7, 0)
-    spr(sprites[r.index], r.x * 8, r.y * 8)
---spr(sprites[r.index], 0, 0)
-    sprite_change(sprites[r.index])
-
-  end
-end
-
-
--->8
--- commands
-function clear_page(i)
-  if i == "all" then
-    for n = 0, 31, 1 do
-      clear_page(n)
-    end
-  else
-  map_set((i % 8) * 16 + 1,
-  flr(i / 8) * 8 + 1, 
-		13, 5, 0)
-		end
-end
-
-function clear_page(i)
-  local s = i * 64
-  local c = 64
-  if i == 0 then
-    s = 1
-    c = 47
-  elseif i == 3 then
-    clear_sprite(203, 5)
-    for j = 0, 3, 1 do
-      clear_sprite(211 + 16 * j, 13)
-    end
-    return
-  end
-  clear_sprite(s, c)
-end
-
-function clear_sprite(n, c)
-  for k = 1, c or 1, 1 do
-  local m = n + k - 1
-  local x = (m % 16) * 8
-  local y = flr(m / 16) * 8
-  for i = x, x + 8, 1 do
-    for j = y, y + 8, 1 do
-      sset(i, j, 0)
-      fset(m, 0)
-    end
-  end
-  end
-end
-
-function map_set(cx, cy, cw, ch, v)
-  for i = cx, cx + cw, 1 do
-    for j = cy, cy + ch, 1 do
-      mset(i, j, v)
-    end
-  end
-end
-
-
--->8
--- choice box
-choicebox = textbox:new()
-function choicebox:new(o, voice, header, choices)
-  o = o or textbox:new(o, voice, {header})
-  setmetatable(o, self)
-  self.__index = self
-  self.header = header
-  self.choices = choices
-  self.choice = 1
-  self:update_strings()
-  return o
-end
-
-function choicebox:update_strings()
-  local str = self.header
-  local sep
-  for i = 1, #self.choices do
-    if (i == self.choice) sep="> " else sep="  "
-    str = str .. "\n" .. sep .. self.choices[i]
-  end
-  self.str = { str }
-end
-
-function choicebox:update()
-  if not textbox.is_complete(self) then
-    return textbox.update(self)
-  else
-    if btnp(5) or btnp(4) then
-      self.last_choice = self.choice
-      return true
-    else
-      if (btnp(3) or btnp(1)) self.choice += 1
-      if (btnp(2) or btnp(0)) self.choice -= 1
-      self.choice = mod1(self.choice, #self.choices)
-      self:update_strings()
-      return true
-    end
-    return false
-  end
-end
-
-function choicebox:is_complete()
-  return textbox.is_complete(self) and self.last_choice
+  _book._page:draw()
+  -- if records ~= nil and frame % 20 == 0 then
+	-- 	  anim_map(records)
+	-- end
 end
 
 __gfx__

@@ -250,7 +250,7 @@ function message.new(class, o, strings)
     add(o.fragments, o:parse(v))
   end
   o.istart = nil -- when we started displaying the ith message
-  o.i = 1 -- where we our in our
+  o.i = 0 -- where we our in our
   o.cur = 1 -- current string
   o.done = false
   return o
@@ -292,6 +292,7 @@ function message:parse(string)
     end
   end
   local fragments = {}
+  fragments[0] = fragment:new()
   for char in all(chars) do
     if not char.skip then
       add(fragments, fragment:new({ color = {}, c = char.c }, self))
@@ -305,7 +306,9 @@ function message:parse(string)
   end
 
   local accum = 0
-  for f in all(fragments) do
+  -- for f in all(fragments) do
+  for i = 0, #fragments do
+    local f = fragments[i]
     if not f.skip then
       accum += f.delay or self.delay
       f.delay_accum = accum
@@ -330,7 +333,7 @@ function message:update()
       consume=true
     elseif self.cur < #self.fragments then
       sfx(self.sound.next_message)
-      self.i = 1
+      self.i = 0
       self.cur += 1
       self.istart = time()
       consume=true

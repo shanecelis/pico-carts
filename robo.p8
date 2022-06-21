@@ -1,12 +1,61 @@
 pico-8 cartridge // http://www.pico-8.com
 version 33
 __lua__
-robo.
-by ryland.
-
-[[q?]], choices = {
+-- robo.
+-- by ryland.
+ 
+pages = {
+{[[q?]], 
+choices = {
  "go to the pond", 3,
- "
+ "", 4
+ },
+}
+}
+-->8
+#include text-box.p8
+#include plist.p8
+#include page.p8
+#include message.lua
+#include util.p8
+-- book code
+
+--_book = book:new({ page_class = cardinal_page }, pages)
+_book = book:new({}, pages)
+for i, p in pairs(_book.pages) do
+  if i > 100 then
+    local default_page = flr(i/100)
+    if (not p.scene or p.scene == i) p.scene = default_page
+    if (not p.nextpage) p.nextpage = default_page
+  end
+end
+records = nil
+
+
+
+function _init()
+--  scan_sprites()
+  l = plist:new(nil, {1, 2, 3, 4})
+  printh(dump(l))
+  printh(dump(l.keys))
+  printh("count " ..#l)
+  l['a'] = 5
+  printh(dump(l))
+  -- stop()
+end
+
+function _update()
+  _book._page:update()
+end
+
+
+function _draw()
+  _book._page:draw()
+  -- if records ~= nil and frame % 20 == 0 then
+	-- 	  anim_map(records)
+	-- end
+end
+
 __gfx__
 000000000ccc0000000000000000ccc000000000bbbbbbbb3333333300000000cccccccc00000000000000000000000000000000000000000000000000000000
 000000000c5c0000000000000000c5c000000000bbbbbbbb3333333300000000cccccccc00000000000000000000000000000000000000000000000000000000

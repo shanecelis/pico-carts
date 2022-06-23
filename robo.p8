@@ -23,6 +23,11 @@ choices = {
 #include util.p8
 -- book code
 
+
+
+
+function _init()
+
 --_book = book:new({ page_class = cardinal_page }, pages)
 _book = book:new({}, pages)
 for i, p in pairs(_book.pages) do
@@ -33,10 +38,6 @@ for i, p in pairs(_book.pages) do
   end
 end
 records = nil
-
-
-
-function _init()
 --  scan_sprites()
   l = plist:new(nil, {1, 2, 3, 4})
   printh(dump(l))
@@ -44,8 +45,9 @@ function _init()
   printh("count " ..#l)
   l['a'] = 5
   printh(dump(l))
-  print(dump(pages.title))
-  stop()
+  print(pages.title[1])
+  print(_book._page.title)
+  --stop()
 end
 
 function _update()

@@ -29,6 +29,10 @@ function book:new(o, pages)
   for k, page in pairs(pages) do
     o:add_page(k, page)
   end
+  if o.pages.title then
+    o.pages.title.scene = 0
+    o:set_page(o.pages.title)
+  end
   return o
 end
 

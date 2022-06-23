@@ -31,6 +31,7 @@ function book:new(o, pages)
   end
   if o.pages.title then
     o.pages.title.scene = 0
+    o.pages.title.nextpage = 1
     o:set_page(o.pages.title)
   end
   return o

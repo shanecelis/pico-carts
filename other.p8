@@ -4,75 +4,343 @@ __lua__
 -- mere villains
 -- by shane celis
 
-pages = {
+start_page = 0
+
+pages = { 
 -- title
-[0] = [[
-$r2mere villains$rx
+[[
+mere villains
 
-by shane celis (c) 2022/03/06
+by shane celis
+(c) 2022/02/17
 
-hit ➡️  to go to next
+hit ➡️ or ❎ to go to next
 page.
 ]],
--- [[ junk page ]],
+
 -- p1
-{[[
-...
-]]
-}
-,
--- p2
-{[[
-},
--- p3
-{[[
-Ick!
-]]},
--- p4
-{[[
-meow!
+[[
+
 ]],
-nextpage = 5
-},
+--
+	
+-- p2
+[[
+
+]],
+
+-- p3
+[[
+
+]],
+
+
+-- p4
+[[
+
+]],
+
 -- p5
 [[
-so there we were.
+
 ]],
 
+-- p6
 [[
-buck naked.
-]],
-}
 
+]],
+
+-- p7
+[[
+
+]],
+
+-- p8
+[[
+
+]],
+
+-- p9
+[[
+
+]],
+
+-- p10
+[[
+
+]],
+
+-- p11
+[[
+
+]],
+
+-- p12
+[[
+
+]],
+
+-- p13
+[[
+
+]],
+
+-- p14
+[[
+
+]],
+
+-- p15
+[[
+
+]],
+
+-- p16
+[[
+
+]],
+
+-- p17
+[[
+
+]],
+
+-- p18
+[[
+
+]],
+
+-- p19
+[[
+
+]],
+
+-- p20
+[[
+
+]],
+
+-- p21
+[[
+
+]],
+
+-- p22
+[[
+
+]],
+
+-- p23
+[[
+
+]],
+
+-- p24
+[[
+
+]],
+
+-- p25
+[[
+
+]],
+
+-- p26
+[[
+
+]],
+
+-- p27
+[[
+
+]],
+
+-- p28
+[[
+
+]],
+
+-- p29
+[[
+
+]],
+
+-- p30
+[[
+
+]],
+
+-- p31
+[[
+
+]]
+
+} 
 
 -->8
-#include text-box.p8
-#include plist.p8
-#include page.p8
-#include message.lua
-#include util.p8
+-- text box code
+
+function tb_init(voice,string) -- this function starts and defines a text box.
+	reading=true -- sets reading to true when a text box has been called.
+	tb={ -- table containing all properties of a text box. i like to work with tables, but you could use global variables if you preffer.
+	str=string, -- the strings. remember: this is the table of strings you passed to this function when you called on _update()
+	voice=voice, -- the voice. again, this was passed to this function when you called it on _update()
+	i=1, -- index used to tell what string from tb.str to read.
+	cur=0, -- buffer used to progressively show characters on the text box.
+	char=0, -- current character to be drawn on the text box.
+	x=0, -- x coordinate
+	y=64, -- y coordginate
+	w=127, -- text box width
+	h=60, -- text box height
+	col1=0, -- background color
+	col2=-1, -- border color (< 0 for no border)
+	col3=7, -- text color
+	}
+end
+
+function tb_next_btnp()
+  return btnp(5) or btnp(1) or btnp(0) or btnp(4)
+end
+
+function te_is_complete()
+  if (te == nil) return true
+  return #te.str == te.i and te.char == #te.str[te.i]
+end
+
+function tb_update()  -- this function handles the text box on every frame update.
+	if tb.char<#tb.str[tb.i] then -- if the message has not been processed until it's last character:
+		tb.cur+=0.5 -- increase the buffer. 0.5 is already max speed for this setup. if you want messages to show slower, set this to a lower number. this should not be lower than 0.1 and also should not be higher than 0.9
+		if tb.cur>0.9 then -- if the buffer is larger than 0.9:
+			tb.char+=1 -- set next character to be drawn.
+			tb.cur=0	-- reset the buffer.
+			if (ord(tb.str[tb.i],tb.char)!=32) sfx(tb.voice) -- play the voice sound effect.
+		end
+		if tb_next_btnp() then 
+		  tb.char=#tb.str[tb.i] -- advance to the last character, to speed up the message.
+		  return true -- return true if you eat a button press
+		end
+	elseif tb_next_btnp() then -- if already on the last message character and button ❎/x is pressed:
+		if #tb.str>tb.i then -- if the number of strings to disay is larger than the current index (this means that there's another message to display next):
+			tb.i+=1 -- increase the index, to display the next message on tb.str
+			tb.cur=0 -- reset the buffer.
+			tb.char=0 -- reset the character position.
+		else -- if there are no more messages to display:
+			reading=false -- set reading to false. this makes sure the text box isn't drawn on screen and can be used to resume normal gameplay.
+		end
+		return false
+	end
+	return false
+end
+
+function tb_draw() -- this function draws the text box.
+	if reading then -- only draw the text box if reading is true, that is, if a text box has been called and tb_init() has already happened.
+		rectfill(tb.x,tb.y,tb.x+tb.w,tb.y+tb.h,tb.col1) -- draw the background.
+		if tb.col2 >= 0 then
+		rect(tb.x,tb.y,tb.x+tb.w,tb.y+tb.h,tb.col2) -- draw the border.
+		print(sub(tb.str[tb.i],1,tb.char),tb.x+2,tb.y+2,tb.col3) -- draw the text.
+  else
+		print(sub(tb.str[tb.i],1,tb.char),tb.x,tb.y,tb.col3) -- draw the text.  
+  end
+	end
+end
+-->8
 -- book code
 
--- _book = book:new({ page_class = cardinal_page }, pages)
-_book = book:new(nil, pages)
+last_page = 0
+current_page = start_page + 1
 records = nil
+frame = 0
+
+function page_change(page)
+  if page ==8 then
+    music(00) -- starts music
+  elseif page >8 then
+ -- cep playing for ever
+  elseif page== 3 then 
+  --sfx(3)
+  music(1) 
+  else
+  music(-1)
+  -- stop music after
+  --rpoot all uv it on page(3)
+  -- whatever i want in my
+  -- comments
+ --stert  page--(8) music
+  end end
+  
+function sprite_change(number)
+  if number == 220 then
+    --sfx(6)
+    music(2)
+  elseif number == 154 then
+    sfx(9)
+  end
+end
 
 function _init()
+  reading=false
+--  tb_init(0, { pages[current_page] })
   scan_sprites()
-  l = plist:new(nil, {1, 2, 3, 4})
-  -- stop()
+  
 end
+
+
+  
 
 function _update()
-  _book._page:update()
+  frame += 1
+  if reading then
+    if (tb_update()) return
+  end
+  if last_page != current_page then
+    last_page = current_page
+    tb_init(0, { pages[current_page] })
+    records = nil
+    my_draw()
+    page_change(current_page - 1)
+    return 
+  else
+  if reading or te_is_complete() then
+    if btnp(➡️) or btnp(❎) then
+      current_page += 1
+    end
+    if btnp(⬅️) or btnp(4) then
+      current_page -= 1
+    end
+    if current_page > #pages 
+    or current_page < 1 then
+      sfx(1)
+    end
+    current_page = clamp(current_page, 1, #pages)
+  end
+  end
 end
 
+function draw_page(page)
+  local i = page - 1
+		map((i % 8) * 16,flr(i / 8) * 8, 
+		0,0, 
+		16, 8)
+  if records == nil then
+		  records = anim_scan_map((i % 8) * 16,flr(i / 8) * 8, 
+		  0,0, 
+		  16, 8)
+		end
+		
+		--print(pages[page], 0, 64)
+end
 
+function my_draw()
+  cls()
+  draw_page(current_page)
+  
+end
+  
 function _draw()
-  _book._page:draw()
-  -- if records ~= nil and frame % 20 == 0 then
-	-- 	  anim_map(records)
-	-- end
+  tb_draw()
+  if records ~= nil and frame % 20 == 0 then 
+		  anim_map(records)
+		end
 end
 
 function clamp(x, a, b)
@@ -81,17 +349,19 @@ end
 -->8
 -- sprite flag animation
 function set_default(t, d)
-  setmetatable(t, {__index = function() return d end })
+  local mt = {__index = function() return d end }
+  setmetatable(t, mt)
 end
 
 function scan_sprites() 
   animated_sprites = {}
 --  set_default(animated_sprites, {})
-  for i = 1, 255 do
+  for i = 1, 255, 1
+  do
     local flag = fget(i)
     if flag ~= 0 then
       local sprites = animated_sprites[flag]
-      if not sprites then
+      if sprites == nil then
         sprites = {}
         animated_sprites[flag] = sprites
       end
@@ -113,12 +383,12 @@ end
 
 function anim_scan_map(cx, cy, sx, sy, cw, ch)
   local records = {}
-  for i = cx, cx + cw do
-    for j = cy, cy + ch do
+  for i = cx, cx + cw, 1 do
+    for j = cy, cy + ch, 1 do
       local s = mget(i, j)
       local f = fget(s)
       local sprites = animated_sprites[f]
-      if sprites then
+      if sprites ~= nil then
         add(records, { x = i - cx + sx,
         y = j - cy + sy,
         f = f,
@@ -130,11 +400,13 @@ function anim_scan_map(cx, cy, sx, sy, cw, ch)
 end
 
 function anim_map(records)
-  for i = 1, #records do
+  for i = 1, #records, 1 do
     local r = records[i]
     local sprites = animated_sprites[r.f]
     r.index += 1
-    if (r.index > #sprites) r.index = 1
+    if r.index > #sprites then
+      r.index = 1
+    end
     rectfill(r.x * 8, r.y * 8, r.x * 8 + 7, r.y * 8 + 7, 0)
     spr(sprites[r.index], r.x * 8, r.y * 8)
 --spr(sprites[r.index], 0, 0)
@@ -144,30 +416,18 @@ function anim_map(records)
 end
 
 
-function dump(o)
-   if type(o) == 'table' then
-      local s = '{ '
-      for k,v in pairs(o) do
-         if type(k) ~= 'number' then k = '"'..k..'"' end
-         s = s .. '['..k..'] = ' .. dump(v) .. ','
-      end
-      return s .. '} '
-   else
-      return tostring(o)
-   end
-end
 -->8
 -- commands
 function clear_page(i)
   if i == "all" then
-    for n = 0, 31 do
+    for n = 0, 31, 1 do
       clear_page(n)
     end
   else
-    map_set((i % 8) * 16 + 1,
-    flr(i / 8) * 8 + 1,
-      13, 5, 0)
-	end
+  map_set((i % 8) * 16 + 1,
+  flr(i / 8) * 8 + 1, 
+		13, 5, 0)
+		end
 end
 
 function clear_page(i)
@@ -187,12 +447,12 @@ function clear_page(i)
 end
 
 function clear_sprite(n, c)
-  for k = 1, c or 1 do
+  for k = 1, c or 1, 1 do
   local m = n + k - 1
   local x = (m % 16) * 8
   local y = flr(m / 16) * 8
-  for i = x, x + 8 do
-    for j = y, y + 8 do
+  for i = x, x + 8, 1 do
+    for j = y, y + 8, 1 do
       sset(i, j, 0)
       fset(m, 0)
     end
@@ -201,13 +461,12 @@ function clear_sprite(n, c)
 end
 
 function map_set(cx, cy, cw, ch, v)
-  for i = cx, cx + cw do
-    for j = cy, cy + ch do
+  for i = cx, cx + cw, 1 do
+    for j = cy, cy + ch, 1 do
       mset(i, j, v)
     end
   end
 end
-
 
 
 __gfx__
@@ -324,13 +583,13 @@ __gfx__
 00006677777777777766000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00006677777777777766000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00006677000000007766000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00006677000000007766000000000000000000000000000000777700000000000000000000000000000000000000000000000000000000000000000000000000
-00006677000000007766000000000000000000007700000000700700000000000000000000000000000000000000000000000000000000000000000000000000
-00006677000000007766000000000000000000007000077000777700007007000007000000000000000700000000000000070000000000000000000000000000
-00006677000000007766000000000000000000007700070000700000007007000000000000007000000700000077770000000000000000000007770000000000
-00006677000000007766000000000000777770007000077000777700007007000007000000007000000700000070070000070000007770700007000000000000
-00006677000000007766000000000000707070007000070000700700007070000007000000007000000700000077770000070000007070700007000000000000
-00006677000000007766000000000000707070007700077000700700000700000007000000007770000777000070070000070000007077700777000000000000
+00006677000000007766000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00006677000000007766000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00006677000000007766000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00006677000000007766000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00006677000000007766000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00006677000000007766000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00006677000000007766000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00006677777777777766000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00006677777777777766000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00006666666666666666000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -469,7 +728,7 @@ __map__
 d0d1d1d1d1d1d1d1d1d1d1d1d1d1d1d2d0c0c1d1d1d1d1d1d1d1d1d1d1d1d1d2d0c0c2d1d1d1d1d1d1d1d1d1d1d1d1d2d0c0c3d1d1d1d1d1d1d1d1d1d1d1d1d2d0c0c4d1d1d1d1d1d1d1d1d1d1d1d1d2d0c0c5d1d1d1d1d1d1d1d1d1d1d1d1d2d0c0c6d1d1d1d1d1d1d1d1d1d1d1d1d2d0c0c7d1d1d1d1d1d1d1d1d1d1d1d1d2
 e00000000000000000000000000000e2e00000000000000000000000000000e2e00000000000000000000000000000e2e00000000000000000000000000000e2e00000000000000000000000000000e2e00000000000000000000000000000e2e00000000000000000000000000000e2e00000000000000000000000000000e2
 e00002000000000000000000000000e2e00000000000000000000000000000e2e00002000000000000000000000000e2e00000000000000000000000000000e2e00000000000000000000000000000e2e00000000000000000000000000000e2e00000000000000000000000000000e2e00000000000000000000000000000e2
-e000e4e5e60000e7e8e9eaebecedeee2e00000000000000000000000000000e2e00000000000000000000000000000e2e00000000000000000000000000000e2e00000000000000000000000000000e2e00000000000000000000000000000e2e00000000000000000000000000000e2e00000000000000000000000000000e2
+e00000000000000000000000000000e2e00000000000000000000000000000e2e00000000000000000000000000000e2e00000000000000000000000000000e2e00000000000000000000000000000e2e00000000000000000000000000000e2e00000000000000000000000000000e2e00000000000000000000000000000e2
 e00000000000000000000000000000e2e00000000000000000000000000000e2e00000000000000000000000000000e2e00000000000000000000000000000e2e00000000000000000000000000000e2e00000000000000000000000000000e2e00000000000000000000000000000e2e00000000000000000000000000000e2
 e00000000000000000220000000000e2e00000000000000000220000000000e2e00000000000000000220000000000e2e00000000000000000000000000000e2e00000000000000000000000000000e2e00000000000000000000000000000e2e00000000000000000000000000000e2e00000000000000000000000000000e2
 e03333333333333333333333333333e2e03333333333333333333333333333e2e03333333333333333333333333333e2e00000000000000000000000000000e2e00000000000000000000000000000e2e00000000000000000000000000000e2e00000000000000000000000000000e2e00000000000000000000000000000e2

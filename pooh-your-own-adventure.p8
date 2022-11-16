@@ -263,6 +263,7 @@ the end.
 #include page.p8
 #include message.lua
 #include util.p8
+#include commands.lua
 -- book code
 
 --_book = book:new({ page_class = cardinal_page }, pages)

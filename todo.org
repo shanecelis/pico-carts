@@ -1,0 +1,7 @@
+#+TITLE: PICO-8 todo
+
+* TODO Allow cardinal pages to work with choices
+* TODO How to have scenes not in the grid?
+Maybe exclude the last row or first column?
+* TODO Make upset text effect time controlled
+* TODO Go back through multiple messages if they're multi

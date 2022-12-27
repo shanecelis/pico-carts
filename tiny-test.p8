@@ -2,6 +2,8 @@ pico-8 cartridge // http://www.pico-8.com
 version 39
 __lua__
 
+-- there is also a trace function for coroutines gives a stacktrace!
+-- try from https://github.com/sparr/pico8lib/blob/master/functions.p8
 local function try(t, c, f)
  local co = cocreate(t)
  local s, m = true
@@ -16,6 +18,8 @@ local function try(t, c, f)
  end
 end
 
+-- inspired by tinytest javascript library by joe walnes.
+-- https://github.com/joewalnes/jstinytest
 tinytest = {
 
   new = function(self, o)
@@ -33,10 +37,9 @@ tinytest = {
           local errors_map = {}
           local failures_map = {}
           local output = ""
-          if (self.sprites) spr(self.sprites.good
+          local failures = 0
+          local errors = 0
           for testname, testaction in pairs(tests) do
-
-                  -- testaction(self)
             try(function ()
                   testaction(self)
                 end,
@@ -65,12 +68,15 @@ tinytest = {
             if (failures_map[testname] or errors_map[testname]) print(testname)
             for _, failure in ipairs(failures_map[testname]) do
               print("  " .. failure)
+              failures += 1
             end
 
             for _, error in ipairs(errors_map[testname]) do
               print("  error line " .. sub(error,32))
+              errors += 1
             end
           end
+          return failures, errors
         end,
 
   fail = function(self, msg, header)
@@ -89,28 +95,36 @@ tinytest = {
          if (expected ~= actual) self:fail('"' .. expected .. '" ~= "' .. actual .. '"', 'not eq: ')
        end,
 
-  -- eqq = function(expected, actual)
-  --       if (expected !== actual) error('eqq() "' .. expected .. '" !== "' .. actual .. '"')
-  --     end,
-
 }
 
-tinytest:new():run({
+tinytest:new({ sprites = { good = {0, 64, 0, 32, 32},
+                           bad = { 8, 64, 0, 32, 32} },
+               run = function(self, tests)
+                 local failures, errors = tinytest.run(self, tests)
+                 if failures + errors == 0 then
+                   spr(unpack(self.sprites.good))
+                 else
+                   -- palt(0, false)
+                   -- spr(unpack(self.sprites.good))
+                   spr(unpack(self.sprites.bad))
+                 end
+               end
+             }):run({
     test_passes = function(t)
-               t:ok(true, "hi")
-             end,
+                    t:ok(true, "hi")
+                  end,
 
     test_fails = function(t)
-              t:ok(false, "bye")
-            end,
+                   t:ok(false, "bye")
+                 end,
     test_errrors = function(t)
-                assert(false, "wtf")
-              end,
+                     assert(false, "wtf")
+                   end,
 
     test_fails_and_errors = function(t)
-              t:ok(false, "bye")
-              assert(false, "wtf")
-            end,
+                              t:ok(false, "bye")
+                              assert(false, "wtf")
+                            end,
 })
 
 __gfx__

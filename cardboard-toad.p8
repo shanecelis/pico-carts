@@ -10,13 +10,13 @@ actor = {} -- all actors
 -- and add to global collection
 -- x,y means center of the actor
 -- in map tiles
-function make_actor(k, x, y, w, h)
+function make_actor(k, x, y, is_add)
 	a={
 		k = k,
 		x = x,
 		y = y,
-		width = w or 1,
-		height = h or 1,
+		width = 1,
+		height = 1,
 		dx = 0,
 		dy = 0,		
 		frame = 0,
@@ -30,36 +30,73 @@ function make_actor(k, x, y, w, h)
 		-- that will fit through 1-wide
 		-- holes.
 		w = 0.4,
-		h = 0.4
+		h = 0.4,
+		is_sprite = function(a, s)
+    return s >= a.k and s <= a.k + a.frames
+  end
 	}
 	
-	add(actor,a)
+	if (is_add == undefined or is_add)	add(actor,a)
 	
 	return a
 end
 
---      local val = mget(x, y)
---	     if fget(val, 1) then
---	       add(result, val)
---	     end
+--function page:new(o)
+--  o = o or {}
+--  setmetatable(o, self)
+--  self.__index = self
+--  return o
+--end
+
+function scan_map(f)
+  local result = {}
+  for x = 0,16 do
+    for y = 0,16 do
+      if f(mget(x,y)) then
+        add(result, {x, y})
+      end
+    end
+  end
+  return result
+end
+
+function replace_actors(a)
+ 
+  for place in all(scan_map(function (k) return a:is_sprite(k) end)) do
+    mset(place[1], place[2], 0)
+    o = {}
+    setmetatable(o, a)
+    a.__index = a
+    o.x = place[1]
+    o.y = place[2]
+
+    add(actor,o)
+  end
+end
 
 function _init()
-
 	-- create some actors
 	
 	-- make player
-	--pl = make_actor(21,2,2)
-	--pl = make_actor(37,2,2)
-	pl = make_actor(9,2,2,1,2)
+	pl = make_actor(21,2,2,false)
+	replace_actors(pl)
+
+	pl = make_actor(37,2,2,false)
+	replace_actors(pl)
+
+	pl = make_actor(9,2,2)
+	pl.height=2
 	pl.frames=4
-	
+	replace_actors(pl)
+
 	-- bouncy ball
 	local ball = make_actor(33,8.5,11)
 	ball.dx=0.05
 	ball.dy=-0.1
 	ball.friction=0.02
 	ball.bounce=1
-	
+	replace_actors(ball)
+
 	-- red ball: bounce forever
 	-- (because no friction and
 	-- max bounce)
@@ -68,7 +105,10 @@ function _init()
 	ball.dy=0.15
 	ball.friction=0
 	ball.bounce=1
-	
+--	?ball:is_sprite(50)
+	replace_actors(ball)
+--	stop()
+--	break
 	-- treasure
 	
 	for i=0,16 do
@@ -76,14 +116,20 @@ function _init()
 		    10+sin(i/16)*3)
 		a.w=0.25 a.h=0.25
 	end
-	
+	replace_actors(a)
+
 	-- blue peopleoids
 	
 	a = make_actor(5,7,5)
 	a.frames=4
 	a.dx=1/8
 	a.friction=0.1
-	
+	replace_actors(a)
+
+ a = make_actor(17,7,5,false)
+	a.dx=1/8
+	a.friction=0.1
+	replace_actors(a)
 	for i=1,6 do
 	 a = make_actor(5,20+i,24)
 	 a.frames=4
@@ -91,18 +137,6 @@ function _init()
 	 a.friction=0.1
 	end
 	
-end
-
-function scan_sprites(f)
-  local result = {}
-  for x = 1,16 do
-    for y = 1,16 do
-      if f(mget(x,y)) then
-        add(result, {x, y})
-      end
-    end
-  end
-  return result
 end
 
 -- for any given point on the
@@ -296,7 +330,7 @@ function _draw()
 	
 	map()
 	foreach(actor,draw_actor)
-	
+	--replace_actors(actor[1])
 end
 
 __gfx__
@@ -469,7 +503,7 @@ __map__
 0202020202020202020202020202020202020202020202020202020202020202000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0200000000000000000400000000000202000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0200000202003203000032000004000202000000000000000004040000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0300000202000004000000000000000202000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0300000202003104000031002500000202000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0200000000000000000000000000000202000000040000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0200003200040000003200111200000202000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0200000000001200000000000000000202000000000002020202000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

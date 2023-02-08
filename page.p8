@@ -95,6 +95,10 @@ page = {
   is_active = false
 }
 
+function page.is_page(t)
+  return type(t) == 'table' and getmetatable(t) == page
+end
+
 book.page_class = page
 
 function page:new(o)
@@ -141,8 +145,12 @@ function page:next()
       return self.book.pages[self.nextpage]
     elseif type(self.nextpage) == 'function' then
       return self.nextpage(self)
-    else
+    elseif page.is_page(self.nextpage) then
       return self.nextpage
+    elseif type(self.index) == 'number' then
+      return self.book.pages[self.index + 1]
+    else
+      error("no next page set.")
     end
   end
 end

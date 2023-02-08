@@ -191,6 +191,7 @@ page.
 
 --_book = book:new({ page_class = cardinal_page }, pages)
 _book = book:new({}, pages)
+_book:set_page(pages[0], false)
 for i, p in pairs(_book.pages) do
   if i > 100 then
     local default_page = flr(i/100)

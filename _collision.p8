@@ -85,6 +85,12 @@ function _init()
 	pl.update=random_actor
 	replace_actors(pl)
 
+	-- donkey
+	pl = make_actor(107,2,2,false)
+	pl.frames=4
+	pl.update=random_actor
+	replace_actors(pl)
+
 	pl = make_actor(41,2,2,false)
 	pl.frames=4
 	replace_actors(pl)

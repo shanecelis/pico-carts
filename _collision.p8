@@ -95,6 +95,7 @@ function _init()
 	pl.width=2
 	pl.w *= 2
 	pl.h *= 2
+	pl.frames=4
 	replace_actors(pl)
 
 	-- bouncy ball

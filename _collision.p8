@@ -32,8 +32,8 @@ function make_actor(k, x, y, is_add)
 		w = 0.4,
 		h = 0.4,
 		is_sprite = function(a, s)
-    return s >= a.k and s <= a.k + a.frames
-  end
+			return s >= a.k and s <= a.k + a.frames
+		end
 	}
 	
 	if (is_add == undefined or is_add)	add(actor,a)
@@ -89,9 +89,12 @@ function _init()
 	pl = make_actor(37,2,2,false)
 	replace_actors(pl)
 
-	pl = make_actor(9,2,2)
+	-- pl = make_actor(9,2,2)
+	pl = make_actor(96,2,2)
 	pl.height=2
-	pl.frames=4
+	pl.width=2
+	pl.w *= 2
+	pl.h *= 2
 	replace_actors(pl)
 
 	-- bouncy ball
@@ -315,6 +318,13 @@ function control_player(pl)
 	
 end
 
+function control_actor(a)
+	-- if rnd(
+	accel = 0.05
+	pl.dx += accel * (rnd(2) - 1)
+	pl.dy += accel * (rnd(2) - 1)
+end
+
 function _update()
 	control_player(pl)
 	foreach(actor, move_actor)
@@ -323,11 +333,10 @@ end
 function draw_actor(a)
 	local sx = (a.x * 8) - 4
 	local sy = (a.y * 8) - 4
-	spr(a.k + a.frame, sx, sy, a.width, a.height)
+	spr(a.k + flr(a.frame) * a.width, sx, sy, a.width, a.height)
 end
 
 function _draw()
-	-- cls(11)
 	cls(background_color)
 	
 	room_x=flr(pl.x/16)

@@ -51,8 +51,8 @@ end
 
 function scan_map(f)
   local result = {}
-  for x = 0,128 do
-    for y = 0,128 do
+  for x = 0,127 do
+    for y = 0,31 do
       if f(mget(x,y)) then
         add(result, {x, y})
       end

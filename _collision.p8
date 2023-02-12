@@ -327,7 +327,8 @@ function draw_actor(a)
 end
 
 function _draw()
-	cls()
+	-- cls(11)
+	cls(background_color)
 	
 	room_x=flr(pl.x/16)
 	room_y=flr(pl.y/16)

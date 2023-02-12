@@ -31,6 +31,7 @@ function make_actor(k, x, y, is_add)
 		-- holes.
 		w = 0.4,
 		h = 0.4,
+		update = function(a) end,
 		is_sprite = function(a, s)
 			return s >= a.k and s <= a.k + a.frames
 		end
@@ -78,8 +79,10 @@ function _init()
 	-- create some actors
 	
 	-- make player
+	-- bunny
 	pl = make_actor(21,2,2,false)
 	pl.frames=4
+	pl.update=random_actor
 	replace_actors(pl)
 
 	pl = make_actor(41,2,2,false)
@@ -90,6 +93,7 @@ function _init()
 	replace_actors(pl)
 
 	-- pl = make_actor(9,2,2)
+	-- princess peach
 	pl = make_actor(96,2,2)
 	pl.height=2
 	pl.width=2
@@ -133,6 +137,8 @@ function _init()
 	a.frames=4
 	a.dx=1/8
 	a.friction=0.1
+	-- a.update=follow_actor(pl)
+	a.update=follow_actor(ball)
 	replace_actors(a)
 
  a = make_actor(17,7,5,false)
@@ -306,6 +312,8 @@ function move_actor(a)
 	a.frame %= a.frames
 
 	a.t += 1
+
+	a:update()
 	
 end
 
@@ -319,11 +327,25 @@ function control_player(pl)
 	
 end
 
-function control_actor(a)
-	-- if rnd(
-	accel = 0.05
-	pl.dx += accel * (rnd(2) - 1)
-	pl.dy += accel * (rnd(2) - 1)
+function random_actor(a)
+	if rnd(1) < 0.1  then
+		accel = 0.05
+		a.dx += accel * (rnd(2) - 1)
+		a.dy += accel * (rnd(2) - 1)
+	end
+end
+
+
+function follow_actor(follow)
+	return function(a)
+		if rnd(1) < 0.1  then
+			local x = sgn(follow.x - a.x)
+			local y = sgn(follow.y - a.y)
+			accel = 0.05
+			a.dx += accel * (x + (rnd(2) - 1))
+			a.dy += accel * (y + (rnd(2) - 1))
+		end
+	end
 end
 
 function _update()

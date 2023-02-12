@@ -79,6 +79,11 @@ function _init()
 	
 	-- make player
 	pl = make_actor(21,2,2,false)
+	pl.frames=4
+	replace_actors(pl)
+
+	pl = make_actor(41,2,2,false)
+	pl.frames=4
 	replace_actors(pl)
 
 	pl = make_actor(37,2,2,false)

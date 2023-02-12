@@ -100,8 +100,8 @@ function _init()
 
 	-- pl = make_actor(9,2,2)
 	-- princess peach
-	-- pl = make_actor(96,2,2)
-	pl = make_actor(96,68,22)
+	pl = make_actor(96,2,2)
+	-- pl = make_actor(96,68,22)
 	pl.height=2
 	pl.width=2
 	pl.w *= 2

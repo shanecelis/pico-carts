@@ -33,7 +33,7 @@ function make_actor(k, x, y, is_add)
 		h = 0.4,
 		update = function(a) end,
 		is_sprite = function(a, s)
-			return s >= a.k and s <= a.k + a.frames
+			return s >= a.k and s < a.k + a.frames
 		end
 	}
 	

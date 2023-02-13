@@ -148,12 +148,14 @@ function _init()
 	a.update=follow_actor(ball)
 	replace_actors(a)
 
- a = make_actor(17,7,5,false)
+	a = make_actor(17,7,5,false)
+	a.update=follow_actor(ball)
 	a.dx=1/8
 	a.friction=0.1
 	replace_actors(a)
 	for i=1,6 do
 	 a = make_actor(5,20+i,24)
+	 a.update=follow_actor(ball)
 	 a.frames=4
 	 a.dx=1/8
 	 a.friction=0.1
@@ -345,9 +347,13 @@ end
 
 function follow_actor(follow)
 	return function(a)
-		if rnd(1) < 0.1  then
+		if rnd(1) < 0.1 then
 			local x = sgn(follow.x - a.x)
 			local y = sgn(follow.y - a.y)
+			if what_room(a) != what_room(follow) then
+				x = 0
+				y = 0
+			end
 			accel = 0.05
 			a.dx += accel * (x + (rnd(2) - 1))
 			a.dy += accel * (y + (rnd(2) - 1))
@@ -364,6 +370,10 @@ function draw_actor(a)
 	local sx = (a.x * 8) - 4
 	local sy = (a.y * 8) - 4
 	spr(a.k + flr(a.frame) * a.width, sx, sy, a.width, a.height)
+end
+
+function what_room(a)
+	return flr(a.x/16) + 8 * flr(a.y/16)
 end
 
 function _draw()

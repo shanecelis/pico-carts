@@ -4,6 +4,24 @@ __lua__
 -- wall and actor collisions
 -- by zep
 
+scene = {
+}
+
+function scene:new(o)
+  o = o or {}
+  setmetatable(o, self)
+  self.__index = self
+  return o
+end
+
+function scene:update()
+end
+
+function scene:draw()
+end
+
+--curr_scene
+
 actor = {} -- all actors
 
 -- make an actor
@@ -373,7 +391,9 @@ function follow_actor(follow)
 	end
 end
 
-function _update()
+collision = scene:new()
+
+function collision:update()
 	control_player(pl)
 	player_room = what_room(pl)
 	foreach(actor, move_actor)
@@ -389,7 +409,7 @@ function what_room(a)
 	return flr(a.x/16) + 8 * flr(a.y/16)
 end
 
-function _draw()
+function collision:draw()
 	cls(background_color)
 	
 	room_x=flr(pl.x/16)
@@ -401,3 +421,25 @@ function _draw()
 	--replace_actors(actor[1])
 end
 
+title = scene:new()
+
+
+function title:draw()
+	camera(7 * 128, 0)
+	map()
+end
+
+
+function title:update()
+--	if (btnp()) curr_scene = collision
+end
+
+curr_scene = title
+
+function _update()
+	curr_scene:update()
+end
+
+function _draw()
+	curr_scene:draw()
+end

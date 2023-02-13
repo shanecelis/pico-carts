@@ -425,13 +425,14 @@ title = scene:new()
 
 
 function title:draw()
+	cls()
 	camera(7 * 128, 0)
 	map()
 end
 
 
 function title:update()
---	if (btnp()) curr_scene = collision
+	if (btnp(5)) curr_scene = collision
 end
 
 curr_scene = title

@@ -7,7 +7,7 @@ __lua__
 scene = {
 }
 
-intro_message = { "hi there" }
+intro_message = intro_message or { "hi there" }
 
 function scene:new(o)
   o = o or {}
@@ -423,9 +423,14 @@ function collision:draw()
 	--replace_actors(actor[1])
 end
 
-title = scene:new()
-title.message = message:new({}, intro_message)
+title = scene:new({})
 
+function title:get_message()
+	if self.message == nil then
+		self.message = message:new({}, intro_message)
+	end
+	return self.message
+end
 
 function title:draw()
 	cls()
@@ -435,13 +440,13 @@ function title:draw()
 	camera(0, 0)
 	local border = 10
 	rectfill(border, 64 + border, 127 - border, 127 - border, 7)
-	title.message:draw(border * 1.5, 64 + 1.5 * border)
+	title:get_message():draw(border * 1.5, 64 + 1.5 * border)
 
 end
 
 
 function title:update()
-	title.message:update()
+	title:get_message():update()
 	if (btnp(5)) curr_scene = collision
 end
 

@@ -446,8 +446,9 @@ end
 
 
 function title:update()
-	title:get_message():update()
-	if (btnp(5)) curr_scene = collision
+	local m = title:get_message()
+	m:update()
+	if (m:is_complete() and btnp(5)) curr_scene = collision
 end
 
 curr_scene = title

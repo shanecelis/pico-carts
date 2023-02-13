@@ -7,6 +7,8 @@ __lua__
 scene = {
 }
 
+intro_message = { "hi there" }
+
 function scene:new(o)
   o = o or {}
   setmetatable(o, self)
@@ -422,16 +424,24 @@ function collision:draw()
 end
 
 title = scene:new()
+title.message = message:new({}, intro_message)
 
 
 function title:draw()
 	cls()
+	-- palt(0, true)
 	camera(7 * 128, 0)
 	map()
+	camera(0, 0)
+	local border = 10
+	rectfill(border, 64 + border, 127 - border, 127 - border, 7)
+	title.message:draw(border * 1.5, 64 + 1.5 * border)
+
 end
 
 
 function title:update()
+	title.message:update()
 	if (btnp(5)) curr_scene = collision
 end
 

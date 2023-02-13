@@ -148,11 +148,22 @@ function _init()
 	a.update=follow_actor(ball)
 	replace_actors(a)
 
+	-- purple guys
+	a = make_actor(204,7,5,false)
+	a.frames=4
+	a.update=follow_actor(ball)
+	a.dx=1/8
+	a.friction=0.1
+	replace_actors(a)
+
+
 	a = make_actor(17,7,5,false)
 	a.update=follow_actor(ball)
 	a.dx=1/8
 	a.friction=0.1
 	replace_actors(a)
+
+
 	for i=1,6 do
 	 a = make_actor(5,20+i,24)
 	 a.update=follow_actor(ball)

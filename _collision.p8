@@ -120,7 +120,7 @@ function _init()
 	-- red ball: bounce forever
 	-- (because no friction and
 	-- max bounce)
-	local ball = make_actor(49,7,8)
+	local ball = make_actor(49,22,20)
 	ball.dx=-0.1
 	ball.dy=0.15
 	ball.friction=0
@@ -298,6 +298,7 @@ function collide_event(a1,a2)
 end
 
 function move_actor(a)
+	if (what_room(a) != player_room) return
 
 	-- only move actor along x
 	-- if the resulting position
@@ -374,6 +375,7 @@ end
 
 function _update()
 	control_player(pl)
+	player_room = what_room(pl)
 	foreach(actor, move_actor)
 end
 

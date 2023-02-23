@@ -130,7 +130,7 @@ function _init()
 	replace_actors(pl)
 
 	-- bouncy ball
-	local ball = make_actor(33,8.5,11)
+	ball = make_actor(33,8.5,11)
 	ball.dx=0.05
 	ball.dy=-0.1
 	ball.friction=0.02
@@ -140,7 +140,7 @@ function _init()
 	-- red ball: bounce forever
 	-- (because no friction and
 	-- max bounce)
-	local ball = make_actor(49,22,20)
+	ball = make_actor(49,22,20)
 	ball.dx=-0.1
 	ball.dy=0.15
 	ball.friction=0
@@ -318,7 +318,10 @@ function collide_event(a1,a2)
 end
 
 function move_actor(a)
-	if what_room(a) == player_room or mhdistance(a, pl) < 5 then
+	local r = what_room(a)
+	if (r == player_room
+	    or is_adjacent(r, player_room)) then
+		-- or mhdistance(a, pl) < 5 then
 	-- if (what_room(a) != player_room) return
 
 	-- only move actor along x
@@ -397,6 +400,13 @@ end
 
 collision = scene:new()
 
+function is_adjacent(room1, room2)
+	return (room1 == room2 - 1
+		 or room1 == room2 + 1
+		 or room1 == room2 + 8
+		 or room1 == room2 - 8)
+end
+
 function collision:update()
 	control_player(pl)
 	player_room = what_room(pl)
@@ -423,6 +433,10 @@ end
 
 function what_room(a)
 	return flr(a.x/16) + 8 * flr(a.y/16)
+end
+
+function what_roomish(a)
+	return (a.x/16) + 8 * (a.y/16)
 end
 
 function collision:draw()

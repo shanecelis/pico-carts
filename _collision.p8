@@ -318,7 +318,8 @@ function collide_event(a1,a2)
 end
 
 function move_actor(a)
-	if (what_room(a) != player_room) return
+	if what_room(a) == player_room or mhdistance(a, pl) < 5 then
+	-- if (what_room(a) != player_room) return
 
 	-- only move actor along x
 	-- if the resulting position
@@ -355,6 +356,7 @@ function move_actor(a)
 	a.t += 1
 
 	a:update()
+	end
 	
 end
 
@@ -399,6 +401,18 @@ function collision:update()
 	control_player(pl)
 	player_room = what_room(pl)
 	foreach(actor, move_actor)
+end
+
+function distance(a1, a2)
+	return sqrt((a1.x - a2.x)^2 + (a1.y - a2.y)^2)
+end
+
+function sqdistance(a1, a2)
+	return (a1.x - a2.x)^2 + (a1.y - a2.y)^2
+end
+
+function mhdistance(a1, a2)
+	return abs(a1.x - a2.x) + abs(a1.y - a2.y)
 end
 
 function draw_actor(a)

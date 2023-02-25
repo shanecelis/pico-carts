@@ -399,7 +399,7 @@ function random_actor(a)
 end
 
 
-function follow_actor(follow)
+function follow_actor(follow, accel)
 	return function(a)
 		if rnd(1) < 0.1 then
 			local x = sgn(follow.x - a.x)
@@ -408,7 +408,7 @@ function follow_actor(follow)
 				x = 0
 				y = 0
 			end
-			accel = 0.05
+			accel = accel or 0.05
 			a.dx += accel * (x + (rnd(2) - 1))
 			a.dy += accel * (y + (rnd(2) - 1))
 		end
@@ -427,7 +427,7 @@ end
 function collision:update()
 	control_player(pl)
 	local current_player_room = what_room(pl)
-	if (current_player_room != player_room) enter_room(current_player_room)
+	if (current_player_room != player_room) enter_room(current_player_room + 1)
 	player_room = current_player_room
 	foreach(actor, move_actor)
 end

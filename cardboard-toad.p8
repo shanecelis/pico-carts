@@ -5,7 +5,7 @@ __lua__
 
 #include message.p8
 #include _collision.p8
-
+debug=true
 background_color = 11
 
 intro_message = {
@@ -16,6 +16,23 @@ birthday party]],
 and bring  birthday gifts]],
 [[press x to play]],
 }
+
+first_time_to_room12 = true
+
+function enter_room(room)
+  if room == 1 then
+    music(0)
+  end
+  if room == 12 
+  and first_time_to_room12 then
+    curr_scene.text = {
+    [[there you are!]],
+    [[i was just aboat to
+    hit the pinata.]]
+    }
+    first_time_to_room12 = false
+  end
+end
 __gfx__
 000000003bbbbbb7030003b0003b30000000000000ccc70000ccc70000ccc70000ccc7000aaaa0000aaaa0000aaaa0000aaaa000000000000000000000000000
 000000003000000b33303b3b03333b30101110100cccccc00cccccc00cccccc00cccccc00a1f10000a1f10000a1f10000a1f1000000000000000000000000000

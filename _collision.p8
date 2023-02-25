@@ -474,10 +474,12 @@ end
 dialog = collision:new({ text = nil, message = nil, origin = {0, 64} })
 
 function dialog:update()
-	collision.update(self)
 	local m = self:get_message()
 
-	if (m == nil) return
+	if (m == nil) then
+		collision.update(self)
+		return
+	end
 	m:update()
 	if m:is_complete() then
 		self.message = nil

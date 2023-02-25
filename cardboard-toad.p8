@@ -17,9 +17,11 @@ and bring  birthday gifts]],
 [[press x to play]],
 }
 
+
 first_time_to_room12 = true
 
 function enter_room(room)
+  room_count[room] += 1
   if room == 1 then
     music(0)
   end
@@ -27,7 +29,7 @@ function enter_room(room)
   and first_time_to_room12 then
     curr_scene.text = {
     [[there you are!]],
-    [[i was just aboat to
+    [[i was just about to
     hit the pinata.]]
     }
     first_time_to_room12 = false

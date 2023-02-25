@@ -123,10 +123,10 @@ function _init()
 	replace_actors(pl)
 
 	-- donkey
-	pl = make_actor(107,2,2,false)
-	pl.frames=4
-	pl.update=random_actor
-	replace_actors(pl)
+	-- pl = make_actor(107,2,2,false)
+	-- pl.frames=4
+	-- pl.update=random_actor
+	-- replace_actors(pl)
 
 	pl = make_actor(41,2,2,false)
 	pl.frames=4
@@ -145,6 +145,22 @@ function _init()
 	pl.h *= 2
 	pl.frames=4
 	replace_actors(pl)
+
+
+	bowser = make_actor(132,2,2, false)
+	-- bowser = make_actor(96,68,22)
+	bowser.height=2
+	bowser.width=2
+	bowser.w *= 2
+	bowser.h *= 2
+	bowser.frames=2
+	replace_actors(bowser)
+
+	pinata = make_actor(107,2,2, false)
+	-- pl = make_actor(96,68,22)
+	pinata.frames=4
+	replace_actors(pinata)
+	pinata.update=follow_actor(pl, -0.10)
 
 	-- bouncy ball
 	ball = make_actor(33,8.5,11)

@@ -101,7 +101,12 @@ end
 function replace_actors(a)
  
   for place in all(scan_map(function (k) return a:is_sprite(k) end)) do
-    mset(place[1], place[2], 0)
+	if (mget(place[1], place[2]) == 0) return
+	for x=0,a.width - 1 do
+		for y=0,a.height - 1 do
+			mset(place[1] + x, place[2] + y, 0)
+		end
+	end
     o = {}
     setmetatable(o, a)
     a.__index = a
@@ -147,13 +152,14 @@ function _init()
 	replace_actors(pl)
 
 
-	bowser = make_actor(132,2,2, false)
+	bowser = make_actor(165,2,2, false)
 	-- bowser = make_actor(96,68,22)
 	bowser.height=2
 	bowser.width=2
 	bowser.w *= 2
 	bowser.h *= 2
 	bowser.frames=2
+	bowser.update=random_actor
 	replace_actors(bowser)
 
 	pinata = make_actor(107,2,2, false)

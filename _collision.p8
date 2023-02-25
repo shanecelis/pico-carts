@@ -8,6 +8,7 @@ scene = {
 }
 
 intro_message = intro_message or { "hi there" }
+debug = debug or false
 
 function scene:new(o)
   o = o or {}
@@ -60,6 +61,22 @@ function make_actor(k, x, y, is_add)
 	if (is_add == undefined or is_add)	add(actor,a)
 	
 	return a
+end
+
+function enter_room(room)
+	if room == 12 then
+		-- mario's room
+
+	end
+
+	if room == 1 then
+		-- mario's room
+		curr_scene.text = {
+			[[hi, i'm a mario.]],
+			[[let's hit this pinata!]]
+		}
+	end
+
 end
 
 --function page:new(o)
@@ -398,7 +415,7 @@ function follow_actor(follow)
 	end
 end
 
-collision = scene:new()
+collision = scene:new({})
 
 function is_adjacent(room1, room2)
 	return (room1 == room2 - 1
@@ -409,17 +426,19 @@ end
 
 function collision:update()
 	control_player(pl)
-	player_room = what_room(pl)
+	local current_player_room = what_room(pl)
+	if (current_player_room != player_room) enter_room(current_player_room)
+	player_room = current_player_room
 	foreach(actor, move_actor)
 end
 
-function distance(a1, a2)
-	return sqrt((a1.x - a2.x)^2 + (a1.y - a2.y)^2)
-end
+-- function distance(a1, a2)
+-- 	return sqrt((a1.x - a2.x)^2 + (a1.y - a2.y)^2)
+-- end
 
-function sqdistance(a1, a2)
-	return (a1.x - a2.x)^2 + (a1.y - a2.y)^2
-end
+-- function sqdistance(a1, a2)
+-- 	return (a1.x - a2.x)^2 + (a1.y - a2.y)^2
+-- end
 
 function mhdistance(a1, a2)
 	return abs(a1.x - a2.x) + abs(a1.y - a2.y)
@@ -445,11 +464,52 @@ function collision:draw()
 	room_x=flr(pl.x/16)
 	room_y=flr(pl.y/16)
 	camera(room_x*128,room_y*128)
-	
+
 	map()
 	foreach(actor,draw_actor)
 	--replace_actors(actor[1])
 end
+
+
+dialog = collision:new({ text = nil, message = nil, origin = {0, 64} })
+
+function dialog:update()
+	collision.update(self)
+	local m = self:get_message()
+
+	if (m == nil) return
+	m:update()
+	if m:is_complete() then
+		self.message = nil
+		self.text = nil
+	end
+
+end
+
+function dialog:get_message()
+	if self.message == nil and self.text ~= nil then
+		self.message = message:new({}, self.text)
+	end
+	return self.message
+end
+
+function rectborder(x0, y0, w, h, fill, border)
+	rectfill(x0, y0, x0 + w, y0 + h, fill)
+	rect    (x0, y0, x0 + w, y0 + h, border)
+end
+
+function dialog:draw()
+	collision.draw(self)
+	camera(0, 0)
+	local border = 10
+	if (debug) print("room " .. what_room(pl), border, border, 7)
+	local m = self:get_message()
+	if (m == nil) return
+
+	rectborder(border + self.origin[1], border + self.origin[2], 128 - 2 * border, 44, 7, 6)
+	m:draw(border * 1.5, 64 + 1.5 * border)
+end
+
 
 title = scene:new({})
 
@@ -483,7 +543,8 @@ end
 function title:update()
 	local m = title:get_message()
 	m:update()
-	if (m:is_complete() and btnp(5)) curr_scene = collision
+	-- if (m:is_complete() and btnp(5)) curr_scene = collision
+	if (m:is_complete() and btnp(5)) curr_scene = dialog
 end
 
 curr_scene = title

@@ -504,7 +504,7 @@ function dialog:draw()
 	collision.draw(self)
 	camera(0, 0)
 	local border = 10
-	if (debug) print("room " .. what_room(pl), border, border, 7)
+	if (debug) print("room " .. (what_room(pl) + 1), border, border, 7)
 	local m = self:get_message()
 	if (m == nil) return
 

@@ -4,6 +4,7 @@ __lua__
 -- cardboard toad
 
 #include message.p8
+#include particles.p8
 #include _collision.p8
 debug=true
 background_color = 11

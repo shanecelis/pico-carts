@@ -23,44 +23,59 @@ end
 function scene:draw()
 end
 
---curr_scene
+-- all actors
+actors = {}
 
-actor = {} -- all actors
+actor = {
+	k = 0,
+	x = 0,
+	y = 0,
+	width = 1,
+	height = 1,
+	dx = 0,
+	dy = 0,
+	frame = 0,
+	t = 0,
+	friction = 0.15,
+	bounce  = 0.3,
+	frames = 2,
+
+	-- half-width and half-height
+	-- slightly less than 0.5 so
+	-- that will fit through 1-wide
+	-- holes.
+	w = 0.4,
+	h = 0.4,
+}
 
 -- make an actor
 -- and add to global collection
 -- x,y means center of the actor
 -- in map tiles
-function make_actor(k, x, y, is_add)
-	a={
-		k = k,
-		x = x,
-		y = y,
-		width = 1,
-		height = 1,
-		dx = 0,
-		dy = 0,		
-		frame = 0,
-		t = 0,
-		friction = 0.15,
-		bounce  = 0.3,
-		frames = 2,
-		
-		-- half-width and half-height
-		-- slightly less than 0.5 so
-		-- that will fit through 1-wide
-		-- holes.
-		w = 0.4,
-		h = 0.4,
-		update = function(a) end,
-		is_sprite = function(a, s)
-			return s >= a.k and s < a.k + a.frames
-		end
-	}
-	
-	if (is_add == undefined or is_add)	add(actor,a)
-	
-	return a
+function actor:new(a, k, x, y, is_add)
+  a = a or {}
+  setmetatable(a, self)
+  self.__index = self
+  a.k = k
+  a.x = x
+  a.y = y
+  if (is_add == undefined or is_add) add(actors,a)
+
+  return a
+end
+
+function actor:update()
+end
+
+function actor.draw(a)
+	local sx = (a.x * 8) - 4
+	local sy = (a.y * 8) - 4
+	spr(a.k + flr(a.frame) * a.width, sx, sy, a.width, a.height)
+end
+
+
+function actor.is_sprite(a, s)
+	return s >= a.k and s < a.k + a.frames
 end
 
 function enter_room(room)
@@ -122,28 +137,28 @@ function _init()
 	
 	-- make player
 	-- bunny
-	pl = make_actor(21,2,2,false)
+	pl = actor:new({},220,2,2,false)
 	pl.frames=4
 	pl.update=random_actor
 	replace_actors(pl)
 
 	-- donkey
-	-- pl = make_actor(107,2,2,false)
+	-- pl = actor:new({},107,2,2,false)
 	-- pl.frames=4
 	-- pl.update=random_actor
 	-- replace_actors(pl)
 
-	pl = make_actor(41,2,2,false)
+	pl = actor:new({},41,2,2,false)
 	pl.frames=4
 	replace_actors(pl)
 
-	pl = make_actor(37,2,2,false)
+	pl = actor:new({},37,2,2,false)
 	replace_actors(pl)
 
-	-- pl = make_actor(9,2,2)
+	-- pl = actor:new({},9,2,2)
 	-- princess peach
-	pl = make_actor(96,2,2)
-	-- pl = make_actor(96,68,22)
+	pl = actor:new({},96,2,2)
+	-- pl = actor:new({},96,68,22)
 	pl.height=2
 	pl.width=2
 	pl.w *= 2
@@ -152,8 +167,8 @@ function _init()
 	replace_actors(pl)
 
 
-	bowser = make_actor(165,2,2, false)
-	-- bowser = make_actor(96,68,22)
+	bowser = actor:new({},165,2,2, false)
+	-- bowser = actor:new({},96,68,22)
 	bowser.height=2
 	bowser.width=2
 	bowser.w *= 2
@@ -162,8 +177,8 @@ function _init()
 	bowser.update=random_actor
 	replace_actors(bowser)
 
-	toad = make_actor(163,2,2, false)
-	-- toad = make_actor(96,68,22)
+	toad = actor:new({},163,2,2, false)
+	-- toad = actor:new({},96,68,22)
 	toad.height=2
 	toad.width=2
 	toad.w *= 2
@@ -172,14 +187,14 @@ function _init()
 	toad.update=follow_actor(pl)
 	replace_actors(toad)
 
-	pinata = make_actor(107,2,2, false)
-	-- pl = make_actor(96,68,22)
+	pinata = actor:new({},107,2,2, false)
+	-- pl = actor:new({},96,68,22)
 	pinata.frames=4
 	replace_actors(pinata)
 	pinata.update=follow_actor(pl, -0.10)
 
 	-- bouncy ball
-	ball = make_actor(33,8.5,11)
+	ball = actor:new({},33,8.5,11)
 	ball.dx=0.05
 	ball.dy=-0.1
 	ball.friction=0.02
@@ -189,7 +204,7 @@ function _init()
 	-- red ball: bounce forever
 	-- (because no friction and
 	-- max bounce)
-	ball = make_actor(49,22,20)
+	ball = actor:new({},49,22,20)
 	ball.dx=-0.1
 	ball.dy=0.15
 	ball.friction=0
@@ -201,7 +216,7 @@ function _init()
 	-- treasure
 	
 	for i=0,16 do
-		a = make_actor(35,8+cos(i/16)*3,
+		a = actor:new({},35,8+cos(i/16)*3,
 		    10+sin(i/16)*3)
 		a.w=0.25 a.h=0.25
 	end
@@ -209,7 +224,7 @@ function _init()
 
 	-- blue peopleoids
 	
-	a = make_actor(5,7,5)
+	a = actor:new({},91,7,5)
 	a.frames=4
 	a.dx=1/8
 	a.friction=0.1
@@ -218,7 +233,7 @@ function _init()
 	replace_actors(a)
 
 	-- purple guys
-	a = make_actor(204,7,5,false)
+	a = actor:new({},204,7,5,false)
 	a.frames=4
 	a.update=follow_actor(ball)
 	a.dx=1/8
@@ -226,7 +241,7 @@ function _init()
 	replace_actors(a)
 
 
-	a = make_actor(17,7,5,false)
+	a = actor:new({},17,7,5,false)
 	a.update=follow_actor(ball)
 	a.dx=1/8
 	a.friction=0.1
@@ -234,7 +249,7 @@ function _init()
 
 
 	for i=1,6 do
-	 a = make_actor(5,20+i,24)
+	 a = actor:new({},91,20+i,24)
 	 a.update=follow_actor(ball)
 	 a.frames=4
 	 a.dx=1/8
@@ -283,7 +298,7 @@ end
 -- the fastest moving actor)
 
 function solid_actor(a, dx, dy)
-	for a2 in all(actor) do
+	for a2 in all(actors) do
 		if a2 != a then
 		
 			local x=(a.x+dx) - a2.x
@@ -356,7 +371,7 @@ function collide_event(a1,a2)
 	
 	-- player collects treasure
 	if (a1==pl and a2.k==35) then
-		del(actor,a2)
+		del(actors,a2)
 		sfx(3)
 		return true
 	end
@@ -366,7 +381,7 @@ function collide_event(a1,a2)
 	return false
 end
 
-function move_actor(a)
+function actor.move(a)
 	local r = what_room(a)
 	if (r == player_room
 	    or is_adjacent(r, player_room)) then
@@ -461,7 +476,7 @@ function collision:update()
 	local current_player_room = what_room(pl)
 	if (current_player_room != player_room) enter_room(current_player_room + 1)
 	player_room = current_player_room
-	foreach(actor, move_actor)
+	foreach(actors, actor.move)
 end
 
 -- function distance(a1, a2)
@@ -474,12 +489,6 @@ end
 
 function mhdistance(a1, a2)
 	return abs(a1.x - a2.x) + abs(a1.y - a2.y)
-end
-
-function draw_actor(a)
-	local sx = (a.x * 8) - 4
-	local sy = (a.y * 8) - 4
-	spr(a.k + flr(a.frame) * a.width, sx, sy, a.width, a.height)
 end
 
 function what_room(a)
@@ -498,7 +507,7 @@ function collision:draw()
 	camera(room_x*128,room_y*128)
 
 	map()
-	foreach(actor,draw_actor)
+	foreach(actors,actor.draw)
 	--replace_actors(actor[1])
 end
 

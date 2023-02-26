@@ -17,7 +17,7 @@ programmed by shane]] or credits_text
 
 room_color = {}
 room_color[1] = 1
-player_room = 0
+player_room = -1
 
 function scene:new(o)
   o = o or {}

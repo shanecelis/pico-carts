@@ -15,6 +15,10 @@ by ryland
 
 programmed by shane]] or credits_text
 
+room_color = {}
+room_color[1] = 1
+player_room = 0
+
 function scene:new(o)
   o = o or {}
   setmetatable(o, self)
@@ -639,7 +643,8 @@ function what_roomish(a)
 end
 
 function collision:draw()
-	cls(background_color)
+
+	cls(room_color[player_room + 1] or background_color)
 	
 	room_x=flr(pl.x/16)
 	room_y=flr(pl.y/16)

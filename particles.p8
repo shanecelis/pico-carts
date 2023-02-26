@@ -45,6 +45,27 @@ function particle.create()
  return p
 end
 
+emitters = {}
+
+function emitters:new(o)
+  o = o or {}
+  setmetatable(o, self)
+  self.__index = self
+  return o
+end
+
+function emitters:draw()
+  for e in all(self) do
+    e:draw()
+  end
+end
+
+function emitters:update(delta_time)
+  for e in all(self) do
+    e:update(delta_time)
+  end
+end
+
 function particle:set_values(x, y, gravity, colours, sprites, life, angle, speed_initial, speed_final, size_initial, size_final)
  self.pos = vec(x,y)
  self.life_initial, self.life, self.dead, self.gravity = life, life, false, gravity

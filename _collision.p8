@@ -9,6 +9,11 @@ scene = {
 
 intro_message = intro_message or { "hi there" }
 debug = debug or false
+credits_text = [[cardboard toad
+
+by ryland
+
+programmed by shane]] or credits_text
 
 function scene:new(o)
   o = o or {}
@@ -143,6 +148,55 @@ function confetti()
  ps_set_life(left, 0.4, 1)
  ps_set_angle(left, 30, 45)
  return left
+end
+
+function stars()
+
+	local my_emitters = emitters:new()
+  local front = emitter.create(0, 64, 0.2, 0)
+  ps_set_area(front, 0, 128)
+  ps_set_colours(front, {7})
+  ps_set_size(front, 0)
+  ps_set_speed(front, 34, 34, 10)
+  ps_set_life(front, 3.5)
+  ps_set_angle(front, 0, 0)
+  add(my_emitters, front)
+  local midfront = front.clone(front)
+  ps_set_frequency(midfront, 0.15)
+  ps_set_life(midfront, 4.5)
+  ps_set_colours(midfront, {6})
+  ps_set_speed(midfront, 26, 26, 5)
+  add(my_emitters, midfront)
+  local midback = front.clone(front)
+  ps_set_life(midback, 6.8)
+  ps_set_colours(midback, {5})
+  ps_set_speed(midback, 18, 18, 5)
+  ps_set_frequency(midback, 0.1)
+  add(my_emitters, midback)
+  local back = front.clone(front)
+  ps_set_frequency(back, 0.07)
+  ps_set_life(back, 11)
+  ps_set_colours(back, {1})
+  ps_set_speed(back, 10, 10, 5)
+  add(my_emitters, back)
+  local special = emitter.create(64, 64, 0.2, 0)
+  ps_set_area(special, 128, 128)
+  ps_set_angle(special, 0, 0)
+  ps_set_frequency(special, 0.01)
+  -- ps_set_sprites(special, {78, 79, 80, 81, 82, 83, 84})
+  ps_set_sprites(special, {107, 108, 109, 110})
+  ps_set_speed(special, 30, 30, 15)
+  ps_set_life(special, 5)
+  add(my_emitters, special)
+  local front = emitter.create(0, 64, 0.2, 0)
+  ps_set_area(front, 0, 128)
+  ps_set_colours(front, {7})
+  ps_set_size(front, 0)
+  ps_set_speed(front, 34, 34, 10)
+  ps_set_life(front, 3.5)
+  ps_set_angle(front, 0, 0)
+  add(my_emitters, front)
+  return my_emitters
 end
 
 actor_with_particles = actor:new {
@@ -661,7 +715,27 @@ function title:update()
 	if (m:is_complete() and btnp(5)) curr_scene = dialog
 end
 
+credits = scene:new {
+	emitter = stars(),
+	x = 35,
+	y = 128,
+	t = 0,
+	speed = -4,
+}
+
+function credits:update()
+	self.t += self.speed * delta_time
+	self.emitter:update(delta_time)
+end
+
+function credits:draw()
+	cls(0)
+	self.emitter:draw()
+	print(credits_text, self.x, self.t + self.y)
+end
+
 curr_scene = title
+-- curr_scene = credits
 
 function _update()
 

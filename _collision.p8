@@ -27,9 +27,9 @@ end
 actors = {}
 
 actor = {
-	k = 0,
-	x = 0,
-	y = 0,
+	k = nil,
+	x = nil,
+	y = nil,
 	width = 1,
 	height = 1,
 	dx = 0,
@@ -52,15 +52,14 @@ actor = {
 -- and add to global collection
 -- x,y means center of the actor
 -- in map tiles
-function actor:new(a, k, x, y, is_add)
+function actor:new(a, k, x, y)
   a = a or {}
   setmetatable(a, self)
   self.__index = self
-  a.k = k
-  a.x = x
-  a.y = y
-  if (is_add == undefined or is_add) add(actors,a)
-
+  a.k = k or a.k
+  a.x = x or a.x
+  a.y = y or a.y
+  -- if (is_add == undefined or is_add) add(actors,a)
   return a
 end
 
@@ -122,25 +121,67 @@ function replace_actors(a)
 			mset(place[1] + x, place[2] + y, 0)
 		end
 	end
-    o = {}
-    setmetatable(o, a)
-    a.__index = a
+	o = a:new({})
+	-- o = a.clone()
+    -- o = {}
+    -- setmetatable(o, a)
+    -- o.__index = a
     o.x = place[1]
     o.y = place[2]
 
-    add(actor,o)
+    add(actors,o)
   end
 end
 
+function confetti()
+
+ local left = emitter.create(0, 0, 5, 10, false, false)
+ ps_set_size(left, 0, 0, 1)
+ ps_set_speed(left, 10, 20, 10)
+ ps_set_colours(left, {7, 8, 9, 10, 11, 12, 13, 14, 15})
+ ps_set_rnd_colour(left, true)
+ ps_set_life(left, 0.4, 1)
+ ps_set_angle(left, 30, 45)
+ return left
+end
+
+actor_with_particles = actor:new {
+  emitter = nil
+}
+
+function actor_with_particles:new(o, k, x, y)
+  o = actor.new(self, o, k, x, y)
+  if (o.emitter) o.emitter = o.emitter:clone()
+  return o
+end
+
+function actor_with_particles:update()
+	actor.update(self)
+	if self.emitter then
+		self.emitter.pos.x = self.x * 8 - 4
+		self.emitter.pos.y = self.y * 8 - 4
+		self.emitter.p_angle = atan2(-self.dx, -self.dy)
+		self.emitter:update(delta_time)
+	end
+end
+function actor_with_particles:draw()
+	actor.draw(self)
+	if (self.emitter) self.emitter:draw()
+end
+
 function _init()
+
+ prev_time = time()
 	-- create some actors
-	
+
 	-- make player
 	-- bunny
 	pl = actor:new({},220,2,2,false)
 	pl.frames=4
 	pl.update=random_actor
 	replace_actors(pl)
+	-- add(actors, pl)
+
 
 	-- donkey
 	-- pl = actor:new({},107,2,2,false)
@@ -164,7 +205,29 @@ function _init()
 	pl.w *= 2
 	pl.h *= 2
 	pl.frames=4
-	replace_actors(pl)
+	add(actors, pl)
+	-- replace_actors(pl)
+
+
+	pinata = actor_with_particles:new({
+			emitter = confetti(),
+
+			follow = follow_actor(pl, -0.10)
+					}, 107,2,2, false)
+	-- pl = actor:new({},96,68,22)
+	pinata.frames=4
+	-- pinata.update=follow_actor(pl, -0.10)
+	function pinata:update()
+		actor_with_particles.update(self)
+		local mhspd = abs(self.dx) + abs(self.dy)
+		self.emitter.emitting = mhspd > 0.2
+		self.follow(self)
+	end
+	function pinata:draw()
+		actor_with_particles.draw(self)
+
+	end
+	replace_actors(pinata)
 
 
 	bowser = actor:new({},165,2,2, false)
@@ -187,11 +250,6 @@ function _init()
 	toad.update=follow_actor(pl)
 	replace_actors(toad)
 
-	pinata = actor:new({},107,2,2, false)
-	-- pl = actor:new({},96,68,22)
-	pinata.frames=4
-	replace_actors(pinata)
-	pinata.update=follow_actor(pl, -0.10)
 
 	-- bouncy ball
 	ball = actor:new({},33,8.5,11)
@@ -199,6 +257,7 @@ function _init()
 	ball.dy=-0.1
 	ball.friction=0.02
 	ball.bounce=1
+	add(actors, ball)
 	replace_actors(ball)
 
 	-- red ball: bounce forever
@@ -209,6 +268,7 @@ function _init()
 	ball.dy=0.15
 	ball.friction=0
 	ball.bounce=1
+	add(actors, ball)
 --	?ball:is_sprite(50)
 	replace_actors(ball)
 --	stop()
@@ -218,6 +278,7 @@ function _init()
 	for i=0,16 do
 		a = actor:new({},35,8+cos(i/16)*3,
 		    10+sin(i/16)*3)
+		add(actors, a)
 		a.w=0.25 a.h=0.25
 	end
 	replace_actors(a)
@@ -230,6 +291,7 @@ function _init()
 	a.friction=0.1
 	-- a.update=follow_actor(pl)
 	a.update=follow_actor(ball)
+	add(actors, a)
 	replace_actors(a)
 
 	-- purple guys
@@ -254,6 +316,7 @@ function _init()
 	 a.frames=4
 	 a.dx=1/8
 	 a.friction=0.1
+		add(actors, a)
 	end
 	
 end
@@ -476,7 +539,12 @@ function collision:update()
 	local current_player_room = what_room(pl)
 	if (current_player_room != player_room) enter_room(current_player_room + 1)
 	player_room = current_player_room
-	foreach(actors, actor.move)
+	-- foreach(actors, actor.move)
+
+	for a in all(actors) do
+		a:move()
+	end
+
 end
 
 -- function distance(a1, a2)
@@ -507,7 +575,10 @@ function collision:draw()
 	camera(room_x*128,room_y*128)
 
 	map()
-	foreach(actors,actor.draw)
+	for a in all(actors) do
+		a:draw()
+	end
+	-- foreach(actors,actor.draw)
 	--replace_actors(actor[1])
 end
 
@@ -593,6 +664,8 @@ end
 curr_scene = title
 
 function _update()
+
+ update_time()
 	curr_scene:update()
 end
 

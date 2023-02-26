@@ -52,7 +52,8 @@ function particle:set_values(x, y, gravity, colours, sprites, life, angle, speed
  -- the 1125 number was 180 in the original calculation,
  -- but i set it to 1131 to make the angle pased in equal to 360 on a full revolution
  -- don't ask me why it's 1131, i don't know. maybe it's odd because i rounded pi?
- local angle_radians = angle * 3.14159 / 1131
+ -- local angle_radians = angle * 3.14159 / 1131
+ local angle_radians = angle
  self.velocity = vec(speed_initial*cos(angle_radians), speed_initial*sin(angle_radians))
  self.vel_initial = vec(self.velocity.x, self.velocity.y)
  self.vel_final = vec(speed_final*cos(angle_radians), speed_final*sin(angle_radians))
@@ -162,7 +163,7 @@ function emitter.create(x,y, frequency, max_p, burst, gravity)
   gravity = gravity or false,
   burst = burst or false,
   burst_amount = max_p,
-  use_pooling = true,
+  use_pooling = false,
   pool = {},
   rnd_colour = false,
   rnd_sprite = false,
@@ -187,8 +188,8 @@ function emitter.create(x,y, frequency, max_p, burst, gravity)
   p_size_spread_final = 0
  }
  setmetatable (p, emitter)
- if (p.max_p < 1) then
-   p.use_pooling = false end
+ -- if (p.max_p < 1) then
+ --   p.use_pooling = false end
 
  return p
 end
@@ -241,7 +242,7 @@ function emitter:get_new_particle()
   y += flr(rnd(height)) - (height / 2)
  end
 
- local p = {}
+ local p = nil
  if (self.use_pooling and #self.particles + #self.pool == self.max_p) then
   p = self.pool[1]
   del(self.pool, p)

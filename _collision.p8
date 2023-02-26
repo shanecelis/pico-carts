@@ -294,6 +294,24 @@ function _init()
 	bowser.update=random_actor
 	replace_actors(bowser)
 
+	luigi = actor:new({},208,2,2, false)
+	luigi.height=3
+	luigi.width=2
+	luigi.w *= 2
+	luigi.h *= 3
+	luigi.frames=1
+	-- luigi.update=random_actor
+	replace_actors(luigi)
+
+	mario = actor:new({},144,2,2, false)
+	mario.height=3
+	mario.width=2
+	mario.w *= 2
+	mario.h *= 3
+	mario.frames=1
+	-- mario.update=random_actor
+	replace_actors(mario)
+
 	toad = actor:new({},163,2,2, false)
 	-- toad = actor:new({},96,68,22)
 	toad.height=2
@@ -303,7 +321,6 @@ function _init()
 	toad.frames=1
 	toad.update=follow_actor(pl)
 	replace_actors(toad)
-
 
 	-- bouncy ball
 	ball = actor:new({},33,8.5,11)

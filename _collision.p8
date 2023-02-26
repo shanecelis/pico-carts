@@ -162,6 +162,16 @@ function _init()
 	bowser.update=random_actor
 	replace_actors(bowser)
 
+	toad = make_actor(163,2,2, false)
+	-- toad = make_actor(96,68,22)
+	toad.height=2
+	toad.width=2
+	toad.w *= 2
+	toad.h *= 2
+	toad.frames=1
+	toad.update=follow_actor(pl)
+	replace_actors(toad)
+
 	pinata = make_actor(107,2,2, false)
 	-- pl = make_actor(96,68,22)
 	pinata.frames=4

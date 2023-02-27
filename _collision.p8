@@ -12,8 +12,7 @@ debug = debug or false
 credits_text = [[cardboard toad
 
 by ryland
-
-programmed by shane]] or credits_text
+]] or credits_text
 
 room_color = {}
 room_color[1] = 1
@@ -316,14 +315,15 @@ function _init()
 	-- mario.update=random_actor
 	replace_actors(mario)
 
-	toad = actor:new({},163,2,2, false)
+	toad = actor:new({},169,2,2, false)
 	-- toad = actor:new({},96,68,22)
 	toad.height=2
-	toad.width=2
-	toad.w *= 2
 	toad.h *= 2
-	toad.frames=1
-	toad.update=follow_actor(pl)
+	toad.frames=4
+	toad.follow=follow_actor(pl)
+	function toad:update()
+		if (mhdistance(pl, self) > 5) self:follow()
+	end
 	replace_actors(toad)
 
 	-- bouncy ball
@@ -349,24 +349,31 @@ function _init()
 --	stop()
 --	break
 	-- treasure
-	
-	for i=0,16 do
-		a = actor:new({},35,8+cos(i/16)*3,
-		    10+sin(i/16)*3)
-		add(actors, a)
-		a.w=0.25 a.h=0.25
-	end
+	-- for i=0,16 do
+	local i = 0
+	a = actor:new({},35,8+cos(i/16)*3,
+						10+sin(i/16)*3)
+		-- add(actors, a)
+	a.w=0.25 a.h=0.25
+	-- end
+	replace_actors(a)
+
+	a = actor:new({},52,8+cos(i/16)*3,
+						10+sin(i/16)*3)
+		-- add(actors, a)
+	a.w=0.25 a.h=0.25
+	a.frames = 1
+	-- end
 	replace_actors(a)
 
 	-- blue peopleoids
-	
 	a = actor:new({},91,7,5)
 	a.frames=4
 	a.dx=1/8
 	a.friction=0.1
 	-- a.update=follow_actor(pl)
 	a.update=follow_actor(ball)
-	add(actors, a)
+	-- add(actors, a)
 	replace_actors(a)
 
 	-- purple guys
@@ -377,7 +384,7 @@ function _init()
 	a.friction=0.1
 	replace_actors(a)
 
-
+	-- cool guy
 	a = actor:new({},17,7,5,false)
 	a.update=follow_actor(ball)
 	a.dx=1/8
@@ -385,14 +392,14 @@ function _init()
 	replace_actors(a)
 
 
-	for i=1,6 do
-	 a = actor:new({},91,20+i,24)
-	 a.update=follow_actor(ball)
-	 a.frames=4
-	 a.dx=1/8
-	 a.friction=0.1
-		add(actors, a)
-	end
+	-- for i=1,6 do
+	--  a = actor:new({},91,20+i,24)
+	--  a.update=follow_actor(ball)
+	--  a.frames=4
+	--  a.dx=1/8
+	--  a.friction=0.1
+	-- 	add(actors, a)
+	-- end
 	
 end
 
@@ -659,7 +666,7 @@ function collision:draw()
 end
 
 
-dialog = collision:new({ text = nil, message = nil, origin = {0, 64} })
+dialog = collision:new({ text = nil, message = nil, origin = {0, 0} })
 
 function dialog:update()
 	local m = self:get_message()
@@ -670,6 +677,8 @@ function dialog:update()
 	end
 	m:update()
 	if m:is_complete() then
+		if (self.on_complete) self:on_complete()
+		self.on_complete = nil
 		self.message = nil
 		self.text = nil
 	end
@@ -697,7 +706,7 @@ function dialog:draw()
 	if (m == nil) return
 
 	rectborder(border + self.origin[1], border + self.origin[2], 128 - 2 * border, 44, 7, 6)
-	m:draw(border * 1.5, 64 + 1.5 * border)
+	m:draw(self.origin[1] + border * 1.5, self.origin[2] + 1.5 * border)
 end
 
 
@@ -762,6 +771,7 @@ curr_scene = title
 function _update()
 
  update_time()
+ coroutines:update()
 	curr_scene:update()
 end
 

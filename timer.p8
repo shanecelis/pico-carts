@@ -31,7 +31,7 @@ end
 coroutines = {}
 
 function coroutines:start(f, ...)
-  add(self, { co = cocreate(f), arg = arg })
+  add(self, { co = cocreate(f), args = {...} })
 end
 
 -- https://wiki.zlg.space/programming/pico8/recipes/coroutine
@@ -43,7 +43,7 @@ function coroutines:update()
       t = c.co
       s = costatus(t)
       if s != 'dead' then
-        active, exception = coresume(t, unpack(c.arg))
+        active, exception = coresume(t, unpack(c.args))
         if exception then
           printh(trace(t, exception))
           stop(trace(t, exception))

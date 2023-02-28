@@ -748,13 +748,16 @@ end
 
 credits = scene:new {
 	emitter = stars(),
+	-- x = 25,
 	x = 35,
-	y = 128,
+	y = 140,
 	t = 0,
+	f = 0,
 	speed = -4,
 }
 
 function credits:update()
+	self.f += 1
 	self.t += self.speed * delta_time
 	self.emitter:update(delta_time)
 end
@@ -762,11 +765,15 @@ end
 function credits:draw()
 	cls(0)
 	self.emitter:draw()
+	if (self.f < 100) then
+		rectfill(0,0, 128 - self.f, 128, 0)
+		print("the end", 50, 64, 7)
+	end
 	print(credits_text, self.x, self.t + self.y)
 end
 
 curr_scene = title
--- curr_scene = credits
+curr_scene = credits
 
 function _update()
 

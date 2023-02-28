@@ -323,7 +323,7 @@ function _init()
 	toad.follow=follow_actor(pl)
 	toad.distance=5
 	function toad:update()
-		if (mhdistance(pl, self) > toad.distance) self:follow()
+		if (mhdistance(pl, self) > toad_distance) self:follow()
 	end
 	replace_actors(toad)
 

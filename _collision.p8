@@ -321,8 +321,9 @@ function _init()
 	toad.h *= 2
 	toad.frames=4
 	toad.follow=follow_actor(pl)
+	toad.distance=5
 	function toad:update()
-		if (mhdistance(pl, self) > 5) self:follow()
+		if (mhdistance(pl, self) > toad.distance) self:follow()
 	end
 	replace_actors(toad)
 

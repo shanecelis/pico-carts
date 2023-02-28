@@ -773,7 +773,7 @@ function credits:draw()
 end
 
 curr_scene = title
-curr_scene = credits
+-- curr_scene = credits
 
 function _update()
 

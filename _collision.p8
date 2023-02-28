@@ -17,6 +17,7 @@ by ryland
 room_color = {}
 room_color[1] = 1
 player_room = -1
+toad_distance = 5
 
 function scene:new(o)
   o = o or {}
@@ -758,7 +759,7 @@ credits = scene:new {
 	emitter = stars(),
 	-- x = 25,
 	x = 35,
-	y = 140,
+	y = 145,
 	t = 0,
 	f = 0,
 	speed = -4,
@@ -781,12 +782,13 @@ function credits:draw()
 end
 
 curr_scene = title
--- curr_scene = credits
+curr_scene = credits
 
 function _update()
-
- update_time()
- coroutines:update()
+ if curr_scene.text == nil then
+	update_time()
+	coroutines:update()
+ end
 	curr_scene:update()
 end
 

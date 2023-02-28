@@ -43,13 +43,13 @@ function coroutines:update()
       t = c.co
       s = costatus(t)
       if s != 'dead' then
-        active, exception = coresume(t, c.arg)
+        active, exception = coresume(t, unpack(c.arg))
         if exception then
           printh(trace(t, exception))
           stop(trace(t, exception))
         end
       else
-        del(self, c)
+        del(coroutines, c)
       end
     end
   end

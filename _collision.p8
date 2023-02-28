@@ -597,10 +597,10 @@ function follow_actor(follow, accel)
 		if rnd(1) < 0.1 then
 			local x = sgn(follow.x - a.x)
 			local y = sgn(follow.y - a.y)
-			if what_room(a) != what_room(follow) then
-				x = 0
-				y = 0
-			end
+			-- if what_room(a) != what_room(follow) then
+			-- 	x = 0
+			-- 	y = 0
+			-- end
 			accel = accel or 0.05
 			a.dx += accel * (x + (rnd(2) - 1))
 			a.dy += accel * (y + (rnd(2) - 1))

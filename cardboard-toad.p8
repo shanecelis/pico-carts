@@ -11,14 +11,15 @@ __lua__
 -- [x] noise from hitting pinata
 -- [ ] toad following
 -- [ ] toad says il help you
--- [ ] cart image
+-- [x] cart image
 #include message.p8
 #include particles.p8
 #include timer.p8
 #include _collision.p8
 
-debug=true
+debug=false
 background_color = 11
+toad_distance = 0  
 
 intro_message = {
 [[you are inveted to marios 
@@ -36,8 +37,8 @@ cardboard toad
 by ryland von hunter
 art by ryland
 music by ryland
-  programing 
-  by shane
+programing by 
+  shane and ryland
 if its your birthday
  dont let your
  pinata run away!
@@ -77,6 +78,12 @@ function enter_room(room)
     away! can you please
     catch it?.]]
     }
+    coroutines:start(function() 
+      wait(9)
+      curr_scene.text = {
+      [[i'l help.  ]]
+      }
+    end)
   end
   if room == 12 
   and room_count[12] == 1 then

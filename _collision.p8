@@ -26,6 +26,9 @@ function scene:new(o)
   return o
 end
 
+function scene:enter()
+end
+
 function scene:update()
 end
 
@@ -765,6 +768,14 @@ credits = scene:new {
 	speed = -4,
 }
 
+function title:enter()
+	music(4, 600)
+end
+
+function credits:enter()
+	music(4, 600)
+end
+
 function credits:update()
 	self.f += 1
 	self.t += self.speed * delta_time
@@ -782,6 +793,7 @@ function credits:draw()
 end
 
 curr_scene = title
+curr_scene:enter()
 -- curr_scene = credits
 
 function _update()

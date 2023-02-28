@@ -731,18 +731,16 @@ function title:draw()
 	if cart_screen then
 		print("by ryland von hunter", 24, 90, 7)
 		print("(c) 2023-02-28", 24, 100, 7)
-
 	else
+		rectfill(border, 64 + border, 127 - border, 127 - border, 7)
+		rect(border, 64 + border, 127 - border, 127 - border, 6)
+		line(border, 64 + border,
+			63, 64 + 3 * border, 6)
 
-	-- rectfill(border, 64 + border, 127 - border, 127 - border, 7)
-	-- rect(border, 64 + border, 127 - border, 127 - border, 6)
-	-- line(border, 64 + border,
-	-- 	 63, 64 + 3 * border, 6)
+		line(63, 64 + 3 * border,
+			127 - border, 64 + border, 6)
 
-	-- line(63, 64 + 3 * border,
-	-- 	 127 - border, 64 + border, 6)
-
-	-- title:get_message():draw(border * 1.5, 64 + 1.5 * border)
+		title:get_message():draw(border * 1.5, 64 + 1.5 * border)
 	end
 
 end

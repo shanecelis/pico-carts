@@ -712,6 +712,8 @@ end
 
 title = scene:new({})
 
+cart_screen = false
+
 function title:get_message()
 	if self.message == nil then
 		self.message = message:new({}, intro_message)
@@ -726,15 +728,22 @@ function title:draw()
 	map()
 	camera(0, 0)
 	local border = 10
-	rectfill(border, 64 + border, 127 - border, 127 - border, 7)
-	rect(border, 64 + border, 127 - border, 127 - border, 6)
-	line(border, 64 + border,
-		 63, 64 + 3 * border, 6)
+	if cart_screen then
+		print("by ryland von hunter", 24, 90, 7)
+		print("(c) 2023-02-28", 24, 100, 7)
 
-	line(63, 64 + 3 * border,
-		 127 - border, 64 + border, 6)
+	else
 
-	title:get_message():draw(border * 1.5, 64 + 1.5 * border)
+	-- rectfill(border, 64 + border, 127 - border, 127 - border, 7)
+	-- rect(border, 64 + border, 127 - border, 127 - border, 6)
+	-- line(border, 64 + border,
+	-- 	 63, 64 + 3 * border, 6)
+
+	-- line(63, 64 + 3 * border,
+	-- 	 127 - border, 64 + border, 6)
+
+	-- title:get_message():draw(border * 1.5, 64 + 1.5 * border)
+	end
 
 end
 

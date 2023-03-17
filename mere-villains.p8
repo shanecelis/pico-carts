@@ -4,6 +4,8 @@ __lua__
 -- mere villains
 -- by shane celis
 
+start_page = 0
+
 pages = {
 -- title
 [0] = [[
@@ -14,15 +16,15 @@ by shane celis (c) 2022/03/06
 hit ➡️  to go to next
 page.
 ]],
--- [[ junk page ]],
 -- p1
 {[[
-...
+... wtf
 ]]
 }
 ,
 -- p2
 {[[
+]]
 },
 -- p3
 {[[
@@ -56,6 +58,7 @@ buck naked.
 -- _book = book:new({ page_class = cardinal_page }, pages)
 _book = book:new(nil, pages)
 records = nil
+_book:set_page(_book.pages[start_page], false)
 
 function _init()
   scan_sprites()

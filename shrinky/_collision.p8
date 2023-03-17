@@ -270,6 +270,11 @@ function _init()
 	add(actors, pl)
 	-- replace_actors(pl)
 
+	fairy = actor:new({},14)
+	fairy.frames=2
+	-- add(actors, fairy)
+	replace_actors(fairy)
+
 
 	pinata = actor_with_particles:new({
 			emitter = confetti(),
@@ -536,9 +541,6 @@ function actor.move(a)
 	local r = what_room(a)
 	if (r == player_room
 	    or is_adjacent(r, player_room)) then
-		-- or mhdistance(a, pl) < 5 then
-	-- if (what_room(a) != player_room) return
-
 	-- only move actor along x
 	-- if the resulting position
 	-- will not overlap with a wall
@@ -625,7 +627,7 @@ end
 function collision:update()
 	control_player(pl)
 	local current_player_room = what_room(pl)
-	if (current_player_room != player_room) enter_room(current_player_room + 1)
+	if (current_player_room != player_room) enter_room(current_player_room)
 	player_room = current_player_room
 	-- foreach(actors, actor.move)
 
@@ -648,7 +650,7 @@ function mhdistance(a1, a2)
 end
 
 function what_room(a)
-	return flr(a.x/16) + 8 * flr(a.y/16)
+	return flr(a.x/16) + 8 * flr(a.y/16) + 1
 end
 
 function what_roomish(a)
@@ -657,7 +659,7 @@ end
 
 function collision:draw()
 
-	cls(room_color[player_room + 1] or background_color)
+	cls(room_color[player_room] or background_color)
 	
 	room_x=flr(pl.x/16)
 	room_y=flr(pl.y/16)
@@ -707,7 +709,7 @@ function dialog:draw()
 	collision.draw(self)
 	camera(0, 0)
 	local border = 10
-	if (debug) print("room " .. (what_room(pl) + 1), border, border, 7)
+	if (debug) print("room " .. what_room(pl), border, border, 7)
 	local m = self:get_message()
 	if (m == nil) return
 

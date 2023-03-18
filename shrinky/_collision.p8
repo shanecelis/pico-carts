@@ -250,9 +250,9 @@ function _init()
 	-- pl.update=random_actor
 	-- replace_actors(pl)
 
-	pl = actor:new({},41,2,2,false)
-	pl.frames=4
-	replace_actors(pl)
+	-- pl = actor:new({},41,2,2,false)
+	-- pl.frames=4
+	-- replace_actors(pl)
 
 	pl = actor:new({},37,2,2,false)
 	replace_actors(pl)

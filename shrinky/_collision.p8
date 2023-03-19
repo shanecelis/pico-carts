@@ -233,6 +233,7 @@ end
 
 function _init()
 
+
  prev_time = time()
 	-- create some actors
 
@@ -412,7 +413,8 @@ function _init()
 	--  a.friction=0.1
 	-- 	add(actors, a)
 	-- end
-	
+
+	if (my_init) my_init()
 end
 
 -- for any given point on the

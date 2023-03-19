@@ -157,9 +157,10 @@ function confetti()
  return left
 end
 
+
 function stars()
 
-	local my_emitters = emitters:new()
+  local my_emitters = emitters:new()
   local front = emitter.create(0, 64, 0.2, 0)
   ps_set_area(front, 0, 128)
   ps_set_colours(front, {7})
@@ -325,17 +326,17 @@ function _init()
 	-- mario.update=random_actor
 	replace_actors(mario)
 
-	toad = actor:new({},169,2,2, false)
-	-- toad = actor:new({},96,68,22)
-	toad.height=2
-	toad.h *= 2
-	toad.frames=4
-	toad.follow=follow_actor(pl)
-	toad.distance=5
-	function toad:update()
-		if (mhdistance(pl, self) > toad_distance) self:follow()
-	end
-	replace_actors(toad)
+	-- toad = actor:new({},169,2,2, false)
+	-- -- toad = actor:new({},96,68,22)
+	-- toad.height=2
+	-- toad.h *= 2
+	-- toad.frames=4
+	-- toad.follow=follow_actor(pl)
+	-- toad.distance=5
+	-- function toad:update()
+	-- 	if (mhdistance(pl, self) > toad_distance) self:follow()
+	-- end
+	-- replace_actors(toad)
 
 	-- bouncy ball
 	ball = actor:new({},33,8.5,11)

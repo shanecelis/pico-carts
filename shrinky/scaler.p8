@@ -30,7 +30,13 @@ function _draw()
  print((stat(7)).." fps",0,12,9)
  -- scalespr(32,64,scale/2,ang)
  -- scalespr2(96,64,scale,ang)
- scalespr2(64,64,scale,ang)
+ -- scalespr2(64,64,scale,ang)
+ -- sprr(1,64,64,2,2,false,false,scale,ang,8,8)
+ sprr(1,64,64,2,2,nil,false,nil,45,8,8)
+ sprr(1,64,64,2,2)
+ -- spr(1,64,64,2,2)
+ -- render_poly(mulv(mulm(translate(64,64),mulm(_scale(scale),rotate(-ang/360))), box(16)))
+ -- sprr(1,64,64,2,2,false,false,scale,ang, 4, 4)
  -- drawpixel(32,32, 10, ang, 7)
 end
 
@@ -67,61 +73,52 @@ function scalespr(posx,posy,s,a)
  end
 end
 
-function scalespr2(posx,posy,s,a)
- -- these nine lines set origin
- -- local ox=posx
- -- local oy=posy
- -- local xdist=abs((posx+s/2)-posx)*8
- -- local ydist=abs((posy+s/2)-posy)*8
- -- local xsq=xdist*xdist
- -- local ysq=ydist*ydist
- -- local rad=sqrt(xsq+ysq)
- -- local x0=angle(ox,oy,rad,a+225).x
- -- local y0=angle(ox,oy,rad,a+225).y
- -- -- set x1 to posx and y1 to posy to
- -- --  move the origin to the top left
- -- local x1=x0
- -- local y1=y0
+function sprr(n,x,y,w,h,flip_x,flip_y,s,a,ox,oy)
+ w = w or 1
+ h = h or 1
+ s = s or 1
+ a = a or 0
+ ox = ox or 0
+ oy = oy or 0
  local vs = mulv(translate(-1/2, -1/2), box(1))
- -- local m = mulm(translate(posx, posy),mulm(rotate(-ang/360),_scale(s)))
+ local m = mulm(rotate(-a/360),_scale(s))
+ local big = mulm(m, translate(-ox, -oy))
+ local v1 = {}
+ local m1 = {}
+ local ws = {}
+ local sx = n % 16 * 8 - 1
+ local sy = flr(n/16) * 16 - 1
+ for yy=1,8*h do
+  for xx=1,8*w do
+    local c = sget(flip_x and sx + 8*w - xx or sx + xx,
+                   flip_y and sy + 8*h - yy or sy + yy)
+    -- c = (xx + yy - 1) % 16
+    mulv(big, {xx, yy, 1}, v1)
+    mulm(translate(x + v1[1] + ox, y + v1[2] + oy), m, m1)
+    -- render_polyy(mulv(m1, vs, w), sprite[xx][yy])
+    render_poly(mulv(m1, vs, ws), c)
+    -- render_polyy(mulv(m1, vb, w), (xx + yy - 1) % 16)
+  end
+ end
+end
+
+function scalespr2(posx,posy,s,a)
+ local vs = mulv(translate(-1/2, -1/2), box(1))
  local m = mulm(rotate(-ang/360),_scale(s))
- -- local big = mulm(_scale(8), m)
- -- local big = mulm(rotate(-ang/360),_scale(s*8))
- -- local big = mulm(_scale(8), m)
  local big = mulm(m, translate(-4, -4))
  local v1 = {}
  local m1 = {}
  local w = {}
+ local n = 1
  for y=1,8 do
-  local x = 1
-  while x <= 8 do
-  -- for x=1,8 do
-    local c = 1
-    while c + x <= 8 and sprite[x + c][y] == sprite[x][y] do
-      c += 1
-    end
-    local vb
-    if c != 1 then
-      vb = mulv(translate(-1/2, -1/2), box(c, 1))
-    else
-      vb = vs
-    end
-
-   -- drawpixel(x1,y1,s,ang,sprite[x][y])
-    -- local v1 = mulv(mulm(translate(posx, posy), m), {x, y, 1})
+  for x=1,8 do
+    local c = sget(n % 16 * 8 + x - 1, flr(n/16) * 16 + y - 1)
     mulv(big, {x, y, 1}, v1)
-    -- render_poly(mulv(mulm(translate(v1[1], v1[2]), m), vs), (x + y) % 16)-- sprite[x][y])
-    -- render_poly(mulv(mulm(translate(posx + v1[1], posy + v1[2]), m), vs), sprite[x][y])
     mulm(translate(posx + v1[1], posy + v1[2]), m, m1)
-    render_poly(mulv(m1, vb, w), sprite[x][y])
+    -- render_poly(mulv(m1, vs, w), sprite[x][y])
+    render_poly(mulv(m1, vs, w), c)
     -- render_poly(mulv(m1, vb, w), (x + y - 1) % 16)
-    x += c
-   -- local angles=angle(x1,y1,s,a)
-   -- y1=angle(x1,y1,s,a).y
-   -- x1=angle(x1,y1,s,a).x
   end
-  -- y1=angle(x0,y0,y*s,a+90).y
-  -- x1=angle(x0,y0,y*s,a+90).x
  end
 end
 
@@ -227,6 +224,44 @@ function _update()
  elseif scale<=1 then
   scale_adjust=0.1
  end
+end
+
+fill_tri = function(a,b,c,col)
+color(col)
+    if (b.y-a.y > 0) dx1=(b.x-a.x)/(b.y-a.y) else dx1=0;
+    if (c.y-a.y > 0) dx2=(c.x-a.x)/(c.y-a.y) else dx2=0;
+    if (c.y-b.y > 0) dx3=(c.x-b.x)/(c.y-b.y) else dx3=0;
+    local e = {x=a.x, y=a.y};
+    local s = {x=a.x, y=a.y}
+    if (dx1 > dx2) then
+        while(s.y<=b.y) do
+            s.y+=1;
+            e.y+=1;
+            s.x+=dx2;
+            e.x+=dx1;
+            line(s.x,s.y,e.x,s.y);
+        end
+        e.x = b.x
+        e.y = b.y
+        while(s.y<=c.y) do
+            s.y+=1;
+            e.y+=1;
+            s.x+=dx2;
+            e.x+=dx3;
+            line(s.x,s.y,e.x,s.y);
+        end
+    else
+        while(s.y<b.y)do
+            s.y+=1;e.y+=1;s.x+=dx1;e.x+=dx2;
+            line(s.x,s.y,e.x,e.y);
+        end
+        s.x=b.x
+        s.y=b.y
+        while(s.y<=c.y)do
+            s.y+=1;e.y+=1;s.x+=dx3;e.x+=dx2;
+            line(s.x,s.y,e.x,e.y);
+        end
+    end
 end
 
 -- polyfill from user scgrn on 

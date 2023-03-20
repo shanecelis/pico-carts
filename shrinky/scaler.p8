@@ -31,17 +31,22 @@ function _draw()
  -- scalespr(32,64,scale/2,ang)
  -- scalespr2(96,64,scale,ang)
  -- scalespr2(64,64,scale,ang)
+ -- sprr(1,64,64,1,1,false,false,scale,ang,4,4)
  -- sprr(1,64,64,2,2,false,false,scale,ang,8,8)
  -- sprr(1,64,64,2,2,nil,false,nil,45,8,8)
  -- sprr(1,64,64,2,2)
  -- spr(1,64,64,2,2)
  -- render_poly(mulv(mulm(translate(64,64),mulm(_scale(scale),rotate(0/360))), box(16)))
  -- fill_rect(mulv(mulm(translate(64,64),mulm(_scale(scale),rotate(45/360))), box(16)), 7)
- fill_rect(mulv(mulm(translate(64,64),mulm(_scale(1),rotate(45/360))), box(16)), 7)
- fill_rect(mulv(mulm(translate(64,64),mulm(_scale(1),rotate(290/360))), box(16)), 7)
+ -- fill_rect(mulv(mulm(translate(64,64),mulm(_scale(1),rotate(45/360))), box(16)), 7)
+ -- fill_rect(mulv(mulm(translate(64,64),mulm(_scale(1),rotate(290/360))), box(16)), 7)
  -- render_poly(mulv(mulm(translate(64,64),mulm(_scale(scale),rotate(-ang/360))), box(16)))
  -- sprr(1,64,64,2,2,false,false,scale,ang, 4, 4)
  -- drawpixel(32,32, 10, ang, 7)
+ local vs = mulv(translate(32,64),box(16))
+ raster({vs[1], vs[2]}, {vs[7], vs[8]}, {vs[4], vs[5]}, 7)
+ local vs = mulv(translate(64,64),box(16))
+ raster({vs[1], vs[2]}, {vs[7], vs[8]}, {vs[4], vs[5]}, {8,0}, {16,8}, {16,0})
 end
 
 -- draws a sprite at posx,posy with
@@ -100,8 +105,8 @@ function sprr(n,x,y,w,h,flip_x,flip_y,s,a,ax,ay)
     mulv(big, {xx, yy, 1}, v1)
     mulm(translate(x + v1[1] + ax, y + v1[2] + ay), m, m1)
     mulv(m1, vs, ws)
-    -- render_poly(ws, c)
-    fill_rect(ws, c)
+    render_poly(ws, c)
+    -- fill_rect(ws, c)
   end
  end
 end
@@ -311,7 +316,10 @@ function render_poly(v,col)
 end
 
 fill_rect = function(v, col)
-  fill_tri({x=v[1], y=v[2]}, {x=v[4], y=v[5]}, {x=v[7], y=v[8]}, col)
+  a={x=v[1], y=v[2]}
+  b={x=v[4], y=v[5]}
+  c={x=v[7], y=v[8]}
+  fill_tri(a, b, c, col)
   -- fill_tri({x=v[1], y=v[2]}, {x=v[4], y=v[5]}, {x=v[7], y=v[8]}, col)
   -- fill_tri(v[2], v[3], v[4], col)
 end
@@ -330,6 +338,7 @@ fill_tri = function(a,b,c,col)
             s.x+=dx2;
             e.x+=dx1;
             line(s.x,s.y,e.x,s.y);
+            --good
         end
         e.x = b.x
         e.y = b.y
@@ -339,47 +348,58 @@ fill_tri = function(a,b,c,col)
             s.x+=dx2;
             e.x+=dx3;
             line(s.x,s.y,e.x,s.y);
+            -- good
         end
     else
         while(s.y<b.y)do
             s.y+=1;e.y+=1;s.x+=dx1;e.x+=dx2;
             line(s.x,s.y,e.x,e.y);
+            assert(false)
         end
         s.x=b.x
         s.y=b.y
         while(s.y<=c.y)do
             s.y+=1;e.y+=1;s.x+=dx3;e.x+=dx2;
             line(s.x,s.y,e.x,e.y);
+            -- bad
+            -- assert(false)
         end
     end
 end
 
+-- https://www.scratchapixel.com/lessons/3d-basic-rendering/rasterization-practical-implementation/rasterization-stage.html
+function edge(a, b, c)
+ return (c[1] - a[1]) * (b[2] - a[2]) - (c[2] - a[2]) * (b[1] - a[1])
+end
 
--- function edge(a, b, c)
---  return (c[1] - a[1]) * (b[2] - a[2]) - (c[2] - a[2]) * (b[1] - a[1])
--- end
+function raster(v0,v1,v2,c0,c1,c2)
+  local lx = min(v0[1], min(v1[1], v2[1]))
+  local ux = max(v0[1], max(v1[1], v2[1]))
+  local ly = min(v0[2], min(v1[2], v2[2]))
+  local uy = max(v0[2], max(v1[2], v2[2]))
+  local area = edge(v0,v1,v2)
+  local c = c0
 
--- function raster(v0,v1,v2,c)
---   for j=1,h do
---     for i=1,w do
---             Vec2 p = {i + 0.5f, j + 0.5f};
---             float w0 = edgeFunction(v1, v2, p);
---             float w1 = edgeFunction(v2, v0, p);
---             float w2 = edgeFunction(v0, v1, p);
---             if (w0 >= 0 && w1 >= 0 && w2 >= 0) {
---                 w0 /= area;
---                 w1 /= area;
---                 w2 /= area;
---                 float r = w0 * c0[0] + w1 * c1[0] + w2 * c2[0];
---                 float g = w0 * c0[1] + w1 * c1[1] + w2 * c2[1];
---                 float b = w0 * c0[2] + w1 * c1[2] + w2 * c2[2];
---                 framebuffer[j * w + i][0] = (unsigned char)(r * 255);
---                 framebuffer[j * w + i][1] = (unsigned char)(g * 255);
---                 framebuffer[j * w + i][2] = (unsigned char)(b * 255);
---             }
---         }
---     }
--- end
+  for j=ly,uy do
+    for i=lx,ux do
+      p = {i + 0.5, j + 0.5};
+      w0 = edge(v1, v2, p);
+      w1 = edge(v2, v0, p);
+      w2 = edge(v0, v1, p);
+      if w0 >= 0 and w1 >= 0 and w2 >= 0 then
+        w0 /= area;
+        w1 /= area;
+        w2 /= area;
+        if c1 and c2 then
+          local ci = w0 * c0[1] + w1 * c1[1] + w2 * c2[1];
+          local cj = w0 * c0[2] + w1 * c1[2] + w2 * c2[2];
+          c = sget(flr(ci), flr(cj))
+        end
+        pset(i, j, c)
+      end
+    end
+  end
+end
 
 function render_poly_tex(v,s)
  -- col=col or 5

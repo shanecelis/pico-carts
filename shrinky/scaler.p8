@@ -3,6 +3,7 @@ version 39
 __lua__
 -- scaling pico sprites
 -- by @mykie on twitter
+-- https://mishkabear.itch.io/pico-8-rotate
 function _init()
  ang=0
  scale=1
@@ -27,7 +28,10 @@ function _draw()
  print((stat(1)*100).."% cpu",0,0,9)
  print((stat(0)).." mem",0,6,9)
  print((stat(7)).." fps",0,12,9)
- scalespr(64,64,scale,ang) 
+ -- scalespr(32,64,scale/2,ang)
+ -- scalespr2(96,64,scale,ang)
+ scalespr2(64,64,scale,ang)
+ -- drawpixel(32,32, 10, ang, 7)
 end
 
 -- draws a sprite at posx,posy with
@@ -48,9 +52,12 @@ function scalespr(posx,posy,s,a)
  --  move the origin to the top left
  local x1=x0
  local y1=y0
+ -- local vs = box(s)
+ -- local m = rotate(-ang/360)
  for y=1,8 do
   for x=1,8 do
    drawpixel(x1,y1,s,ang,sprite[x][y])
+   -- render_poly(mulv(mulm(translate(x1, y1), m), vs), sprite[x][y])
    local angles=angle(x1,y1,s,a)
    y1=angle(x1,y1,s,a).y
    x1=angle(x1,y1,s,a).x
@@ -60,44 +67,118 @@ function scalespr(posx,posy,s,a)
  end
 end
 
--- function scale(x, y)
---   return {x, 0,      0
---           0, y or x, 0
---           0, 0,      1 }
--- end
+function scalespr2(posx,posy,s,a)
+ -- these nine lines set origin
+ -- local ox=posx
+ -- local oy=posy
+ -- local xdist=abs((posx+s/2)-posx)*8
+ -- local ydist=abs((posy+s/2)-posy)*8
+ -- local xsq=xdist*xdist
+ -- local ysq=ydist*ydist
+ -- local rad=sqrt(xsq+ysq)
+ -- local x0=angle(ox,oy,rad,a+225).x
+ -- local y0=angle(ox,oy,rad,a+225).y
+ -- -- set x1 to posx and y1 to posy to
+ -- --  move the origin to the top left
+ -- local x1=x0
+ -- local y1=y0
+ local vs = mulv(translate(-1/2, -1/2), box(1))
+ -- local m = mulm(translate(posx, posy),mulm(rotate(-ang/360),_scale(s)))
+ local m = mulm(rotate(-ang/360),_scale(s))
+ -- local big = mulm(_scale(8), m)
+ -- local big = mulm(rotate(-ang/360),_scale(s*8))
+ -- local big = mulm(_scale(8), m)
+ local big = mulm(m, translate(-4, -4))
+ for y=1,8 do
+  for x=1,8 do
+   -- drawpixel(x1,y1,s,ang,sprite[x][y])
+    -- local v1 = mulv(mulm(translate(posx, posy), m), {x, y, 1})
+    local v1 = mulv(big, {x, y, 1})
+    -- render_poly(mulv(mulm(translate(v1[1], v1[2]), m), vs), (x + y) % 16)-- sprite[x][y])
+    -- render_poly(mulv(mulm(translate(posx + v1[1], posy + v1[2]), m), vs), sprite[x][y])
+    render_poly(mulv(mulm(translate(posx + v1[1], posy + v1[2]), m), vs), sprite[x][y])
+   -- local angles=angle(x1,y1,s,a)
+   -- y1=angle(x1,y1,s,a).y
+   -- x1=angle(x1,y1,s,a).x
+  end
+  -- y1=angle(x0,y0,y*s,a+90).y
+  -- x1=angle(x0,y0,y*s,a+90).x
+ end
+end
 
--- function translate(x, y)
---   return {1, 0, x
---           0, 1, y,
---           0, 0, 1 }
--- end
+function _scale(x, y)
+  return {x, 0,      0,
+          0, y or x, 0,
+          0, 0,      1 }
+end
 
--- function mulv(m, v)
---   return { m[1] * v[1] + m[2] * v[2],
---            m[3] * v[1] + m[4] * v[2] }
--- end
+function translate(x, y)
+  return {1, 0, x,
+          0, 1, y,
+          0, 0, 1 }
+end
 
--- function mulm(m, n)
---   return {m[1] n[1] + m[2] n[3], m[1] n[2] + m[2] n[4], m[3] n[1] + m[4] n[3], m[3] n[2] + m[4] n[4]}
--- end
+function rotate(a)
+  local c = cos(a)
+  local s = sin(a)
+  return {c, -s, 0,
+          s,  c, 0,
+          0,  0, 1 }
+end
+
+function mulv(m, v)
+  r = {}
+  for i = 1,#v,3 do
+    add(r, m[1] * v[i] + m[2] * v[i + 1] + m[3] * v[i + 2])
+    add(r, m[4] * v[i] + m[5] * v[i + 1] + m[6] * v[i + 2])
+    add(r, m[7] * v[i] + m[8] * v[i + 1] + m[9] * v[i + 2])
+  end
+  return r
+end
+
+function mulm(m, n)
+  return {m[1]*n[1] + m[2]*n[4] + m[3]*n[7], m[1]*n[2] + m[2]*n[5] + m[3]*n[8], m[1]*n[3] + m[2]*n[6] + m[3]*n[9],
+          m[4]*n[1] + m[5]*n[4] + m[6]*n[7], m[4]*n[2] + m[5]*n[5] + m[6]*n[8], m[4]*n[3] + m[5]*n[6] + m[6]*n[9],
+          m[7]*n[1] + m[8]*n[4] + m[9]*n[7], m[7]*n[2] + m[8]*n[5] + m[9]*n[8], m[7]*n[3] + m[8]*n[6] + m[9]*n[9]}
+end
 
 
+function box(w)
+ return {0, 0, 1,
+         w, 0, 1,
+         w, w, 1,
+         0, w, 1}
+end
 -- draws a single pixel at pos x,y
 --  with the origin at the top left
 --  w is the width/height of pixel
 --  a is the angle
 --  c is the color
 function drawpixel(x,y,w,a,c)
- local x1=x
- local y1=y
- local x2=angle(x1,y1,w,a).x
- local y2=angle(x1,y1,w,a).y
- local x3=angle(x2,y2,w,a+90).x
- local y3=angle(x2,y2,w,a+90).y
- local x4=angle(x1,y1,w,a+90).x
- local y4=angle(x1,y1,w,a+90).y
- local v={x1,y1,x2,y2,x3,y3,x4,y4}
+ -- local x1=x
+ -- local y1=y
+ -- local x2=angle(x1,y1,w,a).x
+ -- local y2=angle(x1,y1,w,a).y
+ -- local x3=angle(x2,y2,w,a+90).x
+ -- local y3=angle(x2,y2,w,a+90).y
+ -- local x4=angle(x1,y1,w,a+90).x
+ -- local y4=angle(x1,y1,w,a+90).y
+ local v={0, 0, 1,
+          w, 0, 1,
+          w, w, 1,
+          0, w, 1}
+ v = mulv(mulm(translate(x,y), rotate(-a/360)), v)
+ -- render_poly(strip_third(v),c)
  render_poly(v,c)
+end
+
+function strip_third(v)
+  r = {}
+  for i = 1,#v,3 do
+    add(r, v[i])
+    add(r, v[i + 1])
+  end
+  return r
 end
 
 --returns an x and y position based
@@ -138,15 +219,15 @@ function render_poly(v,col)
 
  -- scan convert each pair
  -- of vertices
- for i=1, #v/2 do
+ for i=1, #v/3 do
   local next=i+1
-  if (next>#v/2) next=1
+  if (next>#v/3) next=1
 
   -- alias verts from array
-  local vx1=flr(v[i*2-1])
-  local vy1=flr(v[i*2])
-  local vx2=flr(v[next*2-1])
-  local vy2=flr(v[next*2])
+  local vx1=flr(v[i*3-2])
+  local vy1=flr(v[i*3-1])
+  local vx2=flr(v[next*3-2])
+  local vy2=flr(v[next*3-1])
 
   if vy1>vy2 then
    -- swap verts

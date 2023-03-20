@@ -32,9 +32,13 @@ function _draw()
  -- scalespr2(96,64,scale,ang)
  -- scalespr2(64,64,scale,ang)
  -- sprr(1,64,64,2,2,false,false,scale,ang,8,8)
- sprr(1,64,64,2,2,nil,false,nil,45,8,8)
- sprr(1,64,64,2,2)
+ -- sprr(1,64,64,2,2,nil,false,nil,45,8,8)
+ -- sprr(1,64,64,2,2)
  -- spr(1,64,64,2,2)
+ -- render_poly(mulv(mulm(translate(64,64),mulm(_scale(scale),rotate(0/360))), box(16)))
+ -- fill_rect(mulv(mulm(translate(64,64),mulm(_scale(scale),rotate(45/360))), box(16)), 7)
+ fill_rect(mulv(mulm(translate(64,64),mulm(_scale(1),rotate(45/360))), box(16)), 7)
+ fill_rect(mulv(mulm(translate(64,64),mulm(_scale(1),rotate(290/360))), box(16)), 7)
  -- render_poly(mulv(mulm(translate(64,64),mulm(_scale(scale),rotate(-ang/360))), box(16)))
  -- sprr(1,64,64,2,2,false,false,scale,ang, 4, 4)
  -- drawpixel(32,32, 10, ang, 7)
@@ -45,15 +49,15 @@ end
 --  s is the scale, a is angle
 function scalespr(posx,posy,s,a)
  -- these nine lines set origin
- local ox=posx
- local oy=posy
+ local ax=posx
+ local ay=posy
  local xdist=abs((posx+s/2)-posx)*8
  local ydist=abs((posy+s/2)-posy)*8
  local xsq=xdist*xdist
  local ysq=ydist*ydist
  local rad=sqrt(xsq+ysq)
- local x0=angle(ox,oy,rad,a+225).x
- local y0=angle(ox,oy,rad,a+225).y
+ local x0=angle(ax,ay,rad,a+225).x
+ local y0=angle(ax,ay,rad,a+225).y
  -- set x1 to posx and y1 to posy to
  --  move the origin to the top left
  local x1=x0
@@ -73,16 +77,15 @@ function scalespr(posx,posy,s,a)
  end
 end
 
-function sprr(n,x,y,w,h,flip_x,flip_y,s,a,ox,oy)
+function sprr(n,x,y,w,h,flip_x,flip_y,s,a,ax,ay)
  w = w or 1
  h = h or 1
- s = s or 1
  a = a or 0
- ox = ox or 0
- oy = oy or 0
+ ax = ax or 0
+ ay = ay or 0
  local vs = mulv(translate(-1/2, -1/2), box(1))
- local m = mulm(rotate(-a/360),_scale(s))
- local big = mulm(m, translate(-ox, -oy))
+ local m = mulm(rotate(-a/360),_scale(s or 1))
+ local big = mulm(m, translate(-ax, -ay))
  local v1 = {}
  local m1 = {}
  local ws = {}
@@ -92,12 +95,13 @@ function sprr(n,x,y,w,h,flip_x,flip_y,s,a,ox,oy)
   for xx=1,8*w do
     local c = sget(flip_x and sx + 8*w - xx or sx + xx,
                    flip_y and sy + 8*h - yy or sy + yy)
+    -- debug: render each pixel with a different color.
     -- c = (xx + yy - 1) % 16
     mulv(big, {xx, yy, 1}, v1)
-    mulm(translate(x + v1[1] + ox, y + v1[2] + oy), m, m1)
-    -- render_polyy(mulv(m1, vs, w), sprite[xx][yy])
-    render_poly(mulv(m1, vs, ws), c)
-    -- render_polyy(mulv(m1, vb, w), (xx + yy - 1) % 16)
+    mulm(translate(x + v1[1] + ax, y + v1[2] + ay), m, m1)
+    mulv(m1, vs, ws)
+    -- render_poly(ws, c)
+    fill_rect(ws, c)
   end
  end
 end
@@ -226,45 +230,7 @@ function _update()
  end
 end
 
-fill_tri = function(a,b,c,col)
-color(col)
-    if (b.y-a.y > 0) dx1=(b.x-a.x)/(b.y-a.y) else dx1=0;
-    if (c.y-a.y > 0) dx2=(c.x-a.x)/(c.y-a.y) else dx2=0;
-    if (c.y-b.y > 0) dx3=(c.x-b.x)/(c.y-b.y) else dx3=0;
-    local e = {x=a.x, y=a.y};
-    local s = {x=a.x, y=a.y}
-    if (dx1 > dx2) then
-        while(s.y<=b.y) do
-            s.y+=1;
-            e.y+=1;
-            s.x+=dx2;
-            e.x+=dx1;
-            line(s.x,s.y,e.x,s.y);
-        end
-        e.x = b.x
-        e.y = b.y
-        while(s.y<=c.y) do
-            s.y+=1;
-            e.y+=1;
-            s.x+=dx2;
-            e.x+=dx3;
-            line(s.x,s.y,e.x,s.y);
-        end
-    else
-        while(s.y<b.y)do
-            s.y+=1;e.y+=1;s.x+=dx1;e.x+=dx2;
-            line(s.x,s.y,e.x,e.y);
-        end
-        s.x=b.x
-        s.y=b.y
-        while(s.y<=c.y)do
-            s.y+=1;e.y+=1;s.x+=dx3;e.x+=dx2;
-            line(s.x,s.y,e.x,e.y);
-        end
-    end
-end
-
--- polyfill from user scgrn on 
+-- polyfill from user scgrn on
 --  lexaloffle forums
 --  https://www.lexaloffle.com/bbs/?tid=28312
 -- draws a filled convex polygon
@@ -342,6 +308,151 @@ function render_poly(v,col)
   pset(sx1,y,c)
   pset(sx2,y,c)
  end 
+end
+
+fill_rect = function(v, col)
+  fill_tri({x=v[1], y=v[2]}, {x=v[4], y=v[5]}, {x=v[7], y=v[8]}, col)
+  -- fill_tri({x=v[1], y=v[2]}, {x=v[4], y=v[5]}, {x=v[7], y=v[8]}, col)
+  -- fill_tri(v[2], v[3], v[4], col)
+end
+
+-- https://www.lexaloffle.com/bbs/?tid=2171
+fill_tri = function(a,b,c,col)
+    if (b.y-a.y > 0) dx1=(b.x-a.x)/(b.y-a.y) else dx1=0;
+    if (c.y-a.y > 0) dx2=(c.x-a.x)/(c.y-a.y) else dx2=0;
+    if (c.y-b.y > 0) dx3=(c.x-b.x)/(c.y-b.y) else dx3=0;
+    local e = {x=a.x, y=a.y};
+    local s = {x=a.x, y=a.y}
+    if (dx1 > dx2) then
+        while(s.y<=b.y) do
+            s.y+=1;
+            e.y+=1;
+            s.x+=dx2;
+            e.x+=dx1;
+            line(s.x,s.y,e.x,s.y);
+        end
+        e.x = b.x
+        e.y = b.y
+        while(s.y<=c.y) do
+            s.y+=1;
+            e.y+=1;
+            s.x+=dx2;
+            e.x+=dx3;
+            line(s.x,s.y,e.x,s.y);
+        end
+    else
+        while(s.y<b.y)do
+            s.y+=1;e.y+=1;s.x+=dx1;e.x+=dx2;
+            line(s.x,s.y,e.x,e.y);
+        end
+        s.x=b.x
+        s.y=b.y
+        while(s.y<=c.y)do
+            s.y+=1;e.y+=1;s.x+=dx3;e.x+=dx2;
+            line(s.x,s.y,e.x,e.y);
+        end
+    end
+end
+
+
+-- function edge(a, b, c)
+--  return (c[1] - a[1]) * (b[2] - a[2]) - (c[2] - a[2]) * (b[1] - a[1])
+-- end
+
+-- function raster(v0,v1,v2,c)
+--   for j=1,h do
+--     for i=1,w do
+--             Vec2 p = {i + 0.5f, j + 0.5f};
+--             float w0 = edgeFunction(v1, v2, p);
+--             float w1 = edgeFunction(v2, v0, p);
+--             float w2 = edgeFunction(v0, v1, p);
+--             if (w0 >= 0 && w1 >= 0 && w2 >= 0) {
+--                 w0 /= area;
+--                 w1 /= area;
+--                 w2 /= area;
+--                 float r = w0 * c0[0] + w1 * c1[0] + w2 * c2[0];
+--                 float g = w0 * c0[1] + w1 * c1[1] + w2 * c2[1];
+--                 float b = w0 * c0[2] + w1 * c1[2] + w2 * c2[2];
+--                 framebuffer[j * w + i][0] = (unsigned char)(r * 255);
+--                 framebuffer[j * w + i][1] = (unsigned char)(g * 255);
+--                 framebuffer[j * w + i][2] = (unsigned char)(b * 255);
+--             }
+--         }
+--     }
+-- end
+
+function render_poly_tex(v,s)
+ -- col=col or 5
+
+ -- initialize scan extents
+ -- with ludicrous values
+ local x1,x2={},{}
+ for y=0,127 do
+  x1[y],x2[y]=128,-1
+ end
+ local y1,y2=128,-1
+
+ -- scan convert each pair
+ -- of vertices
+ for i=1, #v/3 do
+  local next=i+1
+  if (next>#v/3) next=1
+
+  -- alias verts from array
+  local vx1=flr(v[i*3-2])
+  local vy1=flr(v[i*3-1])
+  local vx2=flr(v[next*3-2])
+  local vy2=flr(v[next*3-1])
+
+  if vy1>vy2 then
+   -- swap verts
+   local tempx,tempy=vx1,vy1
+   vx1,vy1=vx2,vy2
+   vx2,vy2=tempx,tempy
+  end
+
+  -- skip horizontal edges and
+  -- offscreen polys
+  if vy1~=vy2 and vy1<128 and
+   vy2>=0 then
+
+   -- clip edge to screen bounds
+   if vy1<0 then
+    vx1=(0-vy1)*(vx2-vx1)/(vy2-vy1)+vx1
+    vy1=0
+   end
+   if vy2>127 then
+    vx2=(127-vy1)*(vx2-vx1)/(vy2-vy1)+vx1
+    vy2=127
+   end
+
+   -- iterate horizontal scans
+   for y=vy1,vy2 do
+    if (y<y1) y1=y
+    if (y>y2) y2=y
+
+    -- calculate the x coord for
+    -- this y coord using math!
+    x=(y-vy1)*(vx2-vx1)/(vy2-vy1)+vx1
+
+    if (x<x1[y]) x1[y]=x
+    if (x>x2[y]) x2[y]=x
+   end
+  end
+ end
+
+ -- render scans
+ for y=y1,y2 do
+  local sx1=flr(max(0,x1[y]))
+  local sx2=flr(min(127,x2[y]))
+
+  local c=col*16+col
+  local ofs1=flr((sx1+1)/2)
+  local ofs2=flr((sx2+1)/2)
+  memset(0x6000+(y*64)+ofs1,c,ofs2-ofs1)
+  pset(sx1,y,c)
+  pset(sx2,y,c)
+ end
 end
 
 __gfx__

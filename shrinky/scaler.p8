@@ -89,14 +89,33 @@ function scalespr2(posx,posy,s,a)
  -- local big = mulm(rotate(-ang/360),_scale(s*8))
  -- local big = mulm(_scale(8), m)
  local big = mulm(m, translate(-4, -4))
+ local v1 = {}
+ local m1 = {}
+ local w = {}
  for y=1,8 do
-  for x=1,8 do
+  local x = 1
+  while x <= 8 do
+  -- for x=1,8 do
+    local c = 1
+    while c + x <= 8 and sprite[x + c][y] == sprite[x][y] do
+      c += 1
+    end
+    local vb
+    if c != 1 then
+      vb = mulv(translate(-1/2, -1/2), box(c, 1))
+    else
+      vb = vs
+    end
+
    -- drawpixel(x1,y1,s,ang,sprite[x][y])
     -- local v1 = mulv(mulm(translate(posx, posy), m), {x, y, 1})
-    local v1 = mulv(big, {x, y, 1})
+    mulv(big, {x, y, 1}, v1)
     -- render_poly(mulv(mulm(translate(v1[1], v1[2]), m), vs), (x + y) % 16)-- sprite[x][y])
     -- render_poly(mulv(mulm(translate(posx + v1[1], posy + v1[2]), m), vs), sprite[x][y])
-    render_poly(mulv(mulm(translate(posx + v1[1], posy + v1[2]), m), vs), sprite[x][y])
+    mulm(translate(posx + v1[1], posy + v1[2]), m, m1)
+    render_poly(mulv(m1, vb, w), sprite[x][y])
+    -- render_poly(mulv(m1, vb, w), (x + y - 1) % 16)
+    x += c
    -- local angles=angle(x1,y1,s,a)
    -- y1=angle(x1,y1,s,a).y
    -- x1=angle(x1,y1,s,a).x
@@ -126,28 +145,38 @@ function rotate(a)
           0,  0, 1 }
 end
 
-function mulv(m, v)
-  r = {}
+function mulv(m, v, r)
+  r = r or {}
   for i = 1,#v,3 do
-    add(r, m[1] * v[i] + m[2] * v[i + 1] + m[3] * v[i + 2])
-    add(r, m[4] * v[i] + m[5] * v[i + 1] + m[6] * v[i + 2])
-    add(r, m[7] * v[i] + m[8] * v[i + 1] + m[9] * v[i + 2])
+    r[i + 0] = m[1] * v[i] + m[2] * v[i + 1] + m[3] * v[i + 2]
+    r[i + 1] = m[4] * v[i] + m[5] * v[i + 1] + m[6] * v[i + 2]
+    r[i + 2] = m[7] * v[i] + m[8] * v[i + 1] + m[9] * v[i + 2]
   end
   return r
 end
 
-function mulm(m, n)
-  return {m[1]*n[1] + m[2]*n[4] + m[3]*n[7], m[1]*n[2] + m[2]*n[5] + m[3]*n[8], m[1]*n[3] + m[2]*n[6] + m[3]*n[9],
-          m[4]*n[1] + m[5]*n[4] + m[6]*n[7], m[4]*n[2] + m[5]*n[5] + m[6]*n[8], m[4]*n[3] + m[5]*n[6] + m[6]*n[9],
-          m[7]*n[1] + m[8]*n[4] + m[9]*n[7], m[7]*n[2] + m[8]*n[5] + m[9]*n[8], m[7]*n[3] + m[8]*n[6] + m[9]*n[9]}
+function mulm(m, n, r)
+  r = r or {}
+  r[1] = m[1]*n[1] + m[2]*n[4] + m[3]*n[7]
+  r[2] = m[1]*n[2] + m[2]*n[5] + m[3]*n[8]
+  r[3] = m[1]*n[3] + m[2]*n[6] + m[3]*n[9]
+
+  r[4] = m[4]*n[1] + m[5]*n[4] + m[6]*n[7]
+  r[5] = m[4]*n[2] + m[5]*n[5] + m[6]*n[8]
+  r[6] = m[4]*n[3] + m[5]*n[6] + m[6]*n[9]
+
+  r[7] = m[7]*n[1] + m[8]*n[4] + m[9]*n[7]
+  r[8] = m[7]*n[2] + m[8]*n[5] + m[9]*n[8]
+  r[9] = m[7]*n[3] + m[8]*n[6] + m[9]*n[9]
+  return r
 end
 
 
-function box(w)
- return {0, 0, 1,
-         w, 0, 1,
-         w, w, 1,
-         0, w, 1}
+function box(w, h)
+ return {0, 0,      1,
+         w, 0,      1,
+         w, h or w, 1,
+         0, h or w, 1}
 end
 -- draws a single pixel at pos x,y
 --  with the origin at the top left

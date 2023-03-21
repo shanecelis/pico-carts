@@ -46,8 +46,17 @@ function _draw()
  local vs = mulv(translate(32,64),box(16))
  raster({vs[1], vs[2]}, {vs[7], vs[8]}, {vs[4], vs[5]}, 7)
  local vs = mulv(translate(64,64),box(16))
- raster({vs[1], vs[2]}, {vs[7], vs[8]}, {vs[4], vs[5]}, {8,0}, {16,8}, {16,0})
+
+ -- raster({vs[1], vs[2]}, {vs[7], vs[8]}, {vs[4], vs[5]}, {8,0}, {16,8}, {16,0})
+ fill_rect(vs,{8,0,16,0,16,8,8,8})
 end
+
+-- function box(w, h)
+--  return {0, 0,      1,
+--          w, 0,      1,
+--          w, h or w, 1,
+--          0, h or w, 1}
+-- end
 
 -- draws a sprite at posx,posy with
 --  the origin in the center
@@ -315,13 +324,9 @@ function render_poly(v,col)
  end 
 end
 
-fill_rect = function(v, col)
-  a={x=v[1], y=v[2]}
-  b={x=v[4], y=v[5]}
-  c={x=v[7], y=v[8]}
-  fill_tri(a, b, c, col)
-  -- fill_tri({x=v[1], y=v[2]}, {x=v[4], y=v[5]}, {x=v[7], y=v[8]}, col)
-  -- fill_tri(v[2], v[3], v[4], col)
+fill_rect = function(vs, cs)
+  raster({vs[1], vs[2]}, {vs[7], vs[8]}, {vs[4], vs[5]}, {cs[1],cs[2]}, {cs[5],cs[6]}, {cs[3],cs[4]})
+  raster({vs[1], vs[2]}, {vs[10], vs[11]}, {vs[7], vs[8]}, {cs[1],cs[2]}, {cs[7],cs[8]}, {cs[5],cs[6]})
 end
 
 -- https://www.lexaloffle.com/bbs/?tid=2171
@@ -379,6 +384,7 @@ function raster(v0,v1,v2,c0,c1,c2)
   local uy = max(v0[2], max(v1[2], v2[2]))
   local area = edge(v0,v1,v2)
   local c = c0
+  --local p,w0,w1,w2
 
   for j=ly,uy do
     for i=lx,ux do
@@ -387,10 +393,10 @@ function raster(v0,v1,v2,c0,c1,c2)
       w1 = edge(v2, v0, p);
       w2 = edge(v0, v1, p);
       if w0 >= 0 and w1 >= 0 and w2 >= 0 then
-        w0 /= area;
-        w1 /= area;
-        w2 /= area;
         if c1 and c2 then
+          w0 /= area;
+          w1 /= area;
+          w2 /= area;
           local ci = w0 * c0[1] + w1 * c1[1] + w2 * c2[1];
           local cj = w0 * c0[2] + w1 * c1[2] + w2 * c2[2];
           c = sget(flr(ci), flr(cj))

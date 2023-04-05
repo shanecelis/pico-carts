@@ -41,14 +41,16 @@ function _draw()
  -- fill_rect(mulv(mulm(translate(64,64),mulm(_scale(1),rotate(45/360))), box(16)), 7)
  -- fill_rect(mulv(mulm(translate(64,64),mulm(_scale(1),rotate(290/360))), box(16)), 7)
  -- render_poly(mulv(mulm(translate(64,64),mulm(_scale(scale),rotate(-ang/360))), box(16)))
- -- sprr(1,64,64,2,2,false,false,scale,ang, 4, 4)
+ sprr(1,32,64,1,1,true,true,scale,ang, 4, 4)
+ -- sprr2(1,96,64,1,1,true,true,scale,ang, 4, 4)
  -- drawpixel(32,32, 10, ang, 7)
- local vs = mulv(translate(32,64),box(16))
- raster({vs[1], vs[2]}, {vs[7], vs[8]}, {vs[4], vs[5]}, 7)
- local vs = mulv(translate(64,64),box(16))
+ -- local vs = mulv(translate(32,64),box(16))
+ -- raster({vs[1], vs[2]}, {vs[7], vs[8]}, {vs[4], vs[5]}, 7)
+ -- local vs = mulv(translate(64,64),box(16))
 
  -- raster({vs[1], vs[2]}, {vs[7], vs[8]}, {vs[4], vs[5]}, {8,0}, {16,8}, {16,0})
- fill_rect(vs,{8,0,16,0,16,8,8,8})
+ -- fill_rect(vs,{8,0,16,0,16,8,8,8})
+ bresenham_triangle({x=10,y=10}, {x=40, y=30}, {x=80,y=90})
 end
 
 -- function box(w, h)
@@ -103,8 +105,8 @@ function sprr(n,x,y,w,h,flip_x,flip_y,s,a,ax,ay)
  local v1 = {}
  local m1 = {}
  local ws = {}
- local sx = n % 16 * 8 - 1
- local sy = flr(n/16) * 16 - 1
+ local sx = n % 16 * 8
+ local sy = flr(n/16) * 16
  for yy=1,8*h do
   for xx=1,8*w do
     local c = sget(flip_x and sx + 8*w - xx or sx + xx,
@@ -118,6 +120,28 @@ function sprr(n,x,y,w,h,flip_x,flip_y,s,a,ax,ay)
     -- fill_rect(ws, c)
   end
  end
+end
+
+function sprr2(n,x,y,w,h,flip_x,flip_y,s,a,ax,ay)
+ w = w or 1
+ h = h or 1
+ ax = ax or 0
+ ay = ay or 0
+ local vs = box(w * 8, h * 8)
+ local m1 = {}
+ local ws = {}
+ local sx = n % 16 * 8
+ local sy = flr(n/16) * 16
+ local m = mulm(mulm(rotate(-(a or 0)/360),_scale(s or 1)), translate(-ax,-ay))
+ mulm(translate(x + ax, y + ay), m, m1)
+ mulv(m1, vs, ws)
+ local cs ={sx,        sy,
+            sx + 8 * w,sy,
+            sx + 8 * w,sy + 8*h,
+            sx,        sy + 8*h}
+ if (flip_x) cs[1],cs[3],cs[5],cs[7] = cs[3],cs[1],cs[7],cs[5]
+ if (flip_y) cs[2],cs[4],cs[6],cs[8] = cs[6],cs[8],cs[2],cs[4]
+ fill_rect(ws, cs)
 end
 
 function scalespr2(posx,posy,s,a)
@@ -237,7 +261,7 @@ end
 function _update()
  ang+=3
  scale+=scale_adjust
- if scale>=10 then
+ if scale>=5 then
   scale_adjust=-0.1
  elseif scale<=1 then
   scale_adjust=0.1
@@ -372,6 +396,83 @@ fill_tri = function(a,b,c,col)
     end
 end
 
+function bresenham_triangle(v1, v2, v3, c)
+  local tmp1 = { x=v1.x, y=v1.y };
+  local tmp2 = { x=v1.x, y=v1.y };
+
+  local changed1 = false;
+  local changed2 = false;
+
+  local dx1 = abs(v2.x - v1.x);
+  local dy1 = abs(v2.y - v1.y);
+
+  local dx2 = abs(v3.x - v1.x);
+  local dy2 = abs(v3.y - v1.y);
+
+  local signx1 = sgn(v2.x - v1.x);
+  local signx2 = sgn(v3.x - v1.x);
+
+  local signy1 = sgn(v2.y - v1.y);
+  local signy2 = sgn(v3.y - v1.y);
+
+  if dy1 > dx1 then
+    dx1,dy1 = dy1, dx1
+    changed1 = true;
+  end
+
+  if dy2 > dx2 then
+     -- swap values
+     dx2,dy2 = dy2,dx2
+     changed2 = true;
+  end
+
+  local e1 = 2 * dy1 - dx1;
+  local e2 = 2 * dy2 - dx2;
+
+  for i=1,dx1 do
+    line(tmp1.x, tmp1.y, tmp2.x, tmp2.y, c or 7);
+
+    while e1 >= 0 do
+
+      if changed1 then
+        tmp1.x += signx1;
+      else
+        tmp1.y += signy1;
+      end
+      e1 = e1 - 2 * dx1;
+    end
+
+    if changed1 then
+        tmp1.y += signy1;
+    else
+        tmp1.x += signx1;
+    end
+
+    e1 = e1 + 2 * dy1;
+
+    -- here we rendered the next point on line 1 so follow now line 2
+    -- until we are on the same y-value as line 1.
+    while tmp2.y != tmp1.y do
+      while e2 >= 0 do
+        if changed2 then
+          tmp2.x += signx2;
+        else
+          tmp2.y += signy2;
+        end
+        e2 = e2 - 2 * dx2;
+      end
+
+    if changed2 then
+        tmp2.y += signy2;
+    else
+        tmp2.x += signx2;
+    end
+
+    e2 = e2 + 2 * dy2;
+    end
+  end
+end
+
 -- https://www.scratchapixel.com/lessons/3d-basic-rendering/rasterization-practical-implementation/rasterization-stage.html
 function edge(a, b, c)
  return (c[1] - a[1]) * (b[2] - a[2]) - (c[2] - a[2]) * (b[1] - a[1])
@@ -384,11 +485,11 @@ function raster(v0,v1,v2,c0,c1,c2)
   local uy = max(v0[2], max(v1[2], v2[2]))
   local area = edge(v0,v1,v2)
   local c = c0
-  --local p,w0,w1,w2
+  local p,w0,w1,w2
 
   for j=ly,uy do
     for i=lx,ux do
-      p = {i + 0.5, j + 0.5};
+      p = {i - 0.5, j - 0.5};
       w0 = edge(v1, v2, p);
       w1 = edge(v2, v0, p);
       w2 = edge(v0, v1, p);
@@ -399,7 +500,7 @@ function raster(v0,v1,v2,c0,c1,c2)
           w2 /= area;
           local ci = w0 * c0[1] + w1 * c1[1] + w2 * c2[1];
           local cj = w0 * c0[2] + w1 * c1[2] + w2 * c2[2];
-          c = sget(flr(ci), flr(cj))
+          c = sget(ci, cj)
         end
         pset(i, j, c)
       end

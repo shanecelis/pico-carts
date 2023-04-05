@@ -262,7 +262,7 @@ function _init()
 	-- pl = actor:new({},9,2,2)
 	-- princess peach
   -- peach_sprite = peach_sprite or 96
-	pl = actor:new({},23,2,2)
+	pl = actor:new({},23,4,4)
 	-- pl = actor:new({},96,68,22)
 	pl.height=1
 	pl.width=1

@@ -8,19 +8,6 @@ function _init()
  ang=0
  scale=1
  scale_adjust=0.1
-
- -- this indexes a single sprite which
- --  is a 2d array of color ids
- cls()
- spr(1,0,0)
- sprite={}
- for x=1,8 do
-  sprite[x]={}
-  for y=1,8 do
-   sprite[x][y]=pget(x-1,y-1)
-  end
- end
- cls()
 end
 
 function _draw()
@@ -28,70 +15,19 @@ function _draw()
  print((stat(1)*100).."% cpu",0,0,9)
  print((stat(0)).." mem",0,6,9)
  print((stat(7)).." fps",0,12,9)
- -- scalespr(32,64,scale/2,ang)
- -- scalespr2(96,64,scale,ang)
- -- scalespr2(64,64,scale,ang)
- -- sprr(1,64,64,1,1,false,false,scale,ang,4,4)
- -- sprr(1,64,64,2,2,false,false,scale,ang,8,8)
- -- sprr(1,64,64,2,2,nil,false,nil,45,8,8)
- -- sprr(1,64,64,2,2)
- -- spr(1,64,64,2,2)
- -- render_poly(mulv(mulm(translate(64,64),mulm(_scale(scale),rotate(0/360))), box(16)))
- -- fill_rect(mulv(mulm(translate(64,64),mulm(_scale(scale),rotate(45/360))), box(16)), 7)
- -- fill_rect(mulv(mulm(translate(64,64),mulm(_scale(1),rotate(45/360))), box(16)), 7)
- -- fill_rect(mulv(mulm(translate(64,64),mulm(_scale(1),rotate(290/360))), box(16)), 7)
- -- render_poly(mulv(mulm(translate(64,64),mulm(_scale(scale),rotate(-ang/360))), box(16)))
- sprr(1,32,64,1,1,true,true,scale,ang, 4, 4)
- -- sprr2(1,96,64,1,1,true,true,scale,ang, 4, 4)
- -- drawpixel(32,32, 10, ang, 7)
- -- local vs = mulv(translate(32,64),box(16))
- -- raster({vs[1], vs[2]}, {vs[7], vs[8]}, {vs[4], vs[5]}, 7)
- -- local vs = mulv(translate(64,64),box(16))
-
- -- raster({vs[1], vs[2]}, {vs[7], vs[8]}, {vs[4], vs[5]}, {8,0}, {16,8}, {16,0})
- -- fill_rect(vs,{8,0,16,0,16,8,8,8})
- bresenham_triangle({x=10,y=10}, {x=40, y=30}, {x=80,y=90})
+ sprr(1,32,64,1,1,true,true,scale,ang, 0, 0)
 end
 
--- function box(w, h)
---  return {0, 0,      1,
---          w, 0,      1,
---          w, h or w, 1,
---          0, h or w, 1}
--- end
-
--- draws a sprite at posx,posy with
---  the origin in the center
---  s is the scale, a is angle
-function scalespr(posx,posy,s,a)
- -- these nine lines set origin
- local ax=posx
- local ay=posy
- local xdist=abs((posx+s/2)-posx)*8
- local ydist=abs((posy+s/2)-posy)*8
- local xsq=xdist*xdist
- local ysq=ydist*ydist
- local rad=sqrt(xsq+ysq)
- local x0=angle(ax,ay,rad,a+225).x
- local y0=angle(ax,ay,rad,a+225).y
- -- set x1 to posx and y1 to posy to
- --  move the origin to the top left
- local x1=x0
- local y1=y0
- -- local vs = box(s)
- -- local m = rotate(-ang/360)
- for y=1,8 do
-  for x=1,8 do
-   drawpixel(x1,y1,s,ang,sprite[x][y])
-   -- render_poly(mulv(mulm(translate(x1, y1), m), vs), sprite[x][y])
-   local angles=angle(x1,y1,s,a)
-   y1=angle(x1,y1,s,a).y
-   x1=angle(x1,y1,s,a).x
-  end
-  y1=angle(x0,y0,y*s,a+90).y
-  x1=angle(x0,y0,y*s,a+90).x
+function _update()
+ ang+=3
+ scale+=scale_adjust
+ if scale>=5 then
+  scale_adjust=-0.1
+ elseif scale<=1 then
+  scale_adjust=0.1
  end
 end
+
 
 function sprr(n,x,y,w,h,flip_x,flip_y,s,a,ax,ay)
  w = w or 1
@@ -202,14 +138,6 @@ end
 --  a is the angle
 --  c is the color
 function drawpixel(x,y,w,a,c)
- -- local x1=x
- -- local y1=y
- -- local x2=angle(x1,y1,w,a).x
- -- local y2=angle(x1,y1,w,a).y
- -- local x3=angle(x2,y2,w,a+90).x
- -- local y3=angle(x2,y2,w,a+90).y
- -- local x4=angle(x1,y1,w,a+90).x
- -- local y4=angle(x1,y1,w,a+90).y
  local v={0, 0, 1,
           w, 0, 1,
           w, w, 1,
@@ -226,25 +154,6 @@ function strip_third(v)
     add(r, v[i + 1])
   end
   return r
-end
-
---returns an x and y position based
--- on a vector, r=radius,
--- a=angle in degrees
-function angle(x,y,r,a)
- local x2=x+r*cos(a/360)
- local y2=y+r*sin(a/360)*-1
- return {x=x2,y=y2}
-end
-
-function _update()
- ang+=3
- scale+=scale_adjust
- if scale>=5 then
-  scale_adjust=-0.1
- elseif scale<=1 then
-  scale_adjust=0.1
- end
 end
 
 -- polyfill from user scgrn on
@@ -326,3 +235,10 @@ function render_poly(v,col)
   pset(sx2,y,c)
  end
 end
+__gfx__
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000008888000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000088008000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000088808000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000888000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

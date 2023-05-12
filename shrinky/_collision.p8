@@ -857,12 +857,27 @@ baby_scene = scene:new {
 function baby_scene:draw()
 	cls()
 
-	spr(12, 32, 32, 2, 4)
+	-- spr(12, 32, 32, 2, 4)
 	-- standing legs
-	spr(9, 32 + 11, 32 + 28, 1, 2)
+	-- spr(9, 32 + 11, 32 + 28, 1, 2)
 	-- spr(9, 32 + 1 + self.t % 2, 32 + 28, 1, 2, true)
-	spr(9, 32 + 1, 32 + 28, 1, 2, true)
-	spr_r(9, 32 + 1, 32 + 28, 0, 1, 2)
+    -- spr(n x y [w h] [flipx flip y])
+    -- sprr(n x y [w h] [flipx flip y] s a ax ay)
+    --
+    -- spr_r(n x y a w h
+    -- spr_r(9,
+    -- 32 + 1, 32 + 28,
+    -- 0,
+    -- 1, 2)
+	-- spr (9, 32 + 1, 32 + 28, 1, 2, true)
+
+	sprr(8,
+         32 + 1, 32 + 8,
+         1, 1,
+         false, false,
+         1,
+         0,
+         0, 0)
 
 	-- sitting legs
 	-- spr(58, 32 - 8, 32 + 8 * 3, 2, 1)
@@ -871,11 +886,11 @@ end
 
 function baby_scene:update()
 	self.t += 0.1
-	self.emitter:update(delta_time)
+	-- self.emitter:update(delta_time)
 
 end
 
--- curr_scene = baby_scene
+curr_scene = baby_scene
 
 curr_scene:enter()
 

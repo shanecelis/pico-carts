@@ -799,8 +799,100 @@ function credits:draw()
 end
 
 curr_scene = title
-curr_scene:enter()
 -- curr_scene = credits
+--
+--
+--
+--
+-- https://www.lexaloffle.com/bbs/?pid=52525
+function spr_r(s,x,y,a,w,h)
+ local sw=(w or 1)*8
+ local sh=(h or 1)*8
+ local sx=(s%8)*8
+ local sy=flr(s/8)*8
+ local x0=flr(0.5*sw)
+ local y0=flr(0.5*sh)
+ -- local a=a/360
+ local sa=sin(a)
+ local ca=cos(a)
+ for ix=0,sw-1 do
+  for iy=0,sh-1 do
+   dx=ix-x0
+   dy=iy-y0
+   xx=flr(dx*ca-dy*sa+x0)
+   yy=flr(dx*sa+dy*ca+y0)
+   if (xx>=0 and xx<sw and yy>=0 and yy<=sh) then
+    pset(x+ix,y+iy,sget(sx+xx,sy+yy))
+   end
+  end
+ end
+end
+
+
+
+function tears()
+ local emitters = emitters:new()
+ local left = emitter.create(35, 40, 2, 3, false, false)
+ ps_set_size(left, 0, 0, 1)
+ ps_set_speed(left, 7, 15, 3)
+ ps_set_colours(left, {12})
+ -- ps_set_rnd_colour(left, true)
+ ps_set_life(left, 0.1, 0.5)
+ ps_set_angle(left, 0, 3.14/4)
+ add(emitters, left)
+ local right = left:clone()
+ ps_set_angle(right, 3.14, 3.14/4)
+ right.pos = vec(45, 40)
+
+ add(emitters, right)
+ return emitters
+end
+
+
+baby_scene = scene:new {
+	t = 0,
+	emitter = tears(),
+}
+
+function baby_scene:draw()
+	cls()
+
+	-- spr(12, 32, 32, 2, 4)
+	-- standing legs
+	-- spr(9, 32 + 11, 32 + 28, 1, 2)
+	-- spr(9, 32 + 1 + self.t % 2, 32 + 28, 1, 2, true)
+    -- spr(n x y [w h] [flipx flip y])
+    -- sprr(n x y [w h] [flipx flip y] s a ax ay)
+    --
+    -- spr_r(n x y a w h
+    -- spr_r(9,
+    -- 32 + 1, 32 + 28,
+    -- 0,
+    -- 1, 2)
+	-- spr (9, 32 + 1, 32 + 28, 1, 2, true)
+
+	sprr(8,
+         32 + 1, 32 + 8,
+         1, 1,
+         false, false,
+         1,
+         0,
+         0, 0)
+
+	-- sitting legs
+	-- spr(58, 32 - 8, 32 + 8 * 3, 2, 1)
+	self.emitter:draw()
+end
+
+function baby_scene:update()
+	self.t += 0.1
+	-- self.emitter:update(delta_time)
+
+end
+
+curr_scene = baby_scene
+
+curr_scene:enter()
 
 function _update()
  if curr_scene.text == nil then

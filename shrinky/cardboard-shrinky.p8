@@ -17,6 +17,7 @@ __lua__
 #include particles.p8
 #include timer.p8
 #include _collision.p8
+#include sprr.p8
 
 debug=true
 background_color = 11

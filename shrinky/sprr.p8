@@ -4,30 +4,6 @@ __lua__
 -- scaling pico sprites
 -- by @mykie on twitter
 -- https://mishkabear.itch.io/pico-8-rotate
-function _init()
- ang=0
- scale=1
- scale_adjust=0.1
-end
-
-function _draw()
- cls()
- print((stat(1)*100).."% cpu",0,0,9)
- print((stat(0)).." mem",0,6,9)
- print((stat(7)).." fps",0,12,9)
- sprr(1,32,64,1,1,true,true,scale,ang, 0, 0)
-end
-
-function _update()
- ang+=3
- scale+=scale_adjust
- if scale>=5 then
-  scale_adjust=-0.1
- elseif scale<=1 then
-  scale_adjust=0.1
- end
-end
-
 
 function sprr(n,x,y,w,h,flip_x,flip_y,s,a,ax,ay)
  w = w or 1
@@ -36,7 +12,7 @@ function sprr(n,x,y,w,h,flip_x,flip_y,s,a,ax,ay)
  ax = ax or 0
  ay = ay or 0
  local vs = mulv(translate(-1/2, -1/2), box(1))
- local m = mulm(rotate(-a/360),_scale(s or 1))
+ local m = mulm(rotate(-a/360),scale(s or 1))
  local big = mulm(m, translate(-ax, -ay))
  local v1 = {}
  local m1 = {}
@@ -58,28 +34,27 @@ function sprr(n,x,y,w,h,flip_x,flip_y,s,a,ax,ay)
  end
 end
 
+-- function scalespr2(posx,posy,s,a)
+--  local vs = mulv(translate(-1/2, -1/2), box(1))
+--  local m = mulm(rotate(-ang/360),scale(s))
+--  local big = mulm(m, translate(-4, -4))
+--  local v1 = {}
+--  local m1 = {}
+--  local w = {}
+--  local n = 1
+--  for y=1,8 do
+--   for x=1,8 do
+--     local c = sget(n % 16 * 8 + x - 1, flr(n/16) * 16 + y - 1)
+--     mulv(big, {x, y, 1}, v1)
+--     mulm(translate(posx + v1[1], posy + v1[2]), m, m1)
+--     -- render_poly(mulv(m1, vs, w), sprite[x][y])
+--     render_poly(mulv(m1, vs, w), c)
+--     -- render_poly(mulv(m1, vb, w), (x + y - 1) % 16)
+--   end
+--  end
+-- end
 
-function scalespr2(posx,posy,s,a)
- local vs = mulv(translate(-1/2, -1/2), box(1))
- local m = mulm(rotate(-ang/360),_scale(s))
- local big = mulm(m, translate(-4, -4))
- local v1 = {}
- local m1 = {}
- local w = {}
- local n = 1
- for y=1,8 do
-  for x=1,8 do
-    local c = sget(n % 16 * 8 + x - 1, flr(n/16) * 16 + y - 1)
-    mulv(big, {x, y, 1}, v1)
-    mulm(translate(posx + v1[1], posy + v1[2]), m, m1)
-    -- render_poly(mulv(m1, vs, w), sprite[x][y])
-    render_poly(mulv(m1, vs, w), c)
-    -- render_poly(mulv(m1, vb, w), (x + y - 1) % 16)
-  end
- end
-end
-
-function _scale(x, y)
+function scale(x, y)
   return {x, 0,      0,
           0, y or x, 0,
           0, 0,      1 }
@@ -131,29 +106,6 @@ function box(w, h)
          w, 0,      1,
          w, h or w, 1,
          0, h or w, 1}
-end
--- draws a single pixel at pos x,y
---  with the origin at the top left
---  w is the width/height of pixel
---  a is the angle
---  c is the color
-function drawpixel(x,y,w,a,c)
- local v={0, 0, 1,
-          w, 0, 1,
-          w, w, 1,
-          0, w, 1}
- v = mulv(mulm(translate(x,y), rotate(-a/360)), v)
- -- render_poly(strip_third(v),c)
- render_poly(v,c)
-end
-
-function strip_third(v)
-  r = {}
-  for i = 1,#v,3 do
-    add(r, v[i])
-    add(r, v[i + 1])
-  end
-  return r
 end
 
 -- polyfill from user scgrn on
@@ -235,10 +187,3 @@ function render_poly(v,col)
   pset(sx2,y,c)
  end
 end
-__gfx__
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000008888000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000088008000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000088808000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000888000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

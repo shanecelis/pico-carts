@@ -9,10 +9,18 @@ __lua__
 #include scene.p8
 
 
-curr_scene = envelope:new({}, {"hi there"})
+idea = text_scene:new({},
+    {"virtual pet game?",
+     "by ryland and shane?"})
 
+
+our_credits = credits:new({
+        text = "by ryland and shane"})
+
+idea.next_scene = our_credits
+
+curr_scene = idea
 -- curr_scene = credits
-
 
 function _init()
  prev_time = time()
@@ -24,16 +32,16 @@ function _update()
 	update_time()
 	coroutines:update()
  end
-    local next = curr_scene:update()
-    if next ~= nil then
-        curr_scene:exit()
-        curr_scene = next
-        curr_scene:enter()
-    end
+ local next = curr_scene:update()
+ if next ~= nil then
+  curr_scene:exit()
+  curr_scene = next
+  curr_scene:enter()
+ end
 end
 
 function _draw()
-	curr_scene:draw()
+ curr_scene:draw()
 end
 
 __gfx__

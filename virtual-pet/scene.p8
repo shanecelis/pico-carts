@@ -29,25 +29,47 @@ end
 function scene:draw()
 end
 
-envelope = scene:new({ texts = { "default text" }, next_scene = nil })
+text_scene = scene:new({ texts = { "default text" }, next_scene = nil, x = 0, y = 0 })
 
-function envelope:new(o, texts)
+function text_scene:new(o, texts)
     o = scene.new(self, o)
     o.texts = texts
     return o
 end
 
-function envelope:get_message()
+function text_scene:get_message()
 	if self.message == nil then
 		self.message = message:new({}, self.texts)
 	end
 	return self.message
 end
 
+function text_scene:draw()
+	cls()
+    self:get_message():draw(self.x, self.y)
+end
+
+
+function text_scene:update()
+	local m = self:get_message()
+	m:update()
+	-- if (m:is_complete() and btnp(5)) curr_scene = collision
+	if (m:is_complete() and btnp(5)) return self.next_scene
+end
+
+
+envelope = text_scene:new({ border = 10 })
+
+function envelope:new(o, texts)
+    o = text_scene.new(self, o, texts)
+    o.x = self.border * 1.5
+    o.y = 64 + 1.5 * self.border
+    return o
+end
 function envelope:draw()
 	cls()
 	camera(0, 0)
-	local border = 10
+	local border = self.border
     rectfill(border, 64 + border, 127 - border, 127 - border, 7)
     rect(border, 64 + border, 127 - border, 127 - border, 6)
     line(border, 64 + border,
@@ -59,13 +81,6 @@ function envelope:draw()
     self:get_message():draw(border * 1.5, 64 + 1.5 * border)
 end
 
-
-function envelope:update()
-	local m = self:get_message()
-	m:update()
-	-- if (m:is_complete() and btnp(5)) curr_scene = collision
-	if (m:is_complete() and btnp(5)) return self.next_scene
-end
 
 credits = scene:new {
 	emitter = stars(),

@@ -4,9 +4,6 @@ __lua__
 -- wall and actor collisions
 -- by zep
 
-scene = {
-}
-
 intro_message = intro_message or { "hi there" }
 debug = debug or false
 credits_text = [[cardboard toad
@@ -18,22 +15,6 @@ room_color = {}
 room_color[1] = 1
 player_room = -1
 toad_distance = 5
-
-function scene:new(o)
-  o = o or {}
-  setmetatable(o, self)
-  self.__index = self
-  return o
-end
-
-function scene:enter()
-end
-
-function scene:update()
-end
-
-function scene:draw()
-end
 
 -- all actors
 actors = {}
@@ -157,54 +138,6 @@ function confetti()
  return left
 end
 
-function stars()
-
-	local my_emitters = emitters:new()
-  local front = emitter.create(0, 64, 0.2, 0)
-  ps_set_area(front, 0, 128)
-  ps_set_colours(front, {7})
-  ps_set_size(front, 0)
-  ps_set_speed(front, 34, 34, 10)
-  ps_set_life(front, 3.5)
-  ps_set_angle(front, 0, 0)
-  add(my_emitters, front)
-  local midfront = front.clone(front)
-  ps_set_frequency(midfront, 0.15)
-  ps_set_life(midfront, 4.5)
-  ps_set_colours(midfront, {6})
-  ps_set_speed(midfront, 26, 26, 5)
-  add(my_emitters, midfront)
-  local midback = front.clone(front)
-  ps_set_life(midback, 6.8)
-  ps_set_colours(midback, {5})
-  ps_set_speed(midback, 18, 18, 5)
-  ps_set_frequency(midback, 0.1)
-  add(my_emitters, midback)
-  local back = front.clone(front)
-  ps_set_frequency(back, 0.07)
-  ps_set_life(back, 11)
-  ps_set_colours(back, {1})
-  ps_set_speed(back, 10, 10, 5)
-  add(my_emitters, back)
-  local special = emitter.create(64, 64, 0.2, 0)
-  ps_set_area(special, 128, 128)
-  ps_set_angle(special, 0, 0)
-  ps_set_frequency(special, 0.01)
-  -- ps_set_sprites(special, {78, 79, 80, 81, 82, 83, 84})
-  ps_set_sprites(special, {107, 108, 109, 110})
-  ps_set_speed(special, 30, 30, 15)
-  ps_set_life(special, 5)
-  add(my_emitters, special)
-  local front = emitter.create(0, 64, 0.2, 0)
-  ps_set_area(front, 0, 128)
-  ps_set_colours(front, {7})
-  ps_set_size(front, 0)
-  ps_set_speed(front, 34, 34, 10)
-  ps_set_life(front, 3.5)
-  ps_set_angle(front, 0, 0)
-  add(my_emitters, front)
-  return my_emitters
-end
 
 actor_with_particles = actor:new {
   emitter = nil
@@ -715,62 +648,8 @@ function dialog:draw()
 end
 
 
-title = scene:new({})
 
 cart_screen = false
-
-function title:get_message()
-	if self.message == nil then
-		self.message = message:new({}, intro_message)
-	end
-	return self.message
-end
-
-function title:draw()
-	cls()
-	-- palt(0, true)
-	camera(7 * 128, 0)
-	map()
-	camera(0, 0)
-	local border = 10
-	if cart_screen then
-		print("by ryland von hunter", 24, 90, 7)
-		print("(c) 2023-02-28", 24, 100, 7)
-	else
-		rectfill(border, 64 + border, 127 - border, 127 - border, 7)
-		rect(border, 64 + border, 127 - border, 127 - border, 6)
-		line(border, 64 + border,
-			63, 64 + 3 * border, 6)
-
-		line(63, 64 + 3 * border,
-			127 - border, 64 + border, 6)
-
-		title:get_message():draw(border * 1.5, 64 + 1.5 * border)
-	end
-
-end
-
-
-function title:update()
-	local m = title:get_message()
-	m:update()
-	-- if (m:is_complete() and btnp(5)) curr_scene = collision
-	if (m:is_complete() and btnp(5)) curr_scene = dialog
-end
-
-credits = scene:new {
-	emitter = stars(),
-	-- x = 25,
-	x = 35,
-	y = 145,
-	t = 0,
-	f = 0,
-	speed = -4,
-}
-
-function title:enter()
-	music(4, 600)
-end
 
 function credits:enter()
 	music(4, 600)
@@ -801,7 +680,8 @@ function _update()
 	update_time()
 	coroutines:update()
  end
-	curr_scene:update()
+    local next = curr_scene:update()
+    if (next ~= nil) curr_scene = next
 end
 
 function _draw()

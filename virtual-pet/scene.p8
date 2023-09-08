@@ -29,34 +29,26 @@ end
 function scene:draw()
 end
 
-text_scene = scene:new({ texts = { "default text" }, next_scene = nil, x = 0, y = 0 })
+text_scene = scene:new({ texts = { "default text" }, next_scene = nil, x = 2, y = 2 })
 
 function text_scene:new(o, texts)
     o = scene.new(self, o)
-    o.texts = texts
+    o.message = message:new({}, texts)
+    o.message.color = clone(message.color)
     return o
-end
-
-function text_scene:get_message()
-	if self.message == nil then
-		self.message = message:new({}, self.texts)
-	end
-	return self.message
 end
 
 function text_scene:draw()
 	cls()
-    self:get_message():draw(self.x, self.y)
+    self.message:draw(self.x, self.y)
 end
 
 
 function text_scene:update()
-	local m = self:get_message()
-	m:update()
+	self.message:update()
 	-- if (m:is_complete() and btnp(5)) curr_scene = collision
-	if (m:is_complete() and btnp(5)) return self.next_scene
+	if (self.message:is_complete() and btnp(5)) return self.next_scene
 end
-
 
 envelope = text_scene:new({ border = 10 })
 
@@ -78,7 +70,7 @@ function envelope:draw()
     line(63, 64 + 3 * border,
         127 - border, 64 + border, 6)
 
-    self:get_message():draw(border * 1.5, 64 + 1.5 * border)
+    self.message:draw(border * 1.5, 64 + 1.5 * border)
 end
 
 

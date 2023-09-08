@@ -6,7 +6,7 @@ __lua__
 --[[
     text codes:
 
-   $u1 = underline text (0 for
+   $u# = underline text (0 for
            no underline)
 
    $b# = border color, ##= a
@@ -25,6 +25,7 @@ __lua__
 
    $f#  = special effects
    $sc  = spin character
+   $r#  = rainbow # = speed
    $al  = align left
    $ar  = align right
    $ac  = align center
@@ -75,39 +76,43 @@ reasons: i wanted to integrate it with my code that has a particular style.
 
 effect = {
   sigil = nil, -- 'c'
-  arg_count = 1,
-  val = nil,
-  isolated = false,
-  arg_prefix = "0x" -- use hexadecimal
+  -- arg_count = 1,
+  -- val = nil,
+  isolated = false
+  -- arg_prefix = "0x", -- use hexadecimal
+  -- as_num = true
 }
 
-function effect.new(class, o)
+function effect:new(o)
   o = o or {}
-  setmetatable(o, class)
-  class.__index = class
+  setmetatable(o, self)
+  self.__index = self
   return o
 end
 
 function effect:parse(chars, i)
-  assert(chars[i+0].c == '$', "wrong start")
+  assert(chars[i+0].c == '<', "wrong start")
   if (self.sigil) assert(chars[i+1].c == self.sigil, "wrong sigil")
-  chars[i].skip=true
+  chars[i+0].skip=true
   chars[i+1].skip=true
 
   local arg = ""
-  for j=1, self.arg_count do
-    chars[i+1+j].skip=true
-    arg = arg..chars[i+1+j].c
+  for j=i+2, #chars do
+    chars[j].skip=true
+    if (chars[j].c == '>') break
+    arg = arg..chars[j].c
   end
-  return tonum(self.arg_prefix..arg)
+  return arg
 end
 
 function effect:closure(val)
   return function(fragments, k)
     if self.isolated then
+      assert(fragments[k] ~= nil)
       self:setup(fragments[k], val)
     else
       for j=k,#fragments do
+        assert(fragments[j] ~= nil)
         self:setup(fragments[j], val)
       end
     end
@@ -116,12 +121,23 @@ end
 
 function effect:setup(fragment, val) end
 
+numeffect = effect:new({
+  num_prefix = "0x",
+  parse = function(self, chars, i)
+    local arg = effect.parse(self, chars, i)
+    if (#arg == 1 and arg[1] == '-') return -1
+    return tonum(self.num_prefix..arg)
+  end
+})
+
+
 message = {
   color = {
-    foreground = 15,
+    foreground = 7,
     highlight = nil,
-    outline = 1
+    outline = -1
   },
+  width = 128,
   spacing = {
     letter = 4,
     newline = 7
@@ -136,24 +152,50 @@ message = {
     color = 9
   },
   effects = {
-    c = effect:new{ sigil = 'c',
+    c = numeffect:new{ sigil = 'c',
                     setup = function(self, fragment, val) fragment.color.foreground=val end
     },
-    b = effect:new{ sigil = 'b',
+    b = numeffect:new{ sigil = 'b',
                     setup = function(self, fragment, val) fragment.color.highlight=val end
     },
-    o = effect:new{ sigil = 'o',
-                     setup = function(self, fragment, val) fragment.color.outline=val end
-                   },
-    d = effect:new{ sigil = 'd',
-                     setup = function(self, fragment, val) fragment.delay=val end,
-                     parse = function(self, chars, i)
-                       local val = effect.parse(self, chars, i)
-                       -- if (val) val /= 30
-                       return val and val/30 or nil
-                     end
+    o = numeffect:new{ sigil = 'o',
+                    setup = function(self, fragment, val) fragment.color.outline=val end
     },
-    f = effect:new{ sigil = 'f',
+    d = numeffect:new{ sigil = 'd',
+                       num_prefix = "",
+                    setup = function(self, fragment, val) fragment.delay=val end,
+                    parse = function(self, chars, i)
+                      local val = numeffect.parse(self, chars, i)
+                      -- if (val) val /= 30
+                      return val and val/30 or nil
+                    end
+    },
+    a = effect:new{ sigil = 'a',
+                    isolated = true,
+                    setup = function(self, fragment, val)
+                        assert(fragment ~= nil, "fragment is nil")
+                        fragment.pdx=val
+                    end,
+                    parse = function(self, chars, i)
+                      local val = effect.parse(self, chars, i)
+                      local c=0
+                      for j=1, #chars - i do
+                        if (chars[i + j].c == '\n') break
+                        c += 1
+                      end
+                      local width = message.width
+                      if val == 'l' then
+                        return 0
+                      elseif val == 'c' then
+                        return width/2 - c / 2 * message.spacing.letter
+                      elseif val == 'r' then
+                        return width - c * message.spacing.letter
+                      else
+                        assert(false, "align expect l, c, or r but got " .. val)
+                      end
+                    end
+    },
+    f = numeffect:new{ sigil = 'f',
                     parent = nil,
                     setup = function(self, fragment, val) fragment.update = self.subeffects[val] end,
 
@@ -169,33 +211,33 @@ message = {
                       end,
                     },
     },
-    s = effect:new{ sigil = 's',
+    s = numeffect:new{ sigil = 's',
                     parent = nil,
                     isolated = true,
                     arg_count = 0,
                     setup = function(self, fragment, val)
-                      fragment.update = function(fragment, fxv)
+                      function fragment:update(fxv)
                         local t = 1.6 * time()
-                        fragment.dy=sin(t+fxv)
-                        fragment.dx=cos(t+fxv)
+                        self.dy=sin(t+fxv)
+                        self.dx=cos(t+fxv)
                       end
                     end,
     },
-    u = effect:new{ sigil = 'u',
+    u = numeffect:new{ sigil = 'u',
                     setup = function(self, fragment, val) fragment.underline=val end
-                   },
-    i = effect:new{ sigil = 'i',
+    },
+    i = numeffect:new{ sigil = 'i',
                     isolated = true,
-                    arg_count = 2,
                     setup = function(self, fragment, val) fragment.image=val end
-                   },
-    r = effect:new{ setup = function(self, fragment, val)
+    },
+    -- rainbow
+    r = numeffect:new{ setup = function(self, fragment, val)
                       fragment.update = val and function(fragment, fxv)
                         local t = val * time() + fxv
                         fragment.color.foreground = t % 16
                       end
     end,
-                  },
+  },
     -- prompt
     -- imagine a menu that looked like this;
     --
@@ -223,8 +265,8 @@ message = {
     --                   end
     --                 end
     -- },
-    ['$'] = effect:new {
-      sigil = '$',
+    ['<'] = effect:new {
+      sigil = '<',
       arg_count = 0,
       parse = function(self, chars, i) chars[i].skip=true end,
     },
@@ -266,23 +308,27 @@ fragment = {
   c = nil,
   dx = 0,
   dy = 0,
+  pdx = 0, -- persistent dx
+  pdy = 0, -- persistent dy
   fxv = 0,
   delay = nil,
   image = nil,
-  underline = nil,
+  underline = -1,
   delay_accum = 0,
+  message = nil
 }
 
 
 function fragment.new(class, o, message_instance)
   o = o or {}
-  if (o.color) setmetatable(o.color, { __index = (message_instance or message).color })
+  o.message = message_instance or message
+  if (o.color) setmetatable(o.color, { __index = o.message.color })
   setmetatable(o, class)
   class.__index = class
   return o
 end
 
-function fragment:update() end
+function fragment:update(fxv) end
 
 function message:parse(string)
   -- ctx = {}
@@ -291,16 +337,19 @@ function message:parse(string)
     add(chars, { c=sub(string, i, i), setup = nil, skip = false, fragment_index = nil })
   end
   for i=1,#chars - 1 do
-    local fx = self.effects[chars[i+1].c]
-    if chars[i].c=='$' and fx then
+    if (chars[i].skip) goto continue
+    if chars[i].c=='<' then
+      local fx = self.effects[chars[i+1].c]
+      assert(fx ~= nil, "no effect found for "..chars[i+1].c)
       chars[i].setup = fx:closure(fx:parse(chars, i))
     end
+    ::continue::
   end
   local fragments = {}
-  fragments[0] = fragment:new()
+  fragments[0] = fragment:new() -- why at zero?
   for char in all(chars) do
     if not char.skip then
-      add(fragments, fragment:new({ color = {}, c = char.c }, self))
+      add(fragments, fragment:new({ color = {}, c = char.c }, self)) -- i so don't know what self is doing here
     end
     char.fragment_index = #fragments
   end
@@ -311,13 +360,11 @@ function message:parse(string)
   end
 
   local accum = 0
-  -- for f in all(fragments) do
-  for i = 0, #fragments do
-    local f = fragments[i]
-    if not f.skip then
-      accum += f.delay or self.delay
-      f.delay_accum = accum
-    end
+  for f in all(fragments) do
+  -- for i = 1, #fragments do
+    -- local f = fragments[i]
+    accum += f.delay or self.delay
+    f.delay_accum = accum
   end
   return fragments
 end
@@ -332,6 +379,7 @@ function message:update()
   local consume = false
   if (not self.istart) self.istart = time()
   local fragments = self.fragments[self.cur]
+  assert(fragments ~= nil, "fragments are nil for "..self.cur)
   if btnp(self.next_message.button) then
     if self.i < #fragments then
       self.i=#fragments
@@ -373,13 +421,17 @@ function message:draw(x, y)
     -- local str = sub(f.c, 1, self.i)
     local str = f.c
 
+    if f.pdx then
+      _x += f.pdx
+    end
+
     if f.image then
       spr(f.image, x+_x+f.dx, y+f.dy+_y)
     end
     --you're probably getting
     --bored now, right?
     local outline = f.color.outline
-    if outline and outline ~= 16 then
+    if outline and outline ~= -1 then
       local __x=x+_x+f.dx
       local __y=y+_y+f.dy
       for i4=1,3 do
@@ -395,8 +447,8 @@ function message:draw(x, y)
 
     --yep, not much here...
     print(str, x+_x+f.dx, y+f.dy+_y, f.color.foreground)
-    if f.underline == 1 then
-      line(x+_x, y+_y+5, x+_x+self.spacing.letter, y+_y+5)
+    if f.underline >= 0 then
+      line(x+_x - 1, y+_y+6, x+_x+self.spacing.letter, y+_y+6, f.underline)
     end
 
     _x+=self.spacing.letter
@@ -414,7 +466,7 @@ function message:draw(x, y)
   --i mean, its not like
   --i care.
   for i=1,#fragments do
-    fragments[i]:update(i/3)
+    fragments[i]:update(i/3) -- divided by three?
   end
 
   --enjoy the script :)--

@@ -9,25 +9,28 @@ __lua__
    $u1 = underline text (0 for
            no underline)
 
-   $b## = border color, ##= a
+   $b# = border color, ##= a
           number, 0-15
 
-   $o## = outline color
+   $o# = outline color
 
-   $c## = text color
+   $c# = text color
 
-   $d## = delay extra (0-99)
+   $d# = delay extra (0-99)
           if more delay is
           needed, use $f##
           and create a custom
           fx for it.
    $i## = display sprite inline
 
-   $f## = special effects
+   $f#  = special effects
    $sc  = spin character
+   $al  = align left
+   $ar  = align right
+   $ac  = align center
 
    for any of these, you can use
-   xx instead of a number to
+   x instead of a number to
    reset it to default (based
    on the default config you
    have set up)
@@ -72,9 +75,10 @@ reasons: i wanted to integrate it with my code that has a particular style.
 
 effect = {
   sigil = nil, -- 'c'
-  arg_count = 2,
+  arg_count = 1,
   val = nil,
   isolated = false,
+  arg_prefix = "0x" -- use hexadecimal
 }
 
 function effect.new(class, o)
@@ -95,7 +99,7 @@ function effect:parse(chars, i)
     chars[i+1+j].skip=true
     arg = arg..chars[i+1+j].c
   end
-  return tonum(arg)
+  return tonum(self.arg_prefix..arg)
 end
 
 function effect:closure(val)
@@ -178,15 +182,14 @@ message = {
                     end,
     },
     u = effect:new{ sigil = 'u',
-                    arg_count = 1,
                     setup = function(self, fragment, val) fragment.underline=val end
                    },
     i = effect:new{ sigil = 'i',
                     isolated = true,
+                    arg_count = 2,
                     setup = function(self, fragment, val) fragment.image=val end
                    },
-    r = effect:new{ arg_count = 1,
-                    setup = function(self, fragment, val)
+    r = effect:new{ setup = function(self, fragment, val)
                       fragment.update = val and function(fragment, fxv)
                         local t = val * time() + fxv
                         fragment.color.foreground = t % 16
@@ -239,7 +242,7 @@ function clone(o)
 end
 
 function message.new(class, o, strings)
-  o = o and clone(o) or {}
+  o = o and clone(o) or {} -- wth is this clone doing?
   -- if (o.color) setmetatable(o.color, { __index = class.color })
   -- if (o.color) class.color.__index = class.color
   if (o.spacing) setmetatable(o.spacing, class.spacing); class.spacing.__index = class.spacing

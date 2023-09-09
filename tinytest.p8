@@ -27,19 +27,19 @@ __lua__
 -- #include tinytest.p8
 --
 -- tinytest:new().run({
---   test_passes = function(t)
+--   demo_pass = function(t)
 --     t:ok(true, "hi")
 --   end,
 --
---   test_fails = function(t)
+--   demo_fail = function(t)
 --     t:ok(false, "bye")
 --   end,
 --
---   test_errors = function(t)
+--   demo_error = function(t)
 --     assert(false, "wtf")
 --   end,
 --
---   test_fails_and_errors =
+--   demo_misc  =
 --   function(t)
 --     t:ok(false, "bye2")
 --     assert(false, "wtf2")
@@ -65,7 +65,7 @@ __lua__
 -- ```
 -- -- yourcart.p8
 -- my_tinytests = {
---   test_passes = function(t)
+--   demo_pass = function(t)
 --     t:ok(true, "yep")
 --   end
 -- }
@@ -270,37 +270,37 @@ if my_tinytests then
 elseif not _init then
 
   demo_passtests = {
-    test_passes = function(t)
+    demo_pass = function(t)
       t:ok(true, "hi")
     end,
   }
 
   demo_failtests = {
-    test_fails = function(t)
+    demo_fail = function(t)
       t:ok(false, "bye")
     end,
   }
 
   demo_errortests = {
-    test_errors = function(t)
+    demo_error = function(t)
       assert(false, "wtf")
     end,
   }
 
   demo_misctests = {
-    test_passes = function(t)
+    demo_pass = function(t)
       t:ok(true, "hi")
     end,
 
-    test_fails = function(t)
+    demo_fail = function(t)
       t:ok(false, "bye")
     end,
 
-    test_errors = function(t)
+    demo_error = function(t)
       assert(false, "wtf")
     end,
 
-    test_fails_and_errors = function(t)
+    demo_misc = function(t)
       t:ok(false, "bye2")
       assert(false, "wtf2")
     end,

@@ -77,7 +77,8 @@ local function try(t, c, f)
 end
 -- there is also a trace
 -- function for coroutines gives
--- a stacktrace!
+-- a stacktrace in the preceding
+-- link.
 
 tinytest = {
 
@@ -92,15 +93,18 @@ tinytest = {
     return o
   end,
 
-  on_result = function(self, r)
+  table_count = function(self, table)
+    local count = 0
+    for key, value in pairs(table) do
+      count += 1
+    end
+    return count
   end,
 
   run = function(self, tests)
     local errors_map = {}
     local failures_map = {}
     local output = ""
-    local failures = 0
-    local errors = 0
     cls()
     for testname, testaction in pairs(tests) do
       try(function ()
@@ -131,12 +135,10 @@ tinytest = {
       if failures_map[testname] or errors_map[testname] then
         for _, failure in ipairs(failures_map[testname]) do
           print("  " .. failure)
-          failures += 1
         end
 
         for _, error in ipairs(errors_map[testname]) do
           print("  \f8error line\f6 " .. sub(error,32))
-          errors += 1
         end
       else
         print("  \fbpass\f6")
@@ -168,6 +170,11 @@ bobtest = tinytest:new(
                 bad =  {8, 64, 64, 32, 32} },
     run = function(self, tests)
       local failures, errors = tinytest.run(self, tests)
+      if self:table_count(failures) + self:table_count(errors) == 0 then
+        spr(unpack(self.sprites.good))
+      else
+        spr(unpack(self.sprites.bad))
+      end
       local soundstr = ""
       for testname, testaction in pairs(tests) do
         if errors[testname] then
@@ -179,11 +186,6 @@ bobtest = tinytest:new(
         end
       end
       print(soundstr)
-      if #failures + #errors == 0 then
-        spr(unpack(self.sprites.good))
-      else
-        spr(unpack(self.sprites.bad))
-      end
     end
 })
 

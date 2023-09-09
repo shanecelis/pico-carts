@@ -1,131 +1,259 @@
 pico-8 cartridge // http://www.pico-8.com
-version 39
+version 41
 __lua__
+-- this tiny test library for
+-- pico-8 was inspired by the
+-- tinytest[1] javascript
+-- library by joe walnes.
+--
+-- it provides a basic unit test
+-- framework.
+--
+-- you can use it one of two
+-- ways, as a cart or as a
+-- library.
+--
+-- library usage
+-- -------------
+--
+-- ```
+-- #include tinytest.p8
+--
+-- tinytest:new().run({
+--   test_passes = function(t)
+--     t:ok(true, "hi")
+--   end,
+--
+--   test_fails = function(t)
+--     t:ok(false, "bye")
+--   end,
+--
+--   test_errors = function(t)
+--     assert(false, "wtf")
+--   end,
+--
+--   test_fails_and_errors =
+--   function(t)
+--     t:ok(false, "bye2")
+--     assert(false, "wtf2")
+--   end,
+-- })
+-- ```
+--
+-- cart usage
+-- ----------
+--
+-- the cart comes with some
+-- images of bob from the
+-- incredibles in meme format to
+-- make unit testing more fun.
+-- you would use it like this:
+--
+-- ```
+--
+-- ```
+--
+--
+-- [1]: https://github.com/joewalnes/jstinytest
 
--- there is also a trace function for coroutines gives a stacktrace!
+-- try runs the given function
+-- t() first. on errors call
+-- c(e). finally call f() when
+-- complete.
+--
 -- try from https://github.com/sparr/pico8lib/blob/master/functions.p8
 local function try(t, c, f)
- local co = cocreate(t)
- local s, m = true
- while s and costatus(co) ~= "dead" do
-  s, m = coresume(co)
-  if not s then
-   c(m)
+  local co = cocreate(t)
+  local s, e = true
+  while s and costatus(co) ~= "dead" do
+    s, e = coresume(co)
+    if not s then
+      c(e)
+    end
   end
- end
- if f then
-  f()
- end
+  if f then
+    f()
+  end
 end
+-- there is also a trace
+-- function for coroutines gives
+-- a stacktrace!
 
--- inspired by tinytest javascript library by joe walnes.
--- https://github.com/joewalnes/jstinytest
 tinytest = {
 
   new = function(self, o)
-          o = o or {}
-          setmetatable(o, self)
-          self.__index = self
-          o.failures = {}
-          o.errors = {}
-          o.verbose = o.verbose or false
-          o.fail_is_error = o.fail_is_error or false
-          return o
-        end,
+    o = o or {}
+    setmetatable(o, self)
+    self.__index = self
+    o.failures = {}
+    o.errors = {}
+    o.verbose = o.verbose or false
+    o.fail_is_error = o.fail_is_error or false
+    return o
+  end,
 
   run = function(self, tests)
-          local errors_map = {}
-          local failures_map = {}
-          local output = ""
-          local failures = 0
-          local errors = 0
-          for testname, testaction in pairs(tests) do
-            try(function ()
-                  testaction(self)
-                end,
-                function (e)
-                  -- print("error: line "..sub(e,32))
-                  add(self.errors, e)
-                end,
-                function ()
+    local errors_map = {}
+    local failures_map = {}
+    local output = ""
+    local failures = 0
+    local errors = 0
+    cls()
+    for testname, testaction in pairs(tests) do
+      try(function ()
+            testaction(self)
+          end,
+          function (e)
+            add(self.errors, e)
+          end,
+          function ()
 
-                end)
-            if #self.errors ~= 0 then
-              output ..= "e"
-              errors_map[testname] = self.errors
-              self.errors = {}
-            end
-            if #self.failures ~= 0 then
-              output ..= "f"
-              failures_map[testname] = self.failures
-              self.failures = {}
-            else
-              output ..= "p"
-            end
-          end
-          print("test results: " .. output)
-          for testname, testaction in pairs(tests) do
-            if (failures_map[testname] or errors_map[testname]) print(testname)
-            for _, failure in ipairs(failures_map[testname]) do
-              print("  " .. failure)
-              failures += 1
-            end
+          end)
+      local summary = "\fbp"
+      if #self.failures ~= 0 then
+        summary = "\faf"
+        failures_map[testname] = self.failures
+        self.failures = {}
+      end
+      if #self.errors ~= 0 then
+        summary = "\f8e"
+        errors_map[testname] = self.errors
+        self.errors = {}
+      end
+      output ..= summary
+    end
+    print("test results: " .. output .. "\f6")
+    for testname, testaction in pairs(tests) do
+      print(testname)
+      if failures_map[testname] or errors_map[testname] then
+        for _, failure in ipairs(failures_map[testname]) do
+          print("  " .. failure)
+          failures += 1
+        end
 
-            for _, error in ipairs(errors_map[testname]) do
-              print("  error line " .. sub(error,32))
-              errors += 1
-            end
-          end
-          return failures, errors
-        end,
+        for _, error in ipairs(errors_map[testname]) do
+          print("  \f8error line\f6 " .. sub(error,32))
+          errors += 1
+        end
+      else
+        print("  \fbpass\f6")
+      end
+    end
+    return failures, errors
+  end,
 
   fail = function(self, msg, header)
-           if self.false_is_error then
-             assert(false,      (header or 'fail: ') .. msg)
-           else
-             add(self.failures, (header or 'fail: ') .. msg)
-           end
-         end,
+    if self.false_is_error then
+      assert(false,      (header or 'fail: ') .. msg)
+    else
+      add(self.failures, (header or 'fail: ') .. msg)
+    end
+  end,
 
   ok = function(self, value, msg)
-         if (not value) self:fail(msg, 'not ok: ')
-       end,
+    if (not value) self:fail(msg, '\fanot ok: \f6')
+    end,
 
   eq = function(self, expected, actual)
-         if (expected ~= actual) self:fail('"' .. expected .. '" ~= "' .. actual .. '"', 'not eq: ')
-       end,
+    if (expected ~= actual) self:fail('"' .. expected .. '" ~= "' .. actual .. '"', 'not eq: ')
+    end,
 
 }
 
-tinytest:new({ sprites = { good = {0, 64, 0, 32, 32},
-                           bad = { 8, 64, 0, 32, 32} },
-               run = function(self, tests)
-                 local failures, errors = tinytest.run(self, tests)
-                 if failures + errors == 0 then
-                   spr(unpack(self.sprites.good))
-                 else
-                   -- palt(0, false)
-                   -- spr(unpack(self.sprites.good))
-                   spr(unpack(self.sprites.bad))
-                 end
-               end
-             }):run({
+bobtest = tinytest:new(
+  { sprites = { good = {0, 64, 64, 32, 32},
+                bad =  {8, 64, 64, 32, 32} },
+    run = function(self, tests)
+      local failures, errors = tinytest.run(self, tests)
+      if failures + errors == 0 then
+        spr(unpack(self.sprites.good))
+      else
+        -- palt(0, false)
+        -- spr(unpack(self.sprites.good))
+        spr(unpack(self.sprites.bad))
+      end
+    end
+})
+
+
+if not _init then
+
+  demo_passtests = {
     test_passes = function(t)
-                    t:ok(true, "hi")
-                  end,
+      t:ok(true, "hi")
+    end,
+  }
+
+  demo_failtests = {
+    test_fails = function(t)
+      t:ok(false, "bye")
+    end,
+  }
+
+  demo_errortests = {
+    test_errors = function(t)
+      assert(false, "wtf")
+    end,
+  }
+
+  demo_misctests = {
+    test_passes = function(t)
+      t:ok(true, "hi")
+    end,
 
     test_fails = function(t)
-                   t:ok(false, "bye")
-                 end,
-    test_errrors = function(t)
-                     assert(false, "wtf")
-                   end,
+      t:ok(false, "bye")
+    end,
+
+    test_errors = function(t)
+      assert(false, "wtf")
+    end,
 
     test_fails_and_errors = function(t)
-                              t:ok(false, "bye")
-                              assert(false, "wtf")
-                            end,
-})
+      t:ok(false, "bye2")
+      assert(false, "wtf2")
+    end,
+  }
+
+  last = time()
+  wait = 10
+  slideshow = true
+  function _init()
+    cls()
+    print("welcome to tiny test!")
+    print("")
+    print("press ❎ to run \fbpassing\f6 tests.")
+    print("press 🅾️ to run \fafailing\f6 tests.")
+    print("press ⬆️ to run \f8erroring\f6 tests.")
+    print("press ➡️ to run \f7misc\f6 tests.")
+    print("press ⬅️ to show this screen.")
+    print("press ⬇️ to toggle random selection\n  (currently " .. (slideshow and "on" or "off") .. ").")
+    print("")
+    if slideshow then
+      print("if no buttons are pressed, this \ncart will choose one randomly \nevery "..wait.." seconds.")
+    end
+  end
+
+  function exec(n)
+    if (btnp(5) or n == 1) bobtest:run(demo_passtests)
+    if (btnp(4) or n == 2) bobtest:run(demo_failtests)
+    if (btnp(2) or n == 3) bobtest:run(demo_errortests)
+    if (btnp(1) or n == 4) bobtest:run(demo_misctests)
+    if (btnp(0) or n == 5) _init()
+    if (btnp(3) or n == 5) slideshow = not slideshow; _init()
+  end
+
+  function _update()
+    if btnp() ~= 0 then
+      exec(nil)
+      last = time()
+    elseif slideshow and (time() - last) > wait then
+      exec(flr(rnd(5)) + 1)
+      last = time()
+    end
+  end
+
+end
 
 __gfx__
 ddddddddddddddddddd4444ddddddddddddddddddddddddddddddddddddddddd10000000000000000000000000000000000000001151155555555555555d55dd

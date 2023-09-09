@@ -92,6 +92,9 @@ tinytest = {
     return o
   end,
 
+  on_result = function(self, r)
+  end,
+
   run = function(self, tests)
     local errors_map = {}
     local failures_map = {}
@@ -139,7 +142,7 @@ tinytest = {
         print("  \fbpass\f6")
       end
     end
-    return failures, errors
+    return failures_map, errors_map
   end,
 
   fail = function(self, msg, header)
@@ -165,11 +168,20 @@ bobtest = tinytest:new(
                 bad =  {8, 64, 64, 32, 32} },
     run = function(self, tests)
       local failures, errors = tinytest.run(self, tests)
-      if failures + errors == 0 then
+      local soundstr = ""
+      for testname, testaction in pairs(tests) do
+        if errors[testname] then
+          soundstr ..= "\a2 \^4"
+        elseif failures[testname] then
+          soundstr ..= "\a1 \^4"
+        else
+          soundstr ..= "\a0 \^4"
+        end
+      end
+      print(soundstr)
+      if #failures + #errors == 0 then
         spr(unpack(self.sprites.good))
       else
-        -- palt(0, false)
-        -- spr(unpack(self.sprites.good))
         spr(unpack(self.sprites.bad))
       end
     end
@@ -320,3 +332,7 @@ ade944444d4d44d44444444d44e444d44d44d444444444552552552254dddddd0000110000000011
 94e4d444444d4444d44d444d444d444d444d44d44445544552045025555dd4dd0000551000000000000000000000000000000000000000000000000000000000
 44d4e4445444dd4444444d4444444d444444444444445552525522552554dddd1151101500000000000000000000000000000000000000000000000000000000
 f44f44d44454444d44d4444444d444444444444455544552052052022555dddd6555115550000000000000000000000000000000000000000000000000000000
+__sfx__
+00020000170501c05020050250502b0502f0502200026000280002b0002f000300003000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0004000033550305502b5502855025550215001e5001b500195001650013500115000f5000c5000a5000750006500005000050000500005000050000500005000050000500005000050000500005000050000500
+00040000336102a610236101c61012610116001360000600006000060000600006000060000600006000060000600006000060000600006000060000600006000060000600006000060000600006000060000600

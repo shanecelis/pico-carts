@@ -1,20 +1,27 @@
 pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
--- this tiny test library for
--- pico-8 was inspired by the
--- tinytest[1] javascript
--- library by joe walnes.
+-- copyright (c) 2023 shane celis[1]
+-- licensed under the mit license[2]
 --
--- it provides a basic unit test
+-- this is the tinytest library
+-- for pico-8; it was inspired
+-- by the tinytest[3] javascript
+-- library by joe walnes. it
+-- provides a basic unit test
 -- framework.
 --
 -- you can use it one of two
--- ways, as a cart or as a
--- library.
+-- ways: as a no frills library
+-- or as a singing, dancing cart.
 --
 -- library usage
 -- -------------
+--
+-- you will enjoy colored text
+-- reports but otherwise no
+-- frills, but it's very
+-- flexible this way.
 --
 -- ```
 -- #include tinytest.p8
@@ -45,16 +52,52 @@ __lua__
 --
 -- the cart comes with some
 -- images of bob from the
--- incredibles in meme format to
--- make unit testing more fun.
--- you would use it like this:
+-- incredibles in meme format
+-- and some audio sfx so you can
+-- hear the sweet sound of tests
+-- passing, failing, and
+-- erroring to make unit testing
+-- more fun.
+--
+-- in your cart, define
+-- `my_tinytests`:
 --
 -- ```
---
+-- -- yourcart.p8
+-- my_tinytests = {
+--   test_passes = function(t)
+--     t:ok(true, "yep")
+--   end
+-- }
 -- ```
 --
+-- edit tinytest.p8's cart:
 --
--- [1]: https://github.com/joewalnes/jstinytest
+-- ```
+-- -- tinytest.p8
+-- #include yourcart.p8
+-- ```
+--
+-- load tinytest.p8 and on every
+-- run it will exercise your
+-- tests. since it does an
+-- include, you don't have to
+-- reload either.
+--
+-- todo
+-- ====
+--
+-- * add more bob meme images
+--   (only two currently)
+-- *
+--
+-- [1]: https://mastodon.gamedev.place/@shanecelis
+-- [2]: https://opensource.org/licenses/MIT
+-- [3]: https://github.com/joewalnes/jstinytest
+
+
+-- define my_tintests in yourcart.
+-- #include yourcart.p8
 
 -- try runs the given function
 -- t() first. on errors call
@@ -62,6 +105,11 @@ __lua__
 -- complete.
 --
 -- try from https://github.com/sparr/pico8lib/blob/master/functions.p8
+--
+-- there is also a trace
+-- function for coroutines gives
+-- a stacktrace in the preceding
+-- link.
 local function try(t, c, f)
   local co = cocreate(t)
   local s, e = true
@@ -75,25 +123,29 @@ local function try(t, c, f)
     f()
   end
 end
--- there is also a trace
--- function for coroutines gives
--- a stacktrace in the preceding
--- link.
 
+-- tinytest class
+--
+-- it can be extended. see
+-- bobtest below.
 tinytest = {
 
   new = function(self, o)
     o = o or {}
     setmetatable(o, self)
     self.__index = self
+    -- o.verbose = o.verbose or false
     o.failures = {}
-    o.errors = {}
-    o.verbose = o.verbose or false
     o.fail_is_error = o.fail_is_error or false
     return o
   end,
 
-  table_count = function(self, table)
+  -- utility function. counts
+  -- the number of entries in a
+  -- table. sequences can do
+  -- #list but tables have to be
+  -- iterated it seems.
+  table_count = function(table)
     local count = 0
     for key, value in pairs(table) do
       count += 1
@@ -101,35 +153,42 @@ tinytest = {
     return count
   end,
 
+  -- run the tests and return
+  -- the tables failures and
+  -- errors.
   run = function(self, tests)
     local errors_map = {}
     local failures_map = {}
-    local output = ""
+    local errors = {}
     cls()
+    print("test results: \0")
     for testname, testaction in pairs(tests) do
       try(function ()
             testaction(self)
           end,
           function (e)
-            add(self.errors, e)
+            add(errors, e)
           end,
           function ()
 
           end)
-      local summary = "\fbp"
+
+      if #errors == 0 and #self.failures == 0 then
+        print("\fbp\0")
+      end
+
       if #self.failures ~= 0 then
-        summary = "\faf"
+        print("\faf\0")
         failures_map[testname] = self.failures
         self.failures = {}
       end
-      if #self.errors ~= 0 then
-        summary = "\f8e"
-        errors_map[testname] = self.errors
-        self.errors = {}
+      if #errors ~= 0 then
+        print("\f8e\0")
+        errors_map[testname] = errors
+        errors = {}
       end
-      output ..= summary
     end
-    print("test results: " .. output .. "\f6")
+    print("\f6")
     for testname, testaction in pairs(tests) do
       print(testname)
       if failures_map[testname] or errors_map[testname] then
@@ -147,6 +206,7 @@ tinytest = {
     return failures_map, errors_map
   end,
 
+  -- report an unconditional failure.
   fail = function(self, msg, header)
     if self.false_is_error then
       assert(false,      (header or 'fail: ') .. msg)
@@ -155,22 +215,31 @@ tinytest = {
     end
   end,
 
+  -- assert something is true.
   ok = function(self, value, msg)
     if (not value) self:fail(msg, '\fanot ok: \f6')
-    end,
+  end,
 
+  -- assert something is equal.
   eq = function(self, expected, actual)
     if (expected ~= actual) self:fail('"' .. expected .. '" ~= "' .. actual .. '"', 'not eq: ')
-    end,
+  end,
 
 }
 
+-- add image and sounds to unit
+-- test report. must have
+-- tinytest cart loaded and not
+-- just included to work
+-- properly.
 bobtest = tinytest:new(
-  { sprites = { good = {0, 64, 64, 32, 32},
-                bad =  {8, 64, 64, 32, 32} },
+  { sprites =
+      { good = {0, 64, 64, 32, 32},
+        bad =  {8, 64, 64, 32, 32} },
     run = function(self, tests)
       local failures, errors = tinytest.run(self, tests)
-      if self:table_count(failures) + self:table_count(errors) == 0 then
+      if self.table_count(failures) +
+         self.table_count(errors) == 0 then
         spr(unpack(self.sprites.good))
       else
         spr(unpack(self.sprites.bad))
@@ -189,8 +258,16 @@ bobtest = tinytest:new(
     end
 })
 
-
-if not _init then
+if my_tinytests then
+  function _init()
+    cls()
+    bobtest:run(my_tinytests)
+  end
+  function _draw()
+  end
+  function _update()
+  end
+elseif not _init then
 
   demo_passtests = {
     test_passes = function(t)

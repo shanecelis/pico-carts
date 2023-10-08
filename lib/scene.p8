@@ -29,6 +29,23 @@ end
 function scene:draw()
 end
 
+-- a stage has actors
+stage = scene:new { actors = {},
+                    update = function(self)
+                      for actor in all(self.actors) do
+                        actor:update()
+                      end
+                    end,
+
+                    draw = function(self)
+                      cls()
+                      for actor in all(self.actors) do
+                        actor:draw()
+                      end
+                    end
+                  }
+
+
 text_scene = scene:new({ texts = { "default text" }, next_scene = nil, x = 2, y = 2 })
 
 function text_scene:new(o, texts)

@@ -4,29 +4,16 @@ __lua__
 -- actor.p8
 
 actor = {
-	k = nil,
+	k = nil, -- start sprite
 	x = nil,
 	y = nil,
 	width = 1,
 	height = 1,
-	dx = 0,
-	dy = 0,
 	frame = 0,
-	t = 0,
-	friction = 0.15,
-	bounce  = 0.3,
-	frames = 2,
-
-	-- half-width and half-height
-	-- slightly less than 0.5 so
-	-- that will fit through 1-wide
-	-- holes.
-	w = 0.4,
-	h = 0.4,
+	frames = 1,
 }
 
 -- make an actor
--- and add to global collection
 -- x,y means center of the actor
 -- in map tiles
 function actor:new(a, k, x, y)
@@ -36,7 +23,6 @@ function actor:new(a, k, x, y)
   a.k = k or a.k
   a.x = x or a.x
   a.y = y or a.y
-  -- if (is_add == undefined or is_add) add(actors,a)
   return a
 end
 

@@ -3,11 +3,13 @@ version 41
 __lua__
 -- virtual pet
 
-#include message.p8
-#include particles.p8
-#include timer.p8
-#include scene.p8
-#include skeleton.p8
+#include ../lib/message.p8
+#include ../lib/particles.p8
+#include ../lib/timer.p8
+#include ../lib/scene.p8
+#include ../lib/skeleton.p8
+#include ../lib/actor.p8
+#include ../lib/collision.p8
 
 idea = text_scene:new({}, {
   "<ac>paw village game",
@@ -31,15 +33,25 @@ idea.next_scene = our_credits
 
 text_demo_scene = text_scene:new(nil, {
  '<r9><o1><c9>welcome<c-> to the text demo!',
- '<o1>you can draw sprites\n<i1>   like this, and you can\n\nadd a delay<d10>...<d->like this!',
+ '<o1>you can draw sprites\n<i1>   like this, and you can\n\nadd a delay<d100>...<d->like this!',
  'looking for <d8><f1>spooky<f-><d-> effects?<d30>\n<d->hmm, how about some\n<o-><of><c1><ba>highlighting<b->',
  '<o-><u1>underlining?<u-><d30><o1> <d-> geeze, you\'re\na <f2>hard one to please!',
 })
 text_demo_scene.message.color.foreground = 15
 text_demo_scene.message.color.outline = 1
 
+bouncy_stage = stage:new {}
+
+ball = bouncy_actor:new({}, 1, 2, 2 )
+ball:add(bouncy_stage.actors)
+ball.update = control_player
+
+ball = bouncy_actor:new({}, 1, 4, 4 )
+ball:add(bouncy_stage.actors)
+
 --curr_scene = text_demo_scene
-curr_scene = idea
+-- curr_scene = idea
+curr_scene = bouncy_stage
 -- curr_scene = credits
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

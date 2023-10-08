@@ -6,29 +6,29 @@ __lua__
 --[[
     text codes:
 
-   $u# = underline text (0 for
+   <u#>  = underline text (- for
            no underline)
 
-   $b# = border color, ##= a
-          number, 0-15
+   <b#>  = border color, ##= a
+           number, 0-15
 
-   $o# = outline color
+   <o#>  = outline color
 
-   $c# = text color
+   <c#>  = text color
 
-   $d# = delay extra (0-99)
-          if more delay is
-          needed, use $f##
-          and create a custom
-          fx for it.
-   $i## = display sprite inline
+   <d#>  = delay extra (0-99)
+           if more delay is
+           needed, use $f##
+           and create a custom
+           fx for it.
+   <i#>  = display sprite inline
 
-   $f#  = special effects
-   $sc  = spin character
-   $r#  = rainbow # = speed
-   $al  = align left
-   $ar  = align right
-   $ac  = align center
+   <f#>  = special effects
+   <sc>  = spin character
+   <r#>  = rainbow # = speed
+   <al>  = align left
+   <ar>  = align right
+   <ac>  = align center
 
    for any of these, you can use
    x instead of a number to
@@ -57,7 +57,7 @@ changes
 * parsing happens once
 * many message instances may be used at the same time
 * buttons and timing are handled in _update() instead of _draw()
-* TODO make underline take a color
+* make underline take a color
 
 motivation
 ==========

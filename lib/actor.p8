@@ -1,5 +1,5 @@
 pico-8 cartridge // http://www.pico-8.com
-version 39
+version 41
 __lua__
 -- actor.p8
 
@@ -30,7 +30,7 @@ function actor:update()
 end
 
 function actor.draw(a)
-	spr(a.k + flr(a.frame) * a.width, a.x, a.y, a.width, a.height)
+	spr(a.k + (flr(a.frame) % a.frames) * a.width, a.x, a.y, a.width, a.height)
 end
 
 

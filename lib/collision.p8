@@ -17,7 +17,7 @@ bouncy_actor = actor:new {
   w = 0.4, -- the physics width
   h = 0.4, -- the physics height
   collides_with = 1,
-  bump_sfx = 2,
+  bump_sfx = 0,
   actors = nil
 }
 
@@ -44,9 +44,9 @@ end
 
 function bouncy_actor:is_solid_area(x,y,w,h)
   return
-    self:is_solid(x-w,y-h) or
-    self:is_solid(x+w,y-h) or
-    self:is_solid(x-w,y+h) or
+    self:is_solid(x,  y  ) or
+    self:is_solid(x+w,y  ) or
+    self:is_solid(x,  y+h) or
     self:is_solid(x+w,y+h)
 end
 
@@ -69,14 +69,18 @@ end
 -- the fastest moving actor)
 
 function bouncy_actor.will_hit_solid_actor(a, dx, dy)
+  local w = a.w * a.width * 8
+  local h = a.h * a.height * 8
   for a2 in all(a.actors) do
     if a2 != a then
 
       local x=(a.x+dx) - a2.x
       local y=(a.y+dy) - a2.y
 
-      if ((abs(x) < (a.w+a2.w)) and
-        (abs(y) < (a.h+a2.h)))
+      local w2 = a2.w * a2.width * 8
+      local h2 = a2.h * a2.height * 8
+      if ((abs(x) < (w+w2)) and
+          (abs(y) < (h+h2)))
       then
 
         -- moving together?
@@ -196,7 +200,7 @@ end
 function control_player(pl)
   bouncy_actor.update(pl)
 
-  accel = 0.05
+  accel = 0.05 * 4
   if (btn(0)) pl.dx -= accel
   if (btn(1)) pl.dx += accel
   if (btn(2)) pl.dy -= accel
@@ -226,6 +230,7 @@ function follow_actor(follow, accel)
       a.dx += accel * (x + (rnd(2) - 1))
       a.dy += accel * (y + (rnd(2) - 1))
     end
+    bouncy_actor.update(a)
   end
 end
 

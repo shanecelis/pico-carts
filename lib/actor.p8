@@ -30,9 +30,7 @@ function actor:update()
 end
 
 function actor.draw(a)
-	local sx = (a.x * 8) - 4
-	local sy = (a.y * 8) - 4
-	spr(a.k + flr(a.frame) * a.width, sx, sy, a.width, a.height)
+	spr(a.k + flr(a.frame) * a.width, a.x, a.y, a.width, a.height)
 end
 
 

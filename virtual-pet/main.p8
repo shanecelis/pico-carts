@@ -42,7 +42,13 @@ text_demo_scene.message.color.foreground = 15
 text_demo_scene.message.color.outline = 1
 
 
-bouncy_stage = stage:new { colliders = {} }
+bouncy_stage = stage:new {
+  colliders = {},
+  draw = function(self)
+    stage.draw(self)
+
+  end
+}
 
 mouse:init(true, true, false)
 
@@ -51,6 +57,10 @@ cursor = actor:new({
       mouse:update()
       self.x = mouse.x
       self.y = mouse.y
+      if mouse:btnp(0) then --and has_flag(self.x, self.y, 1) then
+        sfx(1)
+
+      end
     end
   }, 2)
 add(bouncy_stage.actors, cursor)
@@ -71,7 +81,8 @@ ball.update = follow_actor(cursor)
 -- curr_scene = scene:new()
 -- curr_scene = text_demo_scene
 -- curr_scene = idea
-curr_scene = bouncy_stage
+skeleton:init(bouncy_stage)
+-- curr_scene = bouncy_stage
 -- curr_scene = credits
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

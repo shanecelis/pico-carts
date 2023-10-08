@@ -21,18 +21,22 @@ bouncy_actor = actor:new {
   actors = nil
 }
 
--- for any given point on the
--- map, true if there is wall
--- there.
 
-function bouncy_actor:is_solid(x, y)
+function has_flag(x, y, flag)
   -- grab the cel value
   val=mget(x, y)
 
   -- check if flag 1 is set (the
   -- orange toggle button in the
   -- sprite editor)
-  return fget(val, self.collides_with)
+  return fget(val, flag)
+end
+-- for any given point on the
+-- map, true if there is wall
+-- there.
+
+function bouncy_actor:is_solid(x, y)
+  return has_flag(flr(x/8), flr(y/8), self.collides_with)
 end
 
 -- is_solid_area
@@ -131,7 +135,7 @@ end
 -- checks both walls and actors
 function bouncy_actor.will_hit_solid(a, dx, dy)
   if a:is_solid_area(a.x+dx, a.y+dy,
-                     a.w,    a.h)
+                     a.w*8,    a.h*8)
   then
     return true
   else

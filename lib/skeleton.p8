@@ -3,28 +3,33 @@ version 41
 __lua__
 -- skeleton.p8
 
+skeleton = {
+  init = function(self, curr_scene)
 
-function _init()
- prev_time = time()
- curr_scene:enter()
-end
+    function _init()
+      prev_time = time()
+      curr_scene:enter()
+    end
 
-function _update()
- if curr_scene.text == nil then
-	update_time()
-	coroutines:update()
- end
- local next = curr_scene:update()
- if next ~= nil then
-  curr_scene:exit()
-  curr_scene = next
-  curr_scene:enter()
- end
-end
+    function _update()
+      if curr_scene.text == nil then
+        update_time()
+        coroutines:update()
+      end
+      local next = curr_scene:update()
+      if next ~= nil then
+        curr_scene:exit()
+        curr_scene = next
+        curr_scene:enter()
+      end
+    end
 
-function _draw()
- curr_scene:draw()
-end
+    function _draw()
+      curr_scene:draw()
+    end
+  end
+}
+
 
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

@@ -223,12 +223,31 @@ function emitter:update()
  self:emit(dt)
  for p in all(self.particles) do
   p:update(dt)
-  if (p.dead) then
-   self:remove(p)
-  end
+  -- if (p.dead) then
+  --  self:remove(p)
+  -- end
  end
- self:remove_dead()
+ table_remove(self.particles, function(p) return p.dead end)
+ -- self:remove_dead()
 end
+
+-- efficiently remove all
+-- entries that fn returns true.
+-- https://stackoverflow.com/questions/12394841/safely-remove-items-from-an-array-table-while-iterating
+function table_remove(t, fn)
+  local j, n = 1, #t
+  for i=1,n do
+    if fn(t[i]) then
+      -- toss this one
+      t[i] = nil
+    else
+      -- keep this one
+      if (i ~= j) t[j], t[i] = t[i], nil
+      j += 1
+    end
+  end
+end
+
 
 -- tells of the particles to
 -- draw themselves
@@ -344,22 +363,6 @@ end
 
 -- setter functions
 
-function ps_set_pos(e, x, y)
- e.pos = vec(x,y)
-end
-
-function ps_set_frequency(e, frequency)
- e.frequency = frequency
-end
-
-function ps_set_max_p(e, max_p)
- e.max_p = max_p
-end
-
-function ps_set_gravity(e, gravity)
- e.gravity = gravity
-end
-
 function ps_set_burst(e, burst, burst_amount)
  e.burst = burst
  e.burst_amount = burst_amount or e.max_p
@@ -371,14 +374,6 @@ function ps_set_pooling(e, pooling)
  if (e.use_pooling and e.max_p < 1) then
   e.max_p = 20
  end
-end
-
-function ps_set_rnd_colour(e, rnd_colour)
- e.rnd_colour = rnd_colour
-end
-
-function ps_set_rnd_sprite(e, rnd_sprite)
- e.rnd_sprite = rnd_sprite
 end
 
 function ps_set_area(e, width, height)
@@ -420,11 +415,11 @@ function ps_set_size(e, size_initial, size_final, size_spread_initial, size_spre
 end
 
 function confetti()
-  local left = emitter:new({}, 0, 0, 5, 10, false, false)
+ local left = emitter:new({}, 0, 0, 5, 10, false, false)
  ps_set_size(left, 0, 0, 1)
  ps_set_speed(left, 10, 20, 10)
  ps_set_colours(left, {7, 8, 9, 10, 11, 12, 13, 14, 15})
- ps_set_rnd_colour(left, true)
+ left.rnd_colour = true
  ps_set_life(left, 0.4, 1)
  ps_set_angle(left, 30, 45)
  return left
@@ -442,7 +437,7 @@ function stars()
   ps_set_angle(front, 0, 0)
   add(my_emitters, front)
   local midfront = front:clone()
-  ps_set_frequency(midfront, 0.15)
+  midfront.frequency = 0.15
   ps_set_life(midfront, 4.5)
   ps_set_colours(midfront, {6})
   ps_set_speed(midfront, 26, 26, 5)
@@ -451,10 +446,10 @@ function stars()
   ps_set_life(midback, 6.8)
   ps_set_colours(midback, {5})
   ps_set_speed(midback, 18, 18, 5)
-  ps_set_frequency(midback, 0.1)
+  midback.frequency = 0.1
   add(my_emitters, midback)
   local back = front:clone()
-  ps_set_frequency(back, 0.07)
+  back.frequency = 0.7
   ps_set_life(back, 11)
   ps_set_colours(back, {1})
   ps_set_speed(back, 10, 10, 5)
@@ -462,7 +457,7 @@ function stars()
   local special = emitter:new({}, 64, 64, 0.2, 0)
   ps_set_area(special, 128, 128)
   ps_set_angle(special, 0, 0)
-  ps_set_frequency(special, 0.01)
+  special.frequency = 0.01
   -- ps_set_sprites(special, {78, 79, 80, 81, 82, 83, 84})
   ps_set_sprites(special, {107, 108, 109, 110})
   ps_set_speed(special, 30, 30, 15)

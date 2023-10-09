@@ -46,6 +46,21 @@ end
 nopool = pool:new({
     get = function(p) return p.create() end,
     release = function(p) end })
+
+variate = {}
+function variate:new(o, value, spread)
+ o = o or {}
+ setmetatable(o, self)
+ self.__index = self
+ o.value = value or o.value or 0
+ o.spread = spread or o.spread or 0
+ return o
+end
+
+function variate:eval()
+  local spread = self.spread
+  return self.value + rnd(spread * sgn(spread)) * sgn(spread)
+end
 -------------------------------------------------- particle
 particle = {
   prev_time = nil, -- for calculating dt
@@ -212,10 +227,8 @@ emitter = {
   -- particle factory stuff
   p_colours = {1},
   p_sprites = nil,
-  p_life = 1,
-  p_life_spread = 0,
-  p_angle = 0,
-  p_angle_spread = 360,
+  p_life = variate:new({}, 1, 0),
+  p_angle = variate:new({}, 0, 360),
   p_speed_initial = 10,
   p_speed_final = 10,
   p_speed_spread_initial = 0,
@@ -317,8 +330,8 @@ function emitter:get_new_particle()
   self.gravity, -- gravity
   self.get_colour(self),
   sprites, -- graphics
-  self.p_life + get_rnd_spread(self.p_life_spread), -- life
-  self.p_angle + get_rnd_spread(self.p_angle_spread), -- angle
+  self.p_life:eval(), -- life
+  self.p_angle:eval(), -- angle
   self.p_speed_initial + get_rnd_spread(self.p_speed_spread_initial),
   self.p_speed_final + get_rnd_spread(self.p_speed_spread_final), -- speed
   self.p_size_initial + get_rnd_spread(self.p_size_spread_initial),
@@ -391,13 +404,8 @@ function ps_set_sprites(e, sprites)
 end
 
 function ps_set_life(e, life, life_spread)
- e.p_life = life
- e.p_life_spread = life_spread or 0
-end
-
-function ps_set_angle(e, angle, angle_spread)
- e.p_angle = angle
- e.p_angle_spread = angle_spread or 0
+  e.p_life = variate:new(nil, life, life_spread)
+ -- e.p_life_spread = life_spread or 0
 end
 
 function ps_set_speed(e, speed_initial, speed_final, speed_spread_initial, speed_spread_final)
@@ -420,8 +428,8 @@ function confetti()
  ps_set_speed(left, 10, 20, 10)
  ps_set_colours(left, {7, 8, 9, 10, 11, 12, 13, 14, 15})
  left.rnd_colour = true
- ps_set_life(left, 0.4, 1)
- ps_set_angle(left, 30, 45)
+ left.p_life = variate:new({}, 0.4, 1)
+ left.p_angle = variate:new({}, 30, 45)
  return left
 end
 
@@ -434,7 +442,7 @@ function stars()
   ps_set_size(front, 0)
   ps_set_speed(front, 34, 34, 10)
   ps_set_life(front, 3.5)
-  ps_set_angle(front, 0, 0)
+  front.p_angle = variate:new({}, 0, 0)
   add(my_emitters, front)
   local midfront = front:clone()
   midfront.frequency = 0.15
@@ -456,7 +464,7 @@ function stars()
   add(my_emitters, back)
   local special = emitter:new({}, 64, 64, 0.2, 0)
   ps_set_area(special, 128, 128)
-  ps_set_angle(special, 0, 0)
+  special.p_angle = variate:new({}, 0, 0)
   special.frequency = 0.01
   -- ps_set_sprites(special, {78, 79, 80, 81, 82, 83, 84})
   ps_set_sprites(special, {107, 108, 109, 110})
@@ -469,7 +477,7 @@ function stars()
   ps_set_size(front, 0)
   ps_set_speed(front, 34, 34, 10)
   ps_set_life(front, 3.5)
-  ps_set_angle(front, 0, 0)
+  front.p_angle = variate:new({}, 0, 0)
   add(my_emitters, front)
   return my_emitters
 end

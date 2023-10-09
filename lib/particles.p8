@@ -88,9 +88,11 @@ function particle.apply_gravity(a)
 end
 
 vec = {}
-vec.__index = vec
 function vec:new(x,y)
- return {x = x, y = y}
+  local v = {x = x, y = y}
+  setmetatable(v, self)
+ self.__index = self
+  return v
 end
 
 vec.__add = function(a,b)
@@ -112,26 +114,6 @@ function particle:new(o)
  setmetatable(o, self)
  self.__index = self
  return o
-end
-
-emitters = {}
-function emitters:new(o)
-  o = o or {}
-  setmetatable(o, self)
-  self.__index = self
-  return o
-end
-
-function emitters:draw()
-  for e in all(self) do
-    e:draw()
-  end
-end
-
-function emitters:update()
-  for e in all(self) do
-    e:update(particle.delta_time)
-  end
 end
 
 function particle:set_values(x, y, gravity, colours, sprites, life, angle, speed_initial, speed_final, size_initial, size_final)
@@ -337,7 +319,7 @@ function emitter:get_new_particle()
   sprites = {self.p_sprites[flr(rnd(#self.p_sprites))+1]}
  end
 
- local x, y = self.pos.x, self.pos.y
+ local x, y = self:get_pos().x, self:get_pos().y
  if self.area then
   -- center it
   local width, height = self.area.x, self.area.y
@@ -411,12 +393,15 @@ function confetti()
  left.p_colours:set({7, 8, 9, 10, 11, 12, 13, 14, 15})
  left.p_life:set(0.4, 1)
  left.p_angle:set(30, 45)
+ local right = left:clone()
+ right.pos = vec:new(30, 0)
+ left:add(right)
  return left
 end
 
 -- stars credits
 function stars()
-  local my_emitters = emitters:new()
+  -- local my_emitters = emitters:new()
   local front = emitter:new({}, 0, 64, 0.2, 0)
   front.area = vec:new(0, 128)
   front.p_colours:set({7})
@@ -426,28 +411,31 @@ function stars()
   front.p_life:set(3.5)
   front.p_angle:set(0)
 
-  add(my_emitters, front)
+  -- add(my_emitters, front)
   local midfront = front:clone()
   midfront.frequency = 0.15
   midfront.p_life:set(4.5)
   midfront.p_colours:set({6})
   midfront.p_speed:set(26, 5)
   midfront.p_speed_final:set(26)
-  add(my_emitters, midfront)
+  front:add(midfront)
+  -- add(my_emitters, midfront)
   local midback = front:clone()
   midback.p_life:set(6.8)
   midback.p_colours:set({5})
   midback.p_speed:set(18, 5)
   midback.p_speed_final:set(18)
   midback.frequency = 0.1
-  add(my_emitters, midback)
+  front:add(midback)
+  -- add(my_emitters, midback)
   local back = front:clone()
   back.frequency = 0.7
   back.p_life:set(11)
   back.p_colours:set({1})
   back.p_speed:set(10, 5)
   back.p_speed_final:set(10)
-  add(my_emitters, back)
+  -- add(my_emitters, back)
+  front:add(back)
   local special = emitter:new({}, 64, 64, 0.2, 0)
 
   special.area = vec:new(128, 128)
@@ -459,6 +447,7 @@ function stars()
   special.p_speed:set(30, 15)
   special.p_speed_final:set(30)
   special.p_life:set(5)
-  add(my_emitters, special)
-  return my_emitters
+  front:add(special)
+  -- add(my_emitters, special)
+  return front
 end

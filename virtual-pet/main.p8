@@ -42,7 +42,7 @@ text_demo_scene.message.color.outline = 1
 
 
 particlefx = confetti()
-particlefx = stars()
+-- particlefx = stars()
 particlefx.pos = vec:new(65, 65)
 bouncy_stage = scene:new {
   colliders = {},
@@ -64,7 +64,7 @@ cursor = actor:new({
       mouse:update()
       self.x = mouse.x
       self.y = mouse.y
-      -- particlefx.pos = vec(self.x, self.y)
+      particlefx.pos = vec:new(self.x, self.y)
       if mouse:btnp(0) then --and has_flag(self.x, self.y, 1) then
         sfx(1)
       end

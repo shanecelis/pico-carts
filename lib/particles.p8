@@ -48,17 +48,22 @@ nopool = pool:new({
     release = function(p) end })
 
 variate = {}
+
 function variate:new(o, value, spread)
  o = o or {}
+ o.value = value or o.value
+ o.spread = spread or o.spread
  setmetatable(o, self)
  self.__index = self
- o.value = value or o.value or 0
- o.spread = spread or o.spread or 0
  return o
 end
 
+function variate:set(v, s)
+  self.value, self.spread = v, s or 0
+end
+
 function variate:eval()
-  local spread = self.spread
+  local spread = self.spread or 0
   return self.value + rnd(spread * sgn(spread)) * sgn(spread)
 end
 -------------------------------------------------- particle
@@ -229,26 +234,23 @@ emitter = {
   p_sprites = nil,
   p_life = variate:new({}, 1, 0),
   p_angle = variate:new({}, 0, 360),
-  p_speed_initial = 10,
-  p_speed_final = 10,
-  p_speed_spread_initial = 0,
-  p_speed_spread_final = 0,
-  p_size_initial = 1,
-  p_size_final = 1,
-  p_size_spread_initial = 0,
-  p_size_spread_final = 0
+  p_speed_initial = variate:new({}, 10, 0),
+  p_speed_final = nil,
+  p_size_initial = variate:new({}, 1, 0),
 }
 function emitter:new(o, x,y, frequency, max_p, burst, gravity)
  o = o or {}
  setmetatable(o, self)
  self.__index = self
 
- if (o.pos == nil) o.pos = vec(x,y)
+ o.pos = o.pos or vec(x,y)
  o.frequency = frequency or o.frequency
  o.max_p = max_p or o.max_p
  o.burst = burst or o.burst
  o.gravity = gravity or o.gravity
  o.pool = nopool:new({}, function() return particle:new() end)
+ o.p_speed_final = o.p_speed_final or o.p_speed_initial:new()
+ o.p_size_final = o.p_size_final or o.p_size_initial:new()
  -- if (o.max_p < 1) then
  --   o.use_pooling = false end
 
@@ -332,10 +334,10 @@ function emitter:get_new_particle()
   sprites, -- graphics
   self.p_life:eval(), -- life
   self.p_angle:eval(), -- angle
-  self.p_speed_initial + get_rnd_spread(self.p_speed_spread_initial),
-  self.p_speed_final + get_rnd_spread(self.p_speed_spread_final), -- speed
-  self.p_size_initial + get_rnd_spread(self.p_size_spread_initial),
-  self.p_size_final + get_rnd_spread(self.p_size_spread_final) -- size
+  self.p_speed_initial:eval(),
+  self.p_speed_final:eval(), -- speed
+  self.p_size_initial:eval(),
+  self.p_size_final:eval() -- size
  )
  return p
 end
@@ -409,17 +411,13 @@ function ps_set_life(e, life, life_spread)
 end
 
 function ps_set_speed(e, speed_initial, speed_final, speed_spread_initial, speed_spread_final)
- e.p_speed_initial = speed_initial
- e.p_speed_final = speed_final or speed_initial
- e.p_speed_spread_initial = speed_spread_initial or 0
- e.p_speed_spread_final = speed_spread_final or e.p_speed_spread_initial
+ e.p_speed_initial:set(speed_initial, speed_spread_initial)
+ e.p_speed_final:set(speed_final, speed_spread_final)
 end
 
 function ps_set_size(e, size_initial, size_final, size_spread_initial, size_spread_final)
- e.p_size_initial = size_initial
- e.p_size_final = size_final or size_initial
- e.p_size_spread_initial = size_spread_initial or 0
- e.p_size_spread_final = size_spread_final or e.p_size_spread_initial
+ e.p_size_initial:set(size_initial, size_spread_initial)
+ e.p_size_final:set(size_final, size_spread_final)
 end
 
 function confetti()
@@ -439,7 +437,7 @@ function stars()
   local front = emitter:new({}, 0, 64, 0.2, 0)
   ps_set_area(front, 0, 128)
   ps_set_colours(front, {7})
-  ps_set_size(front, 0)
+  front.p_size_initial:set(0)
   ps_set_speed(front, 34, 34, 10)
   ps_set_life(front, 3.5)
   front.p_angle = variate:new({}, 0, 0)
@@ -474,6 +472,7 @@ function stars()
   local front = emitter:new({}, 0, 64, 0.2, 0)
   ps_set_area(front, 0, 128)
   ps_set_colours(front, {7})
+  front.p_size_initial:set(0)
   ps_set_size(front, 0)
   ps_set_speed(front, 34, 34, 10)
   ps_set_life(front, 3.5)

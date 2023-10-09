@@ -18,6 +18,34 @@ __lua__
 
 -------------------------------------------------- globals
 
+pool = {
+}
+
+function pool:new(o, create)
+ o = o or {}
+ setmetatable(o, self)
+ self.__index = self
+ o.create = create or o.create
+ return o
+end
+
+function pool:get()
+  if #self <= 0 then
+    return self.create()
+  else
+    local e = self[#self]
+    self[#self] = nil
+    return e
+  end
+end
+
+function pool:release(e)
+  add(self, e)
+end
+
+nopool = pool:new({
+    get = function(p) return p.create() end,
+    release = function(p) end })
 -------------------------------------------------- particle
 particle = {
   prev_time = nil, -- for calculating dt
@@ -83,7 +111,7 @@ function particle:set_values(x, y, gravity, colours, sprites, life, angle, speed
  self.size, self.size_initial, self.size_final = size_initial, size_initial, size_final
 
  self.sprites = sprites
- if (self.sprites ~= nil) then
+ if self.sprites then
   self.sprite_time = (1 / #self.sprites) * self.life_initial
   self.current_sprite_time = self.sprite_time
   self.sprites_index = 1
@@ -93,12 +121,12 @@ function particle:set_values(x, y, gravity, colours, sprites, life, angle, speed
  end
 
  self.colours = colours
- if (colours ~= nil) then
+ if colours then
   self.colour_time = (1 / #self.colours) * self.life_initial
   self.current_colour_time = self.colour_time
   self.colours_index = 1
   self.colour = self.colours[self.colours_index]
-  if (self.colour == nil) then stop() end -- TODO: somehow the colour ends up being nil
+  if (not self.colour) stop() -- TODO: somehow the colour ends up being nil
  else
   self.colour = nil
  end
@@ -164,7 +192,7 @@ end
 -------------------------------------------------- particle emitter
 emitter = {
   particles = {},
-  to_remove = {},
+  -- to_remove = {},
 
   -- emitter variables
   pos = nil,
@@ -175,8 +203,6 @@ emitter = {
   gravity = false,
   burst = false,
   burst_amount = nil,
-  use_pooling = false,
-  pool = {},
   rnd_colour = false,
   rnd_sprite = false,
   use_area = false,
@@ -209,6 +235,7 @@ function emitter:new(o, x,y, frequency, max_p, burst, gravity)
  o.max_p = max_p or o.max_p
  o.burst = burst or o.burst
  o.gravity = gravity or o.gravity
+ o.pool = nopool:new({}, function() return particle:new() end)
  -- if (o.max_p < 1) then
  --   o.use_pooling = false end
 
@@ -223,9 +250,7 @@ function emitter:update()
  self:emit(dt)
  for p in all(self.particles) do
   p:update(dt)
-  -- if (p.dead) then
-  --  self:remove(p)
-  -- end
+  if (p.dead) self.pool:release(p)
  end
  table_remove(self.particles, function(p) return p.dead end)
  -- self:remove_dead()
@@ -272,37 +297,32 @@ end
 function emitter:get_new_particle()
  local sprites = self.p_sprites
  -- select random sprite from the sprites list
- if (self.rnd_sprite and self.p_sprites ~= nil) then
+ if (self.rnd_sprite and self.p_sprites) then
   sprites = {self.p_sprites[flr(rnd(#self.p_sprites))+1]}
  end
 
- local x = self.pos.x
- local y = self.pos.y
+ local x, y = self.pos.x, self.pos.y
  if (self.use_area) then
   -- center it
-  local width = self.area_width
-  local height = self.area_height
+  local width, height = self.area_width, self.area_height
   x += flr(rnd(width)) - (width / 2)
   y += flr(rnd(height)) - (height / 2)
  end
 
- local p = nil
- if (self.use_pooling and #self.particles + #self.pool == self.max_p) then
-  p = self.pool[1]
-  del(self.pool, p)
- else
-  p = particle:new()
- end
+ local p = self.pool:get()
 
  -- (x, y, gravity, colours, sprites, life, angle, speed_initial, speed_final, size_initial, size_final)
  p.set_values (p, -- self
   x, y, -- pos
   self.gravity, -- gravity
-  self.get_colour(self), sprites, -- graphics
+  self.get_colour(self),
+  sprites, -- graphics
   self.p_life + get_rnd_spread(self.p_life_spread), -- life
   self.p_angle + get_rnd_spread(self.p_angle_spread), -- angle
-  self.p_speed_initial + get_rnd_spread(self.p_speed_spread_initial), self.p_speed_final + get_rnd_spread(self.p_speed_spread_final), -- speed
-  self.p_size_initial + get_rnd_spread(self.p_size_spread_initial), self.p_size_final + get_rnd_spread(self.p_size_spread_final) -- size
+  self.p_speed_initial + get_rnd_spread(self.p_speed_spread_initial),
+  self.p_speed_final + get_rnd_spread(self.p_speed_spread_final), -- speed
+  self.p_size_initial + get_rnd_spread(self.p_size_spread_initial),
+  self.p_size_final + get_rnd_spread(self.p_size_spread_final) -- size
  )
  return p
 end
@@ -314,8 +334,8 @@ function emitter:emit(dt)
    if (self.max_p <= 0) then
     self.max_p = 50
    end
-   for i=1, self.get_amount_to_spawn(self, self.burst_amount) do
-    add(self.particles, self.get_new_particle(self))
+   for i=1, self:get_amount_to_spawn(self.burst_amount) do
+    add(self.particles, self:get_new_particle())
    end
    self.emitting = false
 
@@ -340,18 +360,6 @@ function emitter:get_amount_to_spawn(spawn_amount)
  return flr(spawn_amount)
 end
 
-function emitter:remove(p)
- add(self.to_remove, p)
-end
-
-function emitter:remove_dead()
- for p in all(self.to_remove) do
-  if (self.use_pooling) add(self.pool, p)
-  del(self.particles, p)
- end
- self.to_remove = {}
-end
-
 -- will randomise even if it is negative
 function get_rnd_spread(spread)
  return rnd(spread * sgn(spread)) * sgn(spread)
@@ -366,14 +374,6 @@ end
 function ps_set_burst(e, burst, burst_amount)
  e.burst = burst
  e.burst_amount = burst_amount or e.max_p
-end
-
-function ps_set_pooling(e, pooling)
- e.use_pooling = pooling
- e.pool = {}
- if (e.use_pooling and e.max_p < 1) then
-  e.max_p = 20
- end
 end
 
 function ps_set_area(e, width, height)

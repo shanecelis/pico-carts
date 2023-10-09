@@ -4,8 +4,9 @@ __lua__
 -- scene.p8
 
 scene = {
-    music = -1,
-    fade = 600
+  background = 0,
+  music = -1,
+  fade = 600
 }
 
 function scene:new(o)
@@ -24,9 +25,46 @@ function scene:exit()
 end
 
 function scene:update()
+  for e in all(self) do
+    e:update()
+  end
 end
 
 function scene:draw()
+  cls(self.background)
+  for e in all(self) do
+    e:draw()
+  end
+end
+
+-- install the scene with a
+-- skeleton of the _init,
+-- _update, and _draw functions.
+-- warning: do not use if those
+-- functions are already
+-- defined.
+function scene.install(scene)
+  function _init()
+    prev_time = time()
+    scene:enter()
+  end
+
+  function _update()
+    -- if scene.text == nil then
+      particle.update_time()
+      coroutines:update()
+    -- end
+    local next = scene:update()
+    if next ~= nil then
+      scene:exit()
+      scene = next
+      scene:enter()
+    end
+  end
+
+  function _draw()
+    scene:draw()
+  end
 end
 
 -- a stage has actors

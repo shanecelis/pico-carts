@@ -42,32 +42,39 @@ text_demo_scene.message.color.foreground = 15
 text_demo_scene.message.color.outline = 1
 
 
-bouncy_stage = stage:new {
+particlefx = confetti()
+particlefx.pos = vec(65, 65)
+bouncy_stage = scene:new {
   colliders = {},
-  draw = function(self)
-    stage.draw(self)
-
-  end
+  -- update = function(self)
+  --   particlefx:update()
+  -- end,
+  -- draw = function(self)
+  --   stage.draw(self)
+  --   -- particlefx:draw()
+  -- end
 }
 
 mouse:init(true, true, false)
 
+add(bouncy_stage, particlefx)
+-- add(bouncy_stage, {})
 cursor = actor:new({
     update = function(self)
       mouse:update()
       self.x = mouse.x
       self.y = mouse.y
+      particlefx.pos = vec(self.x, self.y)
       if mouse:btnp(0) then --and has_flag(self.x, self.y, 1) then
         sfx(1)
-
       end
     end
   }, 2)
-add(bouncy_stage.actors, cursor)
+add(bouncy_stage, cursor)
 
 ball = bouncy_actor:new({ }, 1, 0, 0 )
 ball:add(bouncy_stage.colliders)
-add(bouncy_stage.actors, ball)
+add(bouncy_stage, ball)
 ball.update = control_player
 ball:draw()
 local x = ball:is_solid(0,0)
@@ -75,13 +82,13 @@ print("solid" .. tostr(x))
 
 ball = bouncy_actor:new({}, 1, 8, 8 )
 ball:add(bouncy_stage.colliders)
-add(bouncy_stage.actors, ball)
+add(bouncy_stage, ball)
 ball.update = follow_actor(cursor)
 
 -- curr_scene = scene:new()
 -- curr_scene = text_demo_scene
 -- curr_scene = idea
-skeleton:init(bouncy_stage)
+bouncy_stage:install()
 -- curr_scene = bouncy_stage
 -- curr_scene = credits
 __gfx__

@@ -18,31 +18,32 @@ __lua__
 
 -------------------------------------------------- globals
 
-prev_time = nil -- for calculating dt
-delta_time = nil -- the change in time
+-------------------------------------------------- particle
+particle = {
+  prev_time = nil, -- for calculating dt
+  delta_time = nil, -- the change in time
+  gravity = 50
+}
 
-function update_time()
- delta_time = time()-prev_time
- prev_time = time()
+function particle.update_time()
+ particle.delta_time = time()-prev_time
+ particle.prev_time = time()
 end
 
-ps_gravity = 50
 
-function calc_ps_gravity(a)
- a.velocity.y = a.velocity.y + delta_time * ps_gravity
+function particle.apply_gravity(a)
+ a.velocity.y = a.velocity.y + delta_time * a.gravity
 end
 
 function vec(x,y)
  return {x = x, y = y}
 end
 
--------------------------------------------------- particle
-particle = {}
-particle.__index = particle
-function particle.create()
- local p = {}
- setmetatable (p, particle)
- return p
+function particle:new(o)
+ o = o or {}
+ setmetatable(o, self)
+ self.__index = self
+ return o
 end
 
 emitters = {}
@@ -60,9 +61,9 @@ function emitters:draw()
   end
 end
 
-function emitters:update(delta_time)
+function emitters:update()
   for e in all(self) do
-    e:update(delta_time)
+    e:update(particle.delta_time)
   end
 end
 
@@ -107,9 +108,7 @@ end
 function particle:update(dt)
  self.life -= dt
 
- if (self.gravity) then
-  calc_ps_gravity(self)
- end
+ if (self.gravity) self:apply_gravity()
 
  -- size over lifetime
  if (self.size_initial ~= self.size_final) then
@@ -149,11 +148,11 @@ function particle:update(dt)
   self.pos.x = self.pos.x + self.velocity.x * dt
   self.pos.y = self.pos.y + self.velocity.y * dt
  else
-  self.die(self) -- goodbye world
+  self.dead = true -- goodbye world
  end
 end
 
--- draws a circle with it's values
+-- draws a circle with its values
 function particle:draw()
  if (self.sprite ~= nil) then
   spr(self.sprite, self.pos.x, self.pos.y)
@@ -162,28 +161,20 @@ function particle:draw()
  end
 end
 
--- sets flag so that the emitter knows to kill it
-function particle:die()
- self.dead = true
-end
-
 -------------------------------------------------- particle emitter
-emitter = {}
-emitter.__index = emitter
-function emitter.create(x,y, frequency, max_p, burst, gravity)
- local p = {
+emitter = {
   particles = {},
   to_remove = {},
 
   -- emitter variables
-  pos = vec(x,y),
+  pos = nil,
   emitting = true,
-  frequency = frequency,
+  frequency = nil,
   emit_time = 0,
-  max_p = max_p,
-  gravity = gravity or false,
-  burst = burst or false,
-  burst_amount = max_p,
+  max_p = 100,
+  gravity = false,
+  burst = false,
+  burst_amount = nil,
   use_pooling = false,
   pool = {},
   rnd_colour = false,
@@ -207,27 +198,40 @@ function emitter.create(x,y, frequency, max_p, burst, gravity)
   p_size_final = 1,
   p_size_spread_initial = 0,
   p_size_spread_final = 0
- }
- setmetatable (p, emitter)
- -- if (p.max_p < 1) then
- --   p.use_pooling = false end
+}
+function emitter:new(o, x,y, frequency, max_p, burst, gravity)
+ o = o or {}
+ setmetatable(o, self)
+ self.__index = self
 
- return p
+ if (o.pos == nil) o.pos = vec(x,y)
+ o.frequency = frequency or o.frequency
+ o.max_p = max_p or o.max_p
+ o.burst = burst or o.burst
+ o.gravity = gravity or o.gravity
+ -- if (o.max_p < 1) then
+ --   o.use_pooling = false end
+
+ return o
 end
 
--- tells all of the particles to update and removes any that are dead
-function emitter:update(dt)
- self.emit(self, dt)
+-- tells all of the particles to
+-- update and removes any that
+-- are dead.
+function emitter:update()
+ local dt = particle.delta_time
+ self:emit(dt)
  for p in all(self.particles) do
-  p.update(p, dt)
+  p:update(dt)
   if (p.dead) then
-   self.remove(self, p)
+   self:remove(p)
   end
  end
- self.remove_dead(self)
+ self:remove_dead()
 end
 
--- tells of the particles to draw themselves
+-- tells of the particles to
+-- draw themselves
 function emitter:draw()
  foreach(self.particles, function(obj) obj:draw() end)
 end
@@ -268,7 +272,7 @@ function emitter:get_new_particle()
   p = self.pool[1]
   del(self.pool, p)
  else
-  p = particle.create()
+  p = particle:new()
  end
 
  -- (x, y, gravity, colours, sprites, life, angle, speed_initial, speed_final, size_initial, size_final)
@@ -292,7 +296,7 @@ function emitter:emit(dt)
     self.max_p = 50
    end
    for i=1, self.get_amount_to_spawn(self, self.burst_amount) do
-    self.add_particle(self, self.get_new_particle(self))
+    add(self.particles, self.get_new_particle(self))
    end
    self.emitting = false
 
@@ -300,9 +304,9 @@ function emitter:emit(dt)
   else
    self.emit_time += self.frequency
    if (self.emit_time >= 1) then
-    local amount = self.get_amount_to_spawn(self, self.emit_time)
+    local amount = self:get_amount_to_spawn(self.emit_time)
     for i=1, amount do
-     self.add_particle(self, self.get_new_particle(self))
+     add(self.particles, self:get_new_particle())
     end
     self.emit_time -= amount
    end
@@ -317,25 +321,13 @@ function emitter:get_amount_to_spawn(spawn_amount)
  return flr(spawn_amount)
 end
 
-function emitter:add_particle(p)
- add(self.particles, p)
-end
-
-function emitter:add_multiple(ps)
- for p in all(ps) do
-  add(self.particles, p)
- end
-end
-
 function emitter:remove(p)
  add(self.to_remove, p)
 end
 
 function emitter:remove_dead()
  for p in all(self.to_remove) do
-  if (self.use_pooling) then
-   add(self.pool, p)
-  end
+  if (self.use_pooling) add(self.pool, p)
   del(self.particles, p)
  end
  self.to_remove = {}
@@ -346,33 +338,8 @@ function get_rnd_spread(spread)
  return rnd(spread * sgn(spread)) * sgn(spread)
 end
 
-function emitter:start_emit()
- self.emitting = true
-end
-
-function emitter:stop_emit()
- self.emitting = false
-end
-
-function emitter:is_emitting()
- return self.emitting
-end
-
 function emitter:clone()
- local new = emitter.create(self.pos.x, self.pos.y, self.frequency, self.max_p)
- ps_set_burst(new, self.burst, self.burst_amount)
- ps_set_gravity(new, self.gravity)
- ps_set_rnd_colour(new, self.rnd_colour)
- ps_set_rnd_sprite(new, self.rnd_sprite)
- ps_set_area(new, self.area_width, self.area_height)
- ps_set_colours(new, self.p_colours)
- ps_set_sprites(new, self.p_sprites)
- ps_set_life(new, self.p_life, self.p_life_spread)
- ps_set_angle(new, self.p_angle, self.p_angle_spread)
- ps_set_speed(new, self.p_speed_initial, self.p_speed_final, self.p_speed_spread_initial, self.p_speed_spread_final)
- ps_set_size(new, self.p_size_initial, self.p_size_final, self.p_size_spread_initial, self.p_size_spread_final)
- ps_set_pooling(new, self.use_pooling)
- return new
+  return self:new({})
 end
 
 -- setter functions
@@ -452,10 +419,21 @@ function ps_set_size(e, size_initial, size_final, size_spread_initial, size_spre
  e.p_size_spread_final = size_spread_final or e.p_size_spread_initial
 end
 
-function stars()
+function confetti()
+  local left = emitter:new({}, 0, 0, 5, 10, false, false)
+ ps_set_size(left, 0, 0, 1)
+ ps_set_speed(left, 10, 20, 10)
+ ps_set_colours(left, {7, 8, 9, 10, 11, 12, 13, 14, 15})
+ ps_set_rnd_colour(left, true)
+ ps_set_life(left, 0.4, 1)
+ ps_set_angle(left, 30, 45)
+ return left
+end
 
+-- stars credits
+function stars()
   local my_emitters = emitters:new()
-  local front = emitter.create(0, 64, 0.2, 0)
+  local front = emitter:new({}, 0, 64, 0.2, 0)
   ps_set_area(front, 0, 128)
   ps_set_colours(front, {7})
   ps_set_size(front, 0)
@@ -463,25 +441,25 @@ function stars()
   ps_set_life(front, 3.5)
   ps_set_angle(front, 0, 0)
   add(my_emitters, front)
-  local midfront = front.clone(front)
+  local midfront = front:clone()
   ps_set_frequency(midfront, 0.15)
   ps_set_life(midfront, 4.5)
   ps_set_colours(midfront, {6})
   ps_set_speed(midfront, 26, 26, 5)
   add(my_emitters, midfront)
-  local midback = front.clone(front)
+  local midback = front:clone()
   ps_set_life(midback, 6.8)
   ps_set_colours(midback, {5})
   ps_set_speed(midback, 18, 18, 5)
   ps_set_frequency(midback, 0.1)
   add(my_emitters, midback)
-  local back = front.clone(front)
+  local back = front:clone()
   ps_set_frequency(back, 0.07)
   ps_set_life(back, 11)
   ps_set_colours(back, {1})
   ps_set_speed(back, 10, 10, 5)
   add(my_emitters, back)
-  local special = emitter.create(64, 64, 0.2, 0)
+  local special = emitter:new({}, 64, 64, 0.2, 0)
   ps_set_area(special, 128, 128)
   ps_set_angle(special, 0, 0)
   ps_set_frequency(special, 0.01)
@@ -490,7 +468,7 @@ function stars()
   ps_set_speed(special, 30, 30, 15)
   ps_set_life(special, 5)
   add(my_emitters, special)
-  local front = emitter.create(0, 64, 0.2, 0)
+  local front = emitter:new({}, 0, 64, 0.2, 0)
   ps_set_area(front, 0, 128)
   ps_set_colours(front, {7})
   ps_set_size(front, 0)

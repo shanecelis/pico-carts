@@ -18,9 +18,7 @@ __lua__
 
 -------------------------------------------------- globals
 
-pool = {
-}
-
+pool = {}
 function pool:new(o, create)
  o = o or {}
  setmetatable(o, self)
@@ -33,6 +31,7 @@ function pool:get()
   if #self <= 0 then
     return self.create()
   else
+    -- take item from last position.
     local e = self[#self]
     self[#self] = nil
     return e
@@ -48,7 +47,6 @@ nopool = pool:new({
     release = function(p) end })
 
 variate = {}
-
 function variate:new(o, value, spread)
  o = o or {}
  o.value = value or o.value
@@ -86,11 +84,27 @@ end
 
 
 function particle.apply_gravity(a)
- a.velocity.y = a.velocity.y + delta_time * a.gravity
+ a.velocity.y = a.velocity.y + particle.delta_time * a.gravity
 end
 
-function vec(x,y)
+vec = {}
+vec.__index = vec
+function vec:new(x,y)
  return {x = x, y = y}
+end
+
+vec.__add = function(a,b)
+  return vec:new(a.x + b.x, a.y + b.y)
+end
+
+vec.__mul = function(a,b)
+  if type(a) == 'number' then
+    return vec:new(a * b.x, a * b.y)
+  elseif type(b) == 'number' then
+    return vec:new(a.x * b, a.y * b)
+  else
+    return vec:new(a.x * b.x, a.y * b.y)
+  end
 end
 
 function particle:new(o)
@@ -101,7 +115,6 @@ function particle:new(o)
 end
 
 emitters = {}
-
 function emitters:new(o)
   o = o or {}
   setmetatable(o, self)
@@ -122,17 +135,16 @@ function emitters:update()
 end
 
 function particle:set_values(x, y, gravity, colours, sprites, life, angle, speed_initial, speed_final, size_initial, size_final)
- self.pos = vec(x,y)
+ self.pos = vec:new(x,y)
  self.life_initial, self.life, self.dead, self.gravity = life, life, false, gravity
 
  -- the 1125 number was 180 in the original calculation,
  -- but i set it to 1131 to make the angle pased in equal to 360 on a full revolution
  -- don't ask me why it's 1131, i don't know. maybe it's odd because i rounded pi?
- -- local angle_radians = angle * 3.14159 / 1131
- local angle_radians = angle
- self.velocity = vec(speed_initial*cos(angle_radians), speed_initial*sin(angle_radians))
- self.vel_initial = vec(self.velocity.x, self.velocity.y)
- self.vel_final = vec(speed_final*cos(angle_radians), speed_final*sin(angle_radians))
+ -- local angle = angle * 3.14159 / 1131
+ self.velocity = vec:new(speed_initial*cos(angle), speed_initial*sin(angle))
+ self.vel_initial = vec:new(self.velocity.x, self.velocity.y)
+ self.vel_final = vec:new(speed_final*cos(angle), speed_final*sin(angle))
 
  self.size, self.size_initial, self.size_final = size_initial, size_initial, size_final
 
@@ -218,7 +230,6 @@ end
 -------------------------------------------------- particle emitter
 emitter = {
   particles = {},
-  -- to_remove = {},
 
   -- emitter variables
   pos = nil,
@@ -227,13 +238,7 @@ emitter = {
   emit_time = 0,
   max_p = 100,
   gravity = false,
-  burst = false,
-  burst_amount = nil,
-  rnd_colour = false,
-  rnd_sprite = false,
-  use_area = false,
-  area_width = 0,
-  area_height = 0,
+  burst = nil,
 
   -- particle factory stuff
   p_colours = variate:new({}, {1}),
@@ -243,12 +248,12 @@ emitter = {
   p_speed = variate:new({}, 10, 0),
   p_size = variate:new({}, 1, 0),
 }
-function emitter:new(o, x,y, frequency, max_p, burst, gravity)
+function emitter:new(o, x, y, frequency, max_p, burst, gravity)
  o = o or {}
  setmetatable(o, self)
  self.__index = self
 
- o.pos = o.pos or vec(x,y)
+ o.pos = o.pos or vec:new(x,y)
  o.frequency = frequency or o.frequency
  o.max_p = max_p or o.max_p
  o.burst = burst or o.burst
@@ -262,6 +267,10 @@ function emitter:new(o, x,y, frequency, max_p, burst, gravity)
  return o
 end
 
+function emitter:get_pos()
+  return self.pos
+end
+
 -- tells all of the particles to
 -- update and removes any that
 -- are dead.
@@ -273,7 +282,18 @@ function emitter:update()
   if (p.dead) self.pool:release(p)
  end
  table_remove(self.particles, function(p) return p.dead end)
- -- self:remove_dead()
+ -- handle subemitters
+  for e in all(self) do
+    e:update()
+  end
+end
+
+function emitter:add(e)
+  add(self, e)
+  e.get_pos = function(eself)
+    return self.pos + eself.pos
+  end
+
 end
 
 -- efficiently remove all
@@ -293,15 +313,23 @@ function table_remove(t, fn)
   end
 end
 
-
 -- tells of the particles to
 -- draw themselves
 function emitter:draw()
  foreach(self.particles, function(obj) obj:draw() end)
+
+ -- handle subemitters
+  for e in all(self) do
+    e:draw()
+  end
 end
 
--- factory method, creates a new particle based on the values set + random
--- this is why the emitter has to know about the properties of the particle it's emmitting
+-- factory method, creates a new
+-- particle based on the values
+-- set + random. this is why the
+-- emitter has to know about the
+-- properties of the particle
+-- it's emmitting.
 function emitter:get_new_particle()
  local sprites = self.p_sprites
  -- select random sprite from the sprites list
@@ -310,9 +338,9 @@ function emitter:get_new_particle()
  end
 
  local x, y = self.pos.x, self.pos.y
- if (self.use_area) then
+ if self.area then
   -- center it
-  local width, height = self.area_width, self.area_height
+  local width, height = self.area.x, self.area.y
   x += flr(rnd(width)) - (width / 2)
   y += flr(rnd(height)) - (height / 2)
  end
@@ -326,7 +354,7 @@ function emitter:get_new_particle()
   {self.p_colours:eval() or flr(rnd(16))}, -- color
   sprites, -- graphics
   self.p_life:eval(), -- life
-  self.p_angle:eval(), -- angle
+  self.p_angle:eval() / 360, -- angle
   self.p_speed:eval(),
   self.p_speed_final:eval(), -- speed
   self.p_size:eval(),
@@ -342,7 +370,7 @@ function emitter:emit(dt)
    if (self.max_p <= 0) then
     self.max_p = 50
    end
-   for i=1, self:get_amount_to_spawn(self.burst_amount) do
+   for i=1, self:get_amount_to_spawn(self.burst) do
     add(self.particles, self:get_new_particle())
    end
    self.emitting = false
@@ -368,45 +396,19 @@ function emitter:get_amount_to_spawn(spawn_amount)
  return flr(spawn_amount)
 end
 
--- will randomise even if it is negative
-function get_rnd_spread(spread)
- return rnd(spread * sgn(spread)) * sgn(spread)
-end
-
 function emitter:clone()
   return self:new({})
 end
 
 -- setter functions
 
-function ps_set_burst(e, burst, burst_amount)
- e.burst = burst
- e.burst_amount = burst_amount or e.max_p
-end
-
-function ps_set_area(e, width, height)
- e.use_area = width ~= nil and height ~= nil and (width > 0 or height > 0)
- e.area_width = width or 0
- e.area_height = height or 0
-end
-
-function ps_set_colours(e, colours)
- e.p_colours = colours
-end
-
-function ps_set_sprites(e, sprites)
- e.p_sprites = sprites
-end
-
 function confetti()
  local left = emitter:new({}, 0, 0, 5, 10, false, false)
  left.p_size:set(0, 1)
  left.p_size_final:set(0)
-
  left.p_speed:set(10, 20)
  left.p_speed_final:set(10)
  left.p_colours:set({7, 8, 9, 10, 11, 12, 13, 14, 15})
- left.rnd_colour = true
  left.p_life:set(0.4, 1)
  left.p_angle:set(30, 45)
  return left
@@ -416,25 +418,25 @@ end
 function stars()
   local my_emitters = emitters:new()
   local front = emitter:new({}, 0, 64, 0.2, 0)
-  ps_set_area(front, 0, 128)
+  front.area = vec:new(0, 128)
   front.p_colours:set({7})
   front.p_size:set(0)
   front.p_speed:set(34, 10)
   front.p_speed_final:set(34)
   front.p_life:set(3.5)
   front.p_angle:set(0)
+
   add(my_emitters, front)
   local midfront = front:clone()
   midfront.frequency = 0.15
   midfront.p_life:set(4.5)
   midfront.p_colours:set({6})
-  ps_set_colours(midfront, {6})
   midfront.p_speed:set(26, 5)
   midfront.p_speed_final:set(26)
   add(my_emitters, midfront)
   local midback = front:clone()
   midback.p_life:set(6.8)
-  ps_set_colours(midback, {5})
+  midback.p_colours:set({5})
   midback.p_speed:set(18, 5)
   midback.p_speed_final:set(18)
   midback.frequency = 0.1
@@ -442,29 +444,21 @@ function stars()
   local back = front:clone()
   back.frequency = 0.7
   back.p_life:set(11)
-  ps_set_colours(back, {1})
+  back.p_colours:set({1})
   back.p_speed:set(10, 5)
   back.p_speed_final:set(10)
   add(my_emitters, back)
   local special = emitter:new({}, 64, 64, 0.2, 0)
-  ps_set_area(special, 128, 128)
+
+  special.area = vec:new(128, 128)
   special.p_angle:set(0)
   special.frequency = 0.01
   -- ps_set_sprites(special, {78, 79, 80, 81, 82, 83, 84})
-  ps_set_sprites(special, {107, 108, 109, 110})
+  -- special.p_sprites = variate:new(nil, {107, 108, 109, 110})
+  special.p_sprites = {107, 108, 109, 110}
   special.p_speed:set(30, 15)
   special.p_speed_final:set(30)
   special.p_life:set(5)
   add(my_emitters, special)
-  -- local front = emitter:new({}, 0, 64, 0.2, 0)
-  -- ps_set_area(front, 0, 128)
-  -- ps_set_colours(front, {7})
-  -- front.p_size:set(0)
-  -- front.p_speed:set(34, 10)
-  -- front.p_speed_final:set(34)
-  -- ps_set_life(front, 3.5)
-  -- front.p_life:set(11)
-  -- front.p_angle:set(0)
-  -- add(my_emitters, front)
   return my_emitters
 end

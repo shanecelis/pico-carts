@@ -7,7 +7,6 @@ __lua__
 #include ../lib/particles.p8
 #include ../lib/timer.p8
 #include ../lib/scene.p8
-#include ../lib/skeleton.p8
 #include ../lib/actor.p8
 #include ../lib/collision.p8
 #include ../lib/mouse-and-keyboard.p8
@@ -43,7 +42,8 @@ text_demo_scene.message.color.outline = 1
 
 
 particlefx = confetti()
-particlefx.pos = vec(65, 65)
+particlefx = stars()
+particlefx.pos = vec:new(65, 65)
 bouncy_stage = scene:new {
   colliders = {},
   -- update = function(self)
@@ -64,7 +64,7 @@ cursor = actor:new({
       mouse:update()
       self.x = mouse.x
       self.y = mouse.y
-      particlefx.pos = vec(self.x, self.y)
+      -- particlefx.pos = vec(self.x, self.y)
       if mouse:btnp(0) then --and has_flag(self.x, self.y, 1) then
         sfx(1)
       end
@@ -90,7 +90,7 @@ ball.update = follow_actor(cursor)
 -- curr_scene = idea
 bouncy_stage:install()
 -- curr_scene = bouncy_stage
--- curr_scene = credits
+-- credits:install()
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000008808800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

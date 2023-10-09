@@ -145,9 +145,10 @@ function credits:enter()
 end
 
 function credits:update()
+  particle.update_time()
 	self.f += 1
-	self.t += self.speed * delta_time
-	self.emitter:update(delta_time)
+	self.t += self.speed * particle.delta_time
+	self.emitter:update()
 end
 
 function credits:draw()

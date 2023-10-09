@@ -63,9 +63,15 @@ function variate:set(v, s)
 end
 
 function variate:eval()
-  local spread = self.spread or 0
-  return self.value + rnd(spread * sgn(spread)) * sgn(spread)
+  if type(self.value) == "table" then
+    if (#self.value == 0) return nil
+    return self.value[flr(rnd(#self.value))+1]
+  else
+    local spread = self.spread or 0
+    return self.value + rnd(spread * sgn(spread)) * sgn(spread)
+  end
 end
+
 -------------------------------------------------- particle
 particle = {
   prev_time = nil, -- for calculating dt
@@ -230,13 +236,12 @@ emitter = {
   area_height = 0,
 
   -- particle factory stuff
-  p_colours = {1},
+  p_colours = variate:new({}, {1}),
   p_sprites = nil,
   p_life = variate:new({}, 1, 0),
   p_angle = variate:new({}, 0, 360),
-  p_speed_initial = variate:new({}, 10, 0),
-  p_speed_final = nil,
-  p_size_initial = variate:new({}, 1, 0),
+  p_speed = variate:new({}, 10, 0),
+  p_size = variate:new({}, 1, 0),
 }
 function emitter:new(o, x,y, frequency, max_p, burst, gravity)
  o = o or {}
@@ -249,8 +254,8 @@ function emitter:new(o, x,y, frequency, max_p, burst, gravity)
  o.burst = burst or o.burst
  o.gravity = gravity or o.gravity
  o.pool = nopool:new({}, function() return particle:new() end)
- o.p_speed_final = o.p_speed_final or o.p_speed_initial:new()
- o.p_size_final = o.p_size_final or o.p_size_initial:new()
+ o.p_speed_final = o.p_speed_final or o.p_speed:new()
+ o.p_size_final = o.p_size_final or o.p_size:new()
  -- if (o.max_p < 1) then
  --   o.use_pooling = false end
 
@@ -295,18 +300,6 @@ function emitter:draw()
  foreach(self.particles, function(obj) obj:draw() end)
 end
 
-function emitter:get_colour()
- if (self.rnd_colour) then
-  if (#self.p_colours > 1) then
-   return {self.p_colours[flr(rnd(#self.p_colours))+1]}
-  else
-   return {flr(rnd(16))}
-  end
- else
-  return self.p_colours
- end
-end
-
 -- factory method, creates a new particle based on the values set + random
 -- this is why the emitter has to know about the properties of the particle it's emmitting
 function emitter:get_new_particle()
@@ -330,13 +323,13 @@ function emitter:get_new_particle()
  p.set_values (p, -- self
   x, y, -- pos
   self.gravity, -- gravity
-  self.get_colour(self),
+  {self.p_colours:eval() or flr(rnd(16))}, -- color
   sprites, -- graphics
   self.p_life:eval(), -- life
   self.p_angle:eval(), -- angle
-  self.p_speed_initial:eval(),
+  self.p_speed:eval(),
   self.p_speed_final:eval(), -- speed
-  self.p_size_initial:eval(),
+  self.p_size:eval(),
   self.p_size_final:eval() -- size
  )
  return p
@@ -405,29 +398,17 @@ function ps_set_sprites(e, sprites)
  e.p_sprites = sprites
 end
 
-function ps_set_life(e, life, life_spread)
-  e.p_life = variate:new(nil, life, life_spread)
- -- e.p_life_spread = life_spread or 0
-end
-
-function ps_set_speed(e, speed_initial, speed_final, speed_spread_initial, speed_spread_final)
- e.p_speed_initial:set(speed_initial, speed_spread_initial)
- e.p_speed_final:set(speed_final, speed_spread_final)
-end
-
-function ps_set_size(e, size_initial, size_final, size_spread_initial, size_spread_final)
- e.p_size_initial:set(size_initial, size_spread_initial)
- e.p_size_final:set(size_final, size_spread_final)
-end
-
 function confetti()
  local left = emitter:new({}, 0, 0, 5, 10, false, false)
- ps_set_size(left, 0, 0, 1)
- ps_set_speed(left, 10, 20, 10)
- ps_set_colours(left, {7, 8, 9, 10, 11, 12, 13, 14, 15})
+ left.p_size:set(0, 1)
+ left.p_size_final:set(0)
+
+ left.p_speed:set(10, 20)
+ left.p_speed_final:set(10)
+ left.p_colours:set({7, 8, 9, 10, 11, 12, 13, 14, 15})
  left.rnd_colour = true
- left.p_life = variate:new({}, 0.4, 1)
- left.p_angle = variate:new({}, 30, 45)
+ left.p_life:set(0.4, 1)
+ left.p_angle:set(30, 45)
  return left
 end
 
@@ -436,47 +417,54 @@ function stars()
   local my_emitters = emitters:new()
   local front = emitter:new({}, 0, 64, 0.2, 0)
   ps_set_area(front, 0, 128)
-  ps_set_colours(front, {7})
-  front.p_size_initial:set(0)
-  ps_set_speed(front, 34, 34, 10)
-  ps_set_life(front, 3.5)
-  front.p_angle = variate:new({}, 0, 0)
+  front.p_colours:set({7})
+  front.p_size:set(0)
+  front.p_speed:set(34, 10)
+  front.p_speed_final:set(34)
+  front.p_life:set(3.5)
+  front.p_angle:set(0)
   add(my_emitters, front)
   local midfront = front:clone()
   midfront.frequency = 0.15
-  ps_set_life(midfront, 4.5)
+  midfront.p_life:set(4.5)
+  midfront.p_colours:set({6})
   ps_set_colours(midfront, {6})
-  ps_set_speed(midfront, 26, 26, 5)
+  midfront.p_speed:set(26, 5)
+  midfront.p_speed_final:set(26)
   add(my_emitters, midfront)
   local midback = front:clone()
-  ps_set_life(midback, 6.8)
+  midback.p_life:set(6.8)
   ps_set_colours(midback, {5})
-  ps_set_speed(midback, 18, 18, 5)
+  midback.p_speed:set(18, 5)
+  midback.p_speed_final:set(18)
   midback.frequency = 0.1
   add(my_emitters, midback)
   local back = front:clone()
   back.frequency = 0.7
-  ps_set_life(back, 11)
+  back.p_life:set(11)
   ps_set_colours(back, {1})
-  ps_set_speed(back, 10, 10, 5)
+  back.p_speed:set(10, 5)
+  back.p_speed_final:set(10)
   add(my_emitters, back)
   local special = emitter:new({}, 64, 64, 0.2, 0)
   ps_set_area(special, 128, 128)
-  special.p_angle = variate:new({}, 0, 0)
+  special.p_angle:set(0)
   special.frequency = 0.01
   -- ps_set_sprites(special, {78, 79, 80, 81, 82, 83, 84})
   ps_set_sprites(special, {107, 108, 109, 110})
-  ps_set_speed(special, 30, 30, 15)
-  ps_set_life(special, 5)
+  special.p_speed:set(30, 15)
+  special.p_speed_final:set(30)
+  special.p_life:set(5)
   add(my_emitters, special)
-  local front = emitter:new({}, 0, 64, 0.2, 0)
-  ps_set_area(front, 0, 128)
-  ps_set_colours(front, {7})
-  front.p_size_initial:set(0)
-  ps_set_size(front, 0)
-  ps_set_speed(front, 34, 34, 10)
-  ps_set_life(front, 3.5)
-  front.p_angle = variate:new({}, 0, 0)
-  add(my_emitters, front)
+  -- local front = emitter:new({}, 0, 64, 0.2, 0)
+  -- ps_set_area(front, 0, 128)
+  -- ps_set_colours(front, {7})
+  -- front.p_size:set(0)
+  -- front.p_speed:set(34, 10)
+  -- front.p_speed_final:set(34)
+  -- ps_set_life(front, 3.5)
+  -- front.p_life:set(11)
+  -- front.p_angle:set(0)
+  -- add(my_emitters, front)
   return my_emitters
 end

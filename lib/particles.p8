@@ -95,6 +95,27 @@ variate = {
   end
 }
 
+rachet = {
+  new = function (self, o)
+    o = o or {}
+    o.t = 0
+    o.k = 1
+    setmetatable(o, self)
+    self.__index = self
+    return o
+  end,
+
+  update = function (o, dt)
+    o.t += o.k * dt
+  end,
+
+  eval = function (o)
+    -- assert(#self ~= 0)
+    o.t %= #o
+    return o[flr(o.t) + 1]
+  end,
+}
+
 -- a riff on this lib
 -- https://github.com/automattf/vector.lua/blob/master/vector.lua
 vec = {
@@ -152,7 +173,7 @@ particle = {
 
   set_values = function (self, x, y, external_force, colours, sprites, life, angle, speed_initial, speed_final, size_initial, size_final)
     self.pos = vec:new(x,y)
-    self.life_initial, self.life, self.dead, self.external_force = life, life, false, external_force
+    self.life_initial, self.life, self.external_force = life, life, external_force
 
     self.velocity = speed_initial * vec:new(cos(angle), sin(angle))
     self.vel_initial = 1 * self.velocity
@@ -162,7 +183,7 @@ particle = {
 
     self.sprites = sprites
     if self.sprites then
-      self.sprite_time = (1 / #self.sprites) * self.life_initial
+      self.sprite_time = self.life_initial / #self.sprites
       self.current_sprite_time = self.sprite_time
       self.sprites_index = 1
       self.sprite = self.sprites[self.sprites_index]
@@ -221,7 +242,7 @@ particle = {
     if (self.life > 0) then
       self.pos += self.velocity * dt
     else
-      self.dead = true -- goodbye world
+      -- self.dead = true -- goodbye world
     end
   end,
 
@@ -267,8 +288,8 @@ emitter = {
     o.max_p = max_p or o.max_p
     o.burst = burst or o.burst
     o.gravity = gravity or o.gravity
-    -- o.pool = nopool:new({}, function() return particle:new() end)
-    o.pool = pool:new({}, function() return particle:new() end)
+    o.pool = nopool:new({}, function() return particle:new() end)
+    -- o.pool = pool:new({}, function() return particle:new() end)
     o.p_speed_final = o.p_speed_final or o.p_speed:new()
     o.p_size_final = o.p_size_final or o.p_size:new()
     -- if (o.max_p < 1) then
@@ -289,9 +310,9 @@ emitter = {
     self:emit(dt)
     for p in all(self.particles) do
       p:update(dt)
-      if (p.dead) self.pool:release(p)
+      if (p.life < 0) self.pool:release(p)
       end
-    table_remove(self.particles, function(p) return p.dead end)
+    table_remove(self.particles, function(p) return p.life < 0 end)
     -- handle subemitters
     for e in all(self) do
       e:update()
@@ -362,7 +383,7 @@ emitter = {
         if self.max_p <= 0 then
           self.max_p = 50
         end
-        for i=1, self:get_amount_to_spawn(self.burst) do
+        for i=1, self:spawn_count(self.burst) do
           add(self.particles, self:get_new_particle())
         end
         self.emitting = false
@@ -371,7 +392,7 @@ emitter = {
       else
         self.emit_time += self.frequency
         if self.emit_time >= 1 then
-          local amount = self:get_amount_to_spawn(self.emit_time)
+          local amount = self:spawn_count(self.emit_time)
           for i=1, amount do
             add(self.particles, self:get_new_particle())
           end
@@ -381,11 +402,12 @@ emitter = {
     end
   end,
 
-  get_amount_to_spawn = function (self, spawn_amount)
-    if (self.max_p ~= 0 and #self.particles + flr(spawn_amount) >= self.max_p) then
+  spawn_count = function (self, spawn_amount)
+    if self.max_p ~= 0 and #self.particles + flr(spawn_amount) >= self.max_p then
       return self.max_p - #self.particles
+    else
+      return flr(spawn_amount)
     end
-    return flr(spawn_amount)
   end,
 
   clone = function (self)
@@ -408,16 +430,11 @@ function confetti()
   left.p_speed_final:set(10)
   left.p_colours:set({7, 8, 9, 10, 11, 12, 13, 14, 15})
   left.p_life:set(0.4, 1)
-  -- left.p_angle:set(30, 45)
-  -- local right = left:clone()
-  -- right.pos = vec:new(30, 0)
-  -- left:add(right)
   return left
 end
 
 -- stars credits
 function stars()
-  -- local my_emitters = emitters:new()
   local front = emitter:new({}, 0, 64, 0.2, 0)
   front.area = vec:new(0, 128)
   front.p_colours:set({7})
@@ -427,7 +444,6 @@ function stars()
   front.p_life:set(3.5)
   front.p_angle:set(0)
 
-  -- add(my_emitters, front)
   local midfront = front:clone()
   midfront.frequency = 0.15
   midfront.p_life:set(4.5)
@@ -435,7 +451,6 @@ function stars()
   midfront.p_speed:set(26, 5)
   midfront.p_speed_final:set(26)
   front:add(midfront)
-  -- add(my_emitters, midfront)
   local midback = front:clone()
   midback.p_life:set(6.8)
   midback.p_colours:set({5})
@@ -443,27 +458,22 @@ function stars()
   midback.p_speed_final:set(18)
   midback.frequency = 0.1
   front:add(midback)
-  -- add(my_emitters, midback)
   local back = front:clone()
   back.frequency = 0.7
   back.p_life:set(11)
   back.p_colours:set({1})
   back.p_speed:set(10, 5)
   back.p_speed_final:set(10)
-  -- add(my_emitters, back)
   front:add(back)
   local special = emitter:new({}, 64, 64, 0.2, 0)
 
   special.area = vec:new(128, 128)
   special.p_angle:set(0)
   special.frequency = 0.01
-  -- ps_set_sprites(special, {78, 79, 80, 81, 82, 83, 84})
-  -- special.p_sprites = variate:new(nil, {107, 108, 109, 110})
   special.p_sprites = {107, 108, 109, 110}
   special.p_speed:set(30, 15)
   special.p_speed_final:set(30)
   special.p_life:set(5)
   front:add(special)
-  -- add(my_emitters, special)
   return front
 end

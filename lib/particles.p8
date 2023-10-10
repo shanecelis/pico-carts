@@ -72,19 +72,13 @@ end
 
 -------------------------------------------------- particle
 particle = {
-  prev_time = nil, -- for calculating dt
+  prev_time = time(), -- for calculating dt
   delta_time = nil, -- the change in time
-  gravity = 50
 }
 
 function particle.update_time()
- particle.delta_time = time()-prev_time
+ particle.delta_time = time()-particle.prev_time
  particle.prev_time = time()
-end
-
-
-function particle.apply_gravity(a)
- a.velocity.y = a.velocity.y + particle.delta_time * a.gravity
 end
 
 vec = {}
@@ -116,9 +110,9 @@ function particle:new(o)
  return o
 end
 
-function particle:set_values(x, y, gravity, colours, sprites, life, angle, speed_initial, speed_final, size_initial, size_final)
+function particle:set_values(x, y, external_force, colours, sprites, life, angle, speed_initial, speed_final, size_initial, size_final)
  self.pos = vec:new(x,y)
- self.life_initial, self.life, self.dead, self.gravity = life, life, false, gravity
+ self.life_initial, self.life, self.dead, self.external_force = life, life, false, external_force
 
  -- the 1125 number was 180 in the original calculation,
  -- but i set it to 1131 to make the angle pased in equal to 360 on a full revolution
@@ -156,7 +150,8 @@ end
 function particle:update(dt)
  self.life -= dt
 
- if (self.gravity) self:apply_gravity()
+ if (self.external_force) self.velocity += particle.delta_time * self.external_force
+ -- if (self.gravity) self:apply_gravity()
 
  -- size over lifetime
  if (self.size_initial ~= self.size_final) then
@@ -282,8 +277,8 @@ end
 -- entries that fn returns true.
 -- https://stackoverflow.com/questions/12394841/safely-remove-items-from-an-array-table-while-iterating
 function table_remove(t, fn)
-  local j, n = 1, #t
-  for i=1,n do
+  local j = 1
+  for i=1,#t do
     if fn(t[i]) then
       -- toss this one
       t[i] = nil
@@ -330,9 +325,9 @@ function emitter:get_new_particle()
  local p = self.pool:get()
 
  -- (x, y, gravity, colours, sprites, life, angle, speed_initial, speed_final, size_initial, size_final)
- p.set_values (p, -- self
+ p:set_values (
   x, y, -- pos
-  self.gravity, -- gravity
+  self.gravity and vec:new(0, 50) or nil, -- gravity a and b or c === a ? b : c
   {self.p_colours:eval() or flr(rnd(16))}, -- color
   sprites, -- graphics
   self.p_life:eval(), -- life
@@ -346,10 +341,10 @@ function emitter:get_new_particle()
 end
 
 function emitter:emit(dt)
- if (self.emitting) then
+ if self.emitting then
   -- burst!
-  if (self.burst) then
-   if (self.max_p <= 0) then
+  if self.burst then
+   if self.max_p <= 0 then
     self.max_p = 50
    end
    for i=1, self:get_amount_to_spawn(self.burst) do
@@ -360,7 +355,7 @@ function emitter:emit(dt)
   -- we're continuously emitting
   else
    self.emit_time += self.frequency
-   if (self.emit_time >= 1) then
+   if self.emit_time >= 1 then
     local amount = self:get_amount_to_spawn(self.emit_time)
     for i=1, amount do
      add(self.particles, self:get_new_particle())

@@ -6,66 +6,67 @@ __lua__
 scene = {
   background = 0,
   music = -1,
-  fade = 600
-}
+  fade = 600,
+  new = function (self, o)
+    o = o or {}
+    setmetatable(o, self)
+    self.__index = self
+    return o
+  end,
 
-function scene:new(o)
-  o = o or {}
-  setmetatable(o, self)
-  self.__index = self
-  return o
-end
+  enter = function (self)
+    music(self.music, self.fade)
+  end,
 
-function scene:enter()
-  music(self.music, self.fade)
-end
+  exit = function (self)
+    music(-1, self.fade)
+  end,
 
-function scene:exit()
-  music(-1, self.fade)
-end
+  update = function (self)
+    for e in all(self) do
+      e:update()
+    end
+  end,
 
-function scene:update()
-  for e in all(self) do
-    e:update()
-  end
-end
+  draw = function (self)
+    if (self.background) cls(self.background)
+    for e in all(self) do
+      e:draw()
+    end
+  end,
 
-function scene:draw()
-  if (self.background) cls(self.background)
-  for e in all(self) do
-    e:draw()
-  end
-  end
-
--- install the scene with a
--- skeleton of the _init,
--- _update, and _draw functions.
--- warning: do not use if those
--- functions are already
--- defined.
-function scene.install(scene)
-  function _init()
-    prev_time = time()
-    scene:enter()
-  end
-
-  function _update()
-    -- if scene.text == nil then
-    particle.update_time()
-    coroutines:update()
-    -- end
-    local next = scene:update()
-    if next ~= nil then
-      scene:exit()
-      scene = next
+  -- install the scene with a
+  -- skeleton of the _init,
+  -- _update, and _draw functions.
+  -- warning: do not use if those
+  -- functions are already
+  -- defined.
+  install = function (scene)
+    function _init()
+      prev_time = time()
       scene:enter()
     end
-  end
 
-  function _draw()
-    scene:draw()
-  end
-end
+    function _update()
+      -- if scene.text == nil then
+      particle.update_time()
+      coroutines:update()
+      -- end
+      local next = scene:update()
+      if next ~= nil then
+        scene:exit()
+        scene = next
+        scene:enter()
+      end
+    end
+
+    function _draw()
+      scene:draw()
+    end
+  end,
+}
+
+
 
 text_scene = scene:new({ texts = { "default text" }, next_scene = nil, x = 2, y = 2 })
 

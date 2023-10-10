@@ -35,7 +35,7 @@ function table_remove(t, fn)
   end
 end
 
--- create two classes: a pool and a nopool (factory)
+-- create two classes: a pool and a factory (nopool)
 nopool = {
   new = function (self, o, create)
     o = o or {}
@@ -49,6 +49,7 @@ nopool = {
 }
 
 pool = nopool:new {
+  -- get an item from the pool
   get = function (self)
     if #self <= 0 then
       return self.create()
@@ -60,6 +61,7 @@ pool = nopool:new {
     end
   end,
 
+  -- return an item to the pool
   release = function (self, e)
     add(self, e)
   end
@@ -152,13 +154,9 @@ particle = {
     self.pos = vec:new(x,y)
     self.life_initial, self.life, self.dead, self.external_force = life, life, false, external_force
 
-    -- the 1125 number was 180 in the original calculation,
-    -- but i set it to 1131 to make the angle pased in equal to 360 on a full revolution
-    -- don't ask me why it's 1131, i don't know. maybe it's odd because i rounded pi?
-    -- local angle = angle * 3.14159 / 1131
-    self.velocity = vec:new(speed_initial*cos(angle), speed_initial*sin(angle))
-    self.vel_initial = vec:new(self.velocity.x, self.velocity.y)
-    self.vel_final = vec:new(speed_final*cos(angle), speed_final*sin(angle))
+    self.velocity = speed_initial * vec:new(cos(angle), sin(angle))
+    self.vel_initial = 1 * self.velocity
+    self.vel_final = speed_final * vec:new(cos(angle), sin(angle))
 
     self.size, self.size_initial, self.size_final = size_initial, size_initial, size_final
 
@@ -269,7 +267,8 @@ emitter = {
     o.max_p = max_p or o.max_p
     o.burst = burst or o.burst
     o.gravity = gravity or o.gravity
-    o.pool = nopool:new({}, function() return particle:new() end)
+    -- o.pool = nopool:new({}, function() return particle:new() end)
+    o.pool = pool:new({}, function() return particle:new() end)
     o.p_speed_final = o.p_speed_final or o.p_speed:new()
     o.p_size_final = o.p_size_final or o.p_size:new()
     -- if (o.max_p < 1) then

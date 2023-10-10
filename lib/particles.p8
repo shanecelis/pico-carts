@@ -35,8 +35,9 @@ function table_remove(t, fn)
   end
 end
 
--- create two classes: a pool and a factory (nopool)
-nopool = {
+-- an object pool
+pool = {
+  -- eg: pool:new(nil, function() some-object:new() end)
   new = function (self, o, create)
     o = o or {}
     setmetatable(o, self)
@@ -44,11 +45,7 @@ nopool = {
     o.create = create or o.create
     return o
   end,
-  get = function(p) return p.create() end,
-  release = function(p) end
-}
 
-pool = nopool:new {
   -- get an item from the pool
   get = function (self)
     if #self <= 0 then
@@ -65,6 +62,13 @@ pool = nopool:new {
   release = function (self, e)
     add(self, e)
   end
+}
+
+-- a drop-in replacement for pool that
+-- is not a pool but a factory.
+nopool = pool:new {
+  get = function(p) return p.create() end,
+  release = function(p) end
 }
 
 

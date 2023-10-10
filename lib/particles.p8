@@ -83,19 +83,16 @@ function particle.update_time()
  particle.prev_time = time()
 end
 
-vec = {}
-function vec:new(x,y)
-  local v = {x = x, y = y}
-  setmetatable(v, self)
- self.__index = self
-  return v
-end
-
-vec.__add = function(a,b)
+vec = {
+__add = function(a,b)
   return vec:new(a.x + b.x, a.y + b.y)
-end
+end,
 
-vec.__mul = function(a,b)
+__sub = function(a,b)
+  return vec:new(a.x - b.x, a.y - b.y)
+end,
+
+__mul = function(a,b)
   if type(a) == 'number' then
     return vec:new(a * b.x, a * b.y)
   elseif type(b) == 'number' then
@@ -103,6 +100,23 @@ vec.__mul = function(a,b)
   else
     return vec:new(a.x * b.x, a.y * b.y)
   end
+end,
+
+__div = function(a,b)
+  assert(type(b) == 'number' and type(a) ~= 'number')
+  return vec:new(a.x / b, a.y / b)
+end,
+
+map = function(a, f)
+  return vec:new(f(a.x), f(a.y))
+end
+}
+
+function vec:new(x,y)
+  local v = {x = x, y = y}
+  setmetatable(v, self)
+  self.__index = self
+  return v
 end
 
 function particle:new(o)
@@ -161,12 +175,7 @@ function particle:update(dt)
   self.size = self.size - ((self.size_initial-self.size_final)/self.life_initial)*dt
  end
 
- -- velocity over lifetime
- if (self.vel_initial.x ~= self.vel_final.x) then
-  -- take the difference of original and future, divided by time, multiplied by delta time
-  self.velocity.x = self.velocity.x - ((self.vel_initial.x-self.vel_final.x)/self.life_initial)*dt
-  self.velocity.y = self.velocity.y - ((self.vel_initial.y-self.vel_final.y)/self.life_initial)*dt
- end
+ self.velocity -= ((self.vel_initial-self.vel_final)/self.life_initial)*dt
 
  -- changing the colour
  if (self.colours ~= nil and #self.colours > 1) then
@@ -190,8 +199,7 @@ function particle:update(dt)
 
  -- moving the particle
  if (self.life > 0) then
-  self.pos.x = self.pos.x + self.velocity.x * dt
-  self.pos.y = self.pos.y + self.velocity.y * dt
+  self.pos += self.velocity * dt
  else
   self.dead = true -- goodbye world
  end
@@ -226,7 +234,7 @@ function emitter:new(o, x, y, frequency, max_p, burst, gravity)
  setmetatable(o, self)
  self.__index = self
 
- -- talbe members should be set up in new
+ -- table members should be set up in new
  o.particles = {}
  o.p_colours = variate:new({}, {1})
  o.p_life = variate:new({}, 1, 0)
@@ -294,7 +302,7 @@ function table_remove(t, fn)
 end
 
 -- tells of the particles to
--- draw themselves
+-- draw themselves.
 function emitter:draw()
  foreach(self.particles, function(obj) obj:draw() end)
 
@@ -317,19 +325,17 @@ function emitter:get_new_particle()
   sprites = {self.p_sprites[flr(rnd(#self.p_sprites))+1]}
  end
 
- local x, y = self:get_pos().x, self:get_pos().y
- if self.area then
+ local pos, area = self:get_pos(), self.area
+ if area then
   -- center it
-  local width, height = self.area.x, self.area.y
-  x += flr(rnd(width)) - (width / 2)
-  y += flr(rnd(height)) - (height / 2)
+   pos += area:map(rnd) - area / 2
  end
 
  local p = self.pool:get()
 
  -- (x, y, gravity, colours, sprites, life, angle, speed_initial, speed_final, size_initial, size_final)
  p:set_values (
-  x, y, -- pos
+  pos.x, pos.y, -- pos
   self.gravity and vec:new(0, 50) or nil, -- gravity a and b or c === a ? b : c
   {self.p_colours:eval() or flr(rnd(16))}, -- color
   sprites, -- graphics
@@ -377,10 +383,14 @@ function emitter:get_amount_to_spawn(spawn_amount)
 end
 
 function emitter:clone()
-  return self:new({})
+  local o = self:new({})
+  -- o.p_colours = self.p_colors:new()
+  o.p_life = self.p_life:new()
+  o.p_angle = self.p_angle:new()
+  o.p_speed = self.p_speed:new()
+  o.p_size = self.p_size:new()
+  return o
 end
-
--- setter functions
 
 function confetti()
  local left = emitter:new({}, 0, 0, 5, 10, false, false)

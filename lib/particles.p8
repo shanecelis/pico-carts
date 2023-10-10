@@ -57,16 +57,18 @@ function variate:new(o, value, spread)
 end
 
 function variate:set(v, s)
-  self.value, self.spread = v, s or 0
+  self.value, self.spread = v, s
 end
 
 function variate:eval()
   if type(self.value) == "table" then
     if (#self.value == 0) return nil
     return self.value[flr(rnd(#self.value))+1]
+  elseif self.spread then
+    local sign = sgn(self.spread)
+    return self.value + sign * rnd(self.spread * sign) - self.spread / 2
   else
-    local spread = self.spread or 0
-    return self.value + rnd(spread * sgn(spread)) * sgn(spread)
+    return self.value
   end
 end
 
@@ -206,29 +208,31 @@ end
 
 -------------------------------------------------- particle emitter
 emitter = {
-  particles = {},
-
   -- emitter variables
-  pos = nil,
+  -- pos = nil,
   emitting = true,
-  frequency = nil,
+  -- frequency = nil,
   emit_time = 0,
   max_p = 100,
   gravity = false,
-  burst = nil,
+  -- burst = nil,
 
   -- particle factory stuff
-  p_colours = variate:new({}, {1}),
-  p_sprites = nil,
-  p_life = variate:new({}, 1, 0),
-  p_angle = variate:new({}, 0, 360),
-  p_speed = variate:new({}, 10, 0),
-  p_size = variate:new({}, 1, 0),
+  -- p_sprites = nil,
 }
+
 function emitter:new(o, x, y, frequency, max_p, burst, gravity)
  o = o or {}
  setmetatable(o, self)
  self.__index = self
+
+ -- talbe members should be set up in new
+ o.particles = {}
+ o.p_colours = variate:new({}, {1})
+ o.p_life = variate:new({}, 1, 0)
+ o.p_angle = variate:new({}, 0, 360)
+ o.p_speed = variate:new({}, 10, 0)
+ o.p_size = variate:new({}, 1, 0)
 
  o.pos = o.pos or vec:new(x,y)
  o.frequency = frequency or o.frequency
@@ -243,7 +247,6 @@ function emitter:new(o, x, y, frequency, max_p, burst, gravity)
 
  return o
 end
-
 function emitter:get_pos()
   return self.pos
 end
@@ -387,10 +390,10 @@ function confetti()
  left.p_speed_final:set(10)
  left.p_colours:set({7, 8, 9, 10, 11, 12, 13, 14, 15})
  left.p_life:set(0.4, 1)
- left.p_angle:set(30, 45)
- local right = left:clone()
- right.pos = vec:new(30, 0)
- left:add(right)
+ -- left.p_angle:set(30, 45)
+ -- local right = left:clone()
+ -- right.pos = vec:new(30, 0)
+ -- left:add(right)
  return left
 end
 

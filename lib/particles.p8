@@ -255,6 +255,7 @@ function emitter:new(o, x, y, frequency, max_p, burst, gravity)
 
  return o
 end
+
 function emitter:get_pos()
   return self.pos
 end
@@ -321,8 +322,9 @@ end
 function emitter:get_new_particle()
  local sprites = self.p_sprites
  -- select random sprite from the sprites list
- if (self.rnd_sprite and self.p_sprites) then
-  sprites = {self.p_sprites[flr(rnd(#self.p_sprites))+1]}
+ if sprites and sprites.value then
+   -- it's a variate.
+   sprites = {sprites:eval()}
  end
 
  local pos, area = self:get_pos(), self.area

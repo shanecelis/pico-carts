@@ -30,7 +30,7 @@ do
     return band(shl(1, i), flag or _btn) > 0
   end
 
-  -- return mouse wheel info
+  -- return mouse wheel info.
   -- 1 roll up, 0 no roll, -1 roll down
   function mouse:wheel()
     return stat(36)
@@ -63,11 +63,17 @@ do
     -- pressed.
     -- enable_menu = nil,
 
-    -- readline coroutine
+    -- reader function runs as a
+    -- coroutine. it receives a
+    -- key at start and upon
+    -- resumption.
     --
-    -- default reading behavior,
-    -- can substitute your own.
-    cofactory = function(key)
+    -- the default reader is a
+    -- cheap readline: it builds
+    -- up a string until return
+    -- is pressed. meant for you
+    -- to substitute your own.
+    reader = function(key)
       local buffer = ""
       while key ~= "\r" do
         -- end with \0 to not add newline
@@ -88,6 +94,10 @@ do
     poke(0x5f2d, 1)
   end
 
+  -- update keyboard info.
+  -- return the current
+  -- coroutine's last yielded or
+  -- returned value.
   function keyboard:update()
     local s, r = true
     _key = nil
@@ -95,7 +105,7 @@ do
       _key = stat(31)
       if (_key == "\r" and not self.enable_menu) poke(0x5f30, 1)
       repeat
-        if (not s or not _co) _co = cocreate(self.cofactory, _key)
+        if (not s or not _co) _co = cocreate(self.reader, _key)
         s, r = coresume(_co, _key)
       until s
     end
@@ -109,12 +119,12 @@ do
   -- proof. multiple keys can be
   -- pressed per frame. this
   -- only tests against the last
-  -- one.
+  -- key.
   --
   -- for better handling,
-  -- implement your own
+  -- implement your own reader
   -- coroutine which'll catch
-  -- all keys pressed.
+  -- all key presses.
   function keyboard:btnp(k)
     return _key == k
   end

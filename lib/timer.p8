@@ -36,22 +36,23 @@ end
 
 -- https://wiki.zlg.space/programming/pico8/recipes/coroutine
 function coroutines:update()
-  local s
-  local t
-  if #self > 0 then
-    for c in all(self) do
-      t = c.co
-      s = costatus(t)
-      if s != 'dead' then
-        active, exception = coresume(t, unpack(c.args))
-        if exception then
-          printh(trace(t, exception))
-          stop(trace(t, exception))
-        end
-      else
-        del(coroutines, c)
+  local s, t
+  -- fixme: use the table_remove
+  -- and keyboard:update as
+  -- template removing
+  -- coroutines more
+  -- efficiently.
+  for c in all(self) do
+    t = c.co
+    s = costatus(t)
+    if s != 'dead' then
+      local active, exception = coresume(t, unpack(c.args))
+      if exception then
+        printh(trace(t, exception))
+        stop(trace(t, exception))
       end
+    else
+      del(coroutines, c)
     end
   end
 end
-

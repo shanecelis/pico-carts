@@ -7,7 +7,7 @@ __lua__
 #include lib/actor.p8
 
 function _init()
-	widgets = {}
+  widgets = {}
   cursor = actor:new {
     sprite = 0,
     update = function(self)
@@ -19,22 +19,21 @@ function _init()
       if (mouse:btnp()) self.sprite = 32
     end
   }
-	init_widgets(widgets)
+  init_widgets(widgets)
   mouse:init(false, false)
 end
 
 function _update()
   mouse:update()
   cursor:update()
-
-	foreach(widgets, function (w) w:update() end)
+  foreach(widgets, function (w) w:update() end)
 end
 
 function _draw()
-	cls()
-	print("for testing purposes")
-	foreach(widgets, function (w) w:draw() end)
-	print("⬆️ click to reset",60,68,7)
+  cls()
+  print("for testing purposes")
+  foreach(widgets, function (w) w:draw() end)
+  print("⬆️ click to reset",60,68,7)
   cursor:draw()
 end
 
@@ -45,66 +44,66 @@ end
 -- features of the interface
 
 function init_widgets(list)
-	-- red button
-	add(list,
-	widget:new {
-    x = 40, y = 50,
-		on_down = 
-			function (self)
-					sfx(0)
-          self.frame=1
-				end,
-		on_up =
-			function (self)
-          self.frame=0
-				end,
-    sprite = 1,
-    frames = 2,
-	})
+  -- red button
+  add(list,
+      widget:new {
+        x = 40, y = 50,
+        on_down =
+          function (self)
+            sfx(0)
+            self.frame=1
+          end,
+        on_up =
+          function (self)
+            self.frame=0
+          end,
+        sprite = 1,
+        frames = 2,
+  })
 
-	-- green button
-	-- lights up on hover
-	add(list,
-	widget:new {
-    x = 50, y = 50,
-		on_down =
-			function (self)
-					sfx(1)
-          self.frame=1
-      end,
-		on_up =
-			function (self)
-          self.frame=0
-      end,
+  -- green button
+  -- lights up on hover
+  add(list,
+      widget:new {
+        x = 50, y = 50,
+        on_down =
+          function (self)
+            sfx(1)
+            self.frame=1
+          end,
+        on_up =
+          function (self)
+            self.frame=0
+          end,
 
-		on_hover =
-			function (self, inside)
-        self.frame = inside and 2 or 0
-      end,
-    sprite = 17,
-    frames = 3,
-	})
-	
-	-- screen which draws using
-	-- randomly coloured pixels
-	-- and clears after click
-	add(list,
-	widget:new {
-    x = 60, y = 50, width = 2, height = 2, pixels = {},
-		on_up =
-			function (self)
-        self.pixels = {}
-      end,
-		on_hover =
-			function (self, inside)
-        if (inside) add(self.pixels,{mouse.x,mouse.y,flr(rnd(17))})
-      end,
-    draw = function(self)
-      widget.draw(self)
-      foreach(self.pixels, function (p) pset(unpack(p)) end)
-    end,
-    sprite = 33,
-	})
+        on_hover =
+          function (self, inside)
+            self.frame = inside and 2 or 0
+          end,
+        sprite = 17,
+        frames = 3,
+  })
+
+  -- screen which draws using
+  -- randomly coloured pixels
+  -- and clears after click
+  add(list,
+      widget:new {
+        x = 60, y = 50, width = 2, height = 2, pixels = {},
+        on_up =
+          function (self)
+            self.pixels = {}
+          end,
+        on_hover =
+          function (self, inside)
+            if (inside) add(self.pixels,{mouse.x,mouse.y,flr(rnd(17))})
+          end,
+        draw = function(self)
+          widget.draw(self)
+          foreach(self.pixels, function (p) pset(unpack(p)) end)
+        end,
+        sprite = 33,
+  })
 end
 
 

@@ -42,6 +42,7 @@ function actor.is_sprite(a, s)
 end
 
 widget = actor:new {
+  -- can_click
 }
 
 function widget:update()

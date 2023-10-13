@@ -74,7 +74,6 @@ function init_widgets(list)
         on_up = function (self)
             self.frame=0
           end,
-
         on_hover = function (self, inside)
             self.frame = inside and 2 or 0
           end,

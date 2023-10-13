@@ -3,15 +3,20 @@ version 41
 __lua__
 -- mouse interface
 -- by dracus17
+#include lib/mouse-and-keyboard.p8
+#include lib/actor.p8
 
 function _init()
 	_init_all()
+  mouse:init(false, false)
 	init_mouse(widgets)
 end
 
 function _update()
 	_updt()
-	update_mouse()
+  update_mouse()
+
+	foreach(widgets, function (w) w:update() end)
 end
 
 function _draw()
@@ -23,8 +28,9 @@ end
 -- mouse handling
 
 function init_mouse(list)
-	poke(0x5f2d, 1) -- enable mouse
-	mouse_x,mouse_y,mouse_click = 0,0,0
+	-- poke(0x5f2d, 1) -- enable mouse
+	--mouse.x,mouse.y,
+  mouse_click = mouse:btn()
 	mouse_can_click 		= false
 	mouse_is_clicking = false
 	mouse_is_down 				= false
@@ -38,20 +44,21 @@ end
 -- and state, and triggers
 -- mouse events
 function update_mouse()
-	mouse_x,mouse_y,mouse_click = stat(32),stat(33),stat(34)
-	
+  mouse:update()
+  mouse_click = stat(34) --mouse:btn()
+
 	-- test if over widget
 	-- also triggers on_hover event
-	mouse_hover()
+	-- mouse_hover()
 		
 	-- event trigger detection
-	mouse_event()
+	-- mouse_event()
 	
-	if not (mouse_can_click or mouse_is_clicking) then
-		mouse_w_id = nil
-		mouse_w_down_f = nil
-		mouse_w_up_f = nil
-	end
+	-- if not (mouse_can_click or mouse_is_clicking) then
+	-- 	mouse_w_id = nil
+	-- 	mouse_w_down_f = nil
+	-- 	mouse_w_up_f = nil
+	-- end
 end
 
 function draw_mouse()
@@ -60,7 +67,7 @@ function draw_mouse()
 	 s = 16
 	 if (mouse_is_clicking) s = 32
 	end
-	spr(s, mouse_x-1, mouse_y-1)
+	spr(s, mouse.x-1, mouse.y-1)
 end
 
 -- tests if mouse is hovering
@@ -83,12 +90,10 @@ function mouse_hover()
 end
 
 function in_bounds_of(o)
-	if(mouse_x >= o.x and
-				mouse_x < 	o.x+8*o.w and
-				mouse_y >= o.y and
-				mouse_y <  o.y+8*o.h) then
-		return true
-	end
+	return mouse.x >= o.x and
+				mouse.x < 	o.x+8*o.w and
+				mouse.y >= o.y and
+				mouse.y <  o.y+8*o.h;
 end
 
 function mouse_event()
@@ -125,63 +130,71 @@ end
 function init_widgets(list)
 	-- red button
 	add(widgets,
-	{x = 40, y = 50, w = 1, h = 1,
+	widget:new {
+    x = 40, y = 50,
 		on_down = 
-			(function (id)
+			function (self)
 					sfx(0)
-					widgets[id].is_down = true
-				end),
+          self.frame=1
+				end,
 		on_up =
-			(function (id)
-					widgets[id].is_down = false
-				end),
-		clickable = true, is_down = false,
-		s_up = 1, s_down = 2
+			function (self)
+          self.frame=0
+				end,
+    sprite = 1,
+    frames = 2,
 	})
-	
+
 	-- green button
 	-- lights up on hover
 	add(widgets,
-	{x = 50, y = 50, w = 1, h = 1,
-		on_down = 
-			(function (id)
+	widget:new {
+    x = 50, y = 50,
+		on_down =
+			function (self)
 					sfx(1)
-					widgets[id].is_down = true
-				end),
+          self.frame=1
+      end,
 		on_up =
-			(function (id)
-					widgets[id].is_down = false
-				end),
+			function (self)
+          self.frame=0
+      end,
+
 		on_hover =
-		 (function (id)
-		 		widgets[id].s_up = 19
-		  end),
-		clickable = true, is_down = false,
-		s_up = 17, s_down = 18
+			function (self, inside)
+        self.frame = inside and 2 or 0
+      end,
+    sprite = 17,
+    frames = 3,
 	})
 	
 	-- screen which draws using
 	-- randomly coloured pixels
 	-- and clears after click
 	add(widgets,
-	{x = 60, y = 50, w = 2, h = 2,
-		on_up = 
-			(function (id)
-					pixels = {}
-				end),
+	widget:new {
+    x = 60, y = 50, width = 2, height = 2, pixels = {},
+		on_up =
+			function (self)
+        self.pixels = {}
+      end,
 		on_hover =
-		 (function (id)
-		 		add(pixels,{mouse_x,mouse_y,flr(rnd(17))})
-		  end),
-		s_up = 33
+			function (self, inside)
+        if (inside) add(self.pixels,{mouse.x,mouse.y,flr(rnd(17))})
+      end,
+    draw = function(self)
+      widget.draw(self)
+      foreach(self.pixels, function (p) pset(unpack(p)) end)
+    end,
+    sprite = 33,
 	})
 end
 
-function draw_widget(widget)
-	local s = widget.s_up
-	if (widget.is_down) s = widget.s_down
-	spr(s,widget.x,widget.y,widget.w,widget.h)
-end
+-- function draw_widget(widget)
+-- 	local s = widget.s_up
+-- 	if (widget.is_down) s = widget.s_down
+-- 	spr(s,widget.x,widget.y,widget.w,widget.h)
+-- end
 -->8
 -- updates, draws, inits, etc
 
@@ -195,18 +208,13 @@ function _init_all()
 end
 
 function _updt()
-	widgets[2].s_up = 17
+	-- widgets[2].s_up = 17
 end
 
 function _drw()
 	cls()
 	print("for testing purposes")
-	foreach(widgets, draw_widget)
-	foreach(pixels, 
-		(function (p)
-				pset(p[1],p[2],p[3])
-			end)
-	)
+	foreach(widgets, function (w) w:draw() end)
 	print("⬆️ click to reset",60,68,7)
 end
 

@@ -4,7 +4,7 @@ __lua__
 -- actor.p8
 
 actor = {
-	k = nil, -- start sprite
+	sprite = nil, -- start sprite
 	x = nil,
 	y = nil,
 	width = 1,
@@ -16,11 +16,11 @@ actor = {
 -- make an actor
 -- x,y means center of the actor
 -- in map tiles
-function actor:new(a, k, x, y)
+function actor:new(a, sprite, x, y)
   a = a or {}
   setmetatable(a, self)
   self.__index = self
-  a.k = k or a.k
+  a.sprite = sprite or a.sprite
   a.x = x or a.x
   a.y = y or a.y
   return a
@@ -30,20 +30,35 @@ function actor:update()
 end
 
 function actor.draw(a)
-	spr(a.k + (flr(a.frame) % a.frames) * a.width, a.x, a.y, a.width, a.height)
+	spr(a.sprite + (flr(a.frame) % a.frames) * a.width, a.x, a.y, a.width, a.height)
 end
 
+function actor:in_bounds(x, y)
+  return x >= self.x and x < (self.x + 8 * self.width) and y >= self.y and y < (self.y + 8 * self.height)
+end
 
 function actor.is_sprite(a, s)
-	return s >= a.k and s < a.k + a.frames
+	return s >= a.sprite and s < a.sprite + a.frames
+end
+
+widget = actor:new {
+}
+
+function widget:update()
+  local inside = self:in_bounds(mouse.x, mouse.y)
+  if (self.on_hover) self:on_hover(inside)
+  if inside then
+    if (mouse:btnp() and self.on_down) self:on_down()
+    if (mouse:btnp_up() and self.on_up) self:on_up()
+  end
 end
 
 actor_with_particles = actor:new {
   emitter = nil
 }
 
-function actor_with_particles:new(o, k, x, y)
-  o = actor.new(self, o, k, x, y)
+function actor_with_particles:new(o, sprite, x, y)
+  o = actor.new(self, o, sprite, x, y)
   if (o.emitter) o.emitter = o.emitter:clone()
   return o
 end

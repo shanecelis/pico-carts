@@ -1,5 +1,5 @@
 pico-8 cartridge // http://www.pico-8.com
-version 39
+version 41
 __lua__
 -- https://www.lexaloffle.com/bbs/?tid=31079
 -- 288 tokens, original was 232. doh!
@@ -13,7 +13,7 @@ do
   -- private vars
   local _btn, _last_btn
   mouse = {
-    -- public vars
+    --- public vars
     -- x = nil,
     -- y = nil,
   }
@@ -27,7 +27,7 @@ do
   -- return true if button pressed.
   -- buttons: left 0, right 1, middle 2
   function mouse:btn(i, flag)
-    return band(shl(1, i), flag or _btn) > 0
+    return band(i and shl(1, i) or 7, flag or _btn) > 0
   end
 
   -- return mouse wheel info.
@@ -55,12 +55,12 @@ end
 do
   local _co, _key
   keyboard = {
-    -- if true, echo the input
-    -- echo = true
+    --- if true, echo the input.
+    -- echo = nil
 
-    -- if true, disables the
-    -- menu when return is
-    -- pressed.
+    --- if true, disables the
+    --- menu when return is
+    --- pressed.
     -- enable_menu = nil,
 
     -- reader function runs as a
@@ -95,8 +95,8 @@ do
   end
 
   -- update keyboard info.
-  -- return the current
-  -- coroutine's last yielded or
+  -- returns the current
+  -- reader's last yielded or
   -- returned value.
   function keyboard:update()
     local s, r = true
@@ -129,6 +129,9 @@ do
     return _key == k
   end
 end
+
+-->8
+-- hi
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

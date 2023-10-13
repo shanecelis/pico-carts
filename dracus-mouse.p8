@@ -7,120 +7,37 @@ __lua__
 #include lib/actor.p8
 
 function _init()
-	_init_all()
+	widgets = {}
+  cursor = actor:new {
+    sprite = 0,
+    update = function(self)
+      self.sprite = 0
+      self.x, self.y = mouse.x, mouse.y
+      for w in all(widgets) do
+        if (w:in_bounds(mouse.x, mouse.y)) self.sprite = 16
+      end
+      if (mouse:btnp()) self.sprite = 32
+    end
+  }
+	init_widgets(widgets)
   mouse:init(false, false)
-	init_mouse(widgets)
 end
 
 function _update()
-	_updt()
-  update_mouse()
+  mouse:update()
+  cursor:update()
 
 	foreach(widgets, function (w) w:update() end)
 end
 
 function _draw()
-	_drw()
-	draw_mouse()
+	cls()
+	print("for testing purposes")
+	foreach(widgets, function (w) w:draw() end)
+	print("⬆️ click to reset",60,68,7)
+  cursor:draw()
 end
 
--->8
--- mouse handling
-
-function init_mouse(list)
-	-- poke(0x5f2d, 1) -- enable mouse
-	--mouse.x,mouse.y,
-  mouse_click = mouse:btn()
-	mouse_can_click 		= false
-	mouse_is_clicking = false
-	mouse_is_down 				= false
-	mouse_w_down_f 			= nil
-	mouse_w_up_f 					= nil
-	mouse_w_id 							= nil
-	mouse_w_list 					= list
-end
-
--- updates mouse position
--- and state, and triggers
--- mouse events
-function update_mouse()
-  mouse:update()
-  mouse_click = stat(34) --mouse:btn()
-
-	-- test if over widget
-	-- also triggers on_hover event
-	-- mouse_hover()
-		
-	-- event trigger detection
-	-- mouse_event()
-	
-	-- if not (mouse_can_click or mouse_is_clicking) then
-	-- 	mouse_w_id = nil
-	-- 	mouse_w_down_f = nil
-	-- 	mouse_w_up_f = nil
-	-- end
-end
-
-function draw_mouse()
-	local s = 0 
-	if mouse_can_click then
-	 s = 16
-	 if (mouse_is_clicking) s = 32
-	end
-	spr(s, mouse.x-1, mouse.y-1)
-end
-
--- tests if mouse is hovering
--- over a widget
-function mouse_hover()
-	mouse_can_click = false
-	for i=1,#mouse_w_list do
-		local o = mouse_w_list[i]
-		if in_bounds_of(o) then
-			if not mouse_is_clicking then
-				mouse_w_down_f = o.on_down
-				mouse_w_up_f = o.on_up
-				mouse_w_id = i
-			end
-			if (o.on_hover) o.on_hover(i)
-			if (o.clickable)	mouse_can_click = true
-			break
-		end
-	end
-end
-
-function in_bounds_of(o)
-	return mouse.x >= o.x and
-				mouse.x < 	o.x+8*o.w and
-				mouse.y >= o.y and
-				mouse.y <  o.y+8*o.h;
-end
-
-function mouse_event()
-	if(mouse_click == 1) then
-		if (not mouse_is_down) mouse_down()
-		mouse_is_down = true
-	elseif mouse_is_down then
-		mouse_is_down = false
-		mouse_up()
-	end
-end
-
--- triggered on click
-function mouse_down()
-	if not mouse_is_clicking then
-		mouse_is_clicking = true
-		if (mouse_w_down_f) mouse_w_down_f(mouse_w_id)
-	end
-end
-
--- triggered on release
-function mouse_up()
-	mouse_is_clicking = false
-	if(mouse_w_up_f) mouse_w_up_f(mouse_w_id)
-end
-
--->8
 -- widgets
 
 --	 an example of a few widgets
@@ -129,7 +46,7 @@ end
 
 function init_widgets(list)
 	-- red button
-	add(widgets,
+	add(list,
 	widget:new {
     x = 40, y = 50,
 		on_down = 
@@ -147,7 +64,7 @@ function init_widgets(list)
 
 	-- green button
 	-- lights up on hover
-	add(widgets,
+	add(list,
 	widget:new {
     x = 50, y = 50,
 		on_down =
@@ -171,7 +88,7 @@ function init_widgets(list)
 	-- screen which draws using
 	-- randomly coloured pixels
 	-- and clears after click
-	add(widgets,
+	add(list,
 	widget:new {
     x = 60, y = 50, width = 2, height = 2, pixels = {},
 		on_up =
@@ -190,33 +107,6 @@ function init_widgets(list)
 	})
 end
 
--- function draw_widget(widget)
--- 	local s = widget.s_up
--- 	if (widget.is_down) s = widget.s_down
--- 	spr(s,widget.x,widget.y,widget.w,widget.h)
--- end
--->8
--- updates, draws, inits, etc
-
---  separated to make first tab
--- as simple as possible
-
-function _init_all()
-	widgets = {}
-	pixels = {}
-	init_widgets(widgets)
-end
-
-function _updt()
-	-- widgets[2].s_up = 17
-end
-
-function _drw()
-	cls()
-	print("for testing purposes")
-	foreach(widgets, function (w) w:draw() end)
-	print("⬆️ click to reset",60,68,7)
-end
 
 __gfx__
 01000000008888000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

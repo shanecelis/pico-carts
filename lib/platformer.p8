@@ -238,6 +238,32 @@ jumper = actor:new {
   --assumes tile flag 0 == solid
   --assumes sprite size of 8x8
   collide_side = function(self)
+    -- for   i in all({self.h/6, self.h*5/6}) do
+    for   i in all({self.h/6, self.h*5/6}) do
+      local j=self.w*5/6
+      if self.dx > 0 then -- going right
+        if fget(mget((self.x+j)/8,(self.y+i)/8),0) then
+          -- stop()
+          self.dx=0
+          self.x=flr((self.x+j)/8)*8-1.01*j -- ugh!
+          return true
+        end
+      elseif self.dx < 0 then
+        -- self.dx < 0 -- going left
+        j = self.w/6
+        if fget(mget((self.x+j)/8,(self.y+i)/8),0) then
+          -- stop()
+          self.dx=0
+          self.x=flr((self.x+j)/8)*8+self.w-j
+          return true
+        end
+      end
+    end
+    --didn't hit a solid tile.
+    return false
+  end,
+
+  collide_side2 = function(self)
     for   i in all({self.h/6, self.h*5/6}) do
       local j=self.w*5/6
       if self.dx > 0 then -- going right

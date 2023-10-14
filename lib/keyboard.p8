@@ -1,56 +1,9 @@
 pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
+
 -- https://www.lexaloffle.com/bbs/?tid=31079
--- 288 tokens, original was 232. doh!
--- 285
--- 255
--- 253
--- 251
--- 250
--- 241
-do
-  -- private vars
-  local _btn, _last_btn
-  mouse = {
-    --- public vars
-    -- x = nil,
-    -- y = nil,
-  }
-
-  function mouse:init(btn_emu, pointer_lock)
-    poke(0x5f2d,  1 -- assume enable
-                | (btn_emu      and 2 or 0)
-                | (pointer_lock and 4 or 0))
-  end
-
-  -- return true if button pressed.
-  -- buttons: left 0, right 1, middle 2
-  function mouse:btn(i, flag)
-    return band(i and shl(1, i) or 7, flag or _btn) > 0
-  end
-
-  -- return mouse wheel info.
-  -- 1 roll up, 0 no roll, -1 roll down
-  function mouse:wheel()
-    return stat(36)
-  end
-
-  -- return true if button pressed this frame.
-  function mouse:btnp(i)
-    return mouse:btn(i) and not mouse:btn(i, _last_btn)
-  end
-
-  -- return true if button released this frame.
-  function mouse:btnp_up(i)
-    return not mouse:btn(i) and mouse:btn(i, _last_btn)
-  end
-
-  function mouse:update()
-    _last_btn,self.x,self.y,_btn=_btn,stat(32),stat(33),stat(34)
-  end
-end
-
+-- 130 tokens
 
 do
   local _co, _key

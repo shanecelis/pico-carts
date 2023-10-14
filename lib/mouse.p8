@@ -1,107 +1,161 @@
 pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
--- mouse interface
--- by dracus17
-#include lib/mouse.p8
-#include lib/actor.p8
-
-function _init()
-  widgets = {}
-  cursor = actor:new {
-    sprite = 5,
-    frames = 3,
-    update = function(self)
-      self.frame = 0
-      self.x, self.y = mouse.x, mouse.y
-      for w in all(widgets) do
-        if (w:in_bounds(mouse.x, mouse.y) and w.can_click) self.frame = 1
-      end
-      if (mouse:btn()) self.frame = 2
-    end
+-- https://www.lexaloffle.com/bbs/?tid=31079
+-- library 115 tokens, original was 232. doh!
+do
+  -- private vars
+  local _btn, _last_btn
+  mouse = {
+    --- public vars
+    -- x = nil,
+    -- y = nil,
   }
-  init_widgets(widgets)
-  mouse:init(false, false)
+
+  function mouse:init(btn_emu, pointer_lock)
+    poke(0x5f2d,  1 -- assume enable
+                | (btn_emu      and 2 or 0)
+                | (pointer_lock and 4 or 0))
+  end
+
+  -- return true if button pressed.
+  -- buttons: left 0, right 1, middle 2
+  function mouse:btn(i, flag)
+    return band(i and shl(1, i) or 7, flag or _btn) > 0
+  end
+
+  -- return mouse wheel info.
+  -- 1 roll up, 0 no roll, -1 roll down
+  function mouse:wheel()
+    return stat(36)
+  end
+
+  -- return true if button pressed this frame.
+  function mouse:btnp(i)
+    return mouse:btn(i) and not mouse:btn(i, _last_btn)
+  end
+
+  -- return true if button released this frame.
+  function mouse:btnp_up(i)
+    return not mouse:btn(i) and mouse:btn(i, _last_btn)
+  end
+
+  function mouse:update()
+    _last_btn,self.x,self.y,_btn=_btn,stat(32),stat(33),stat(34)
+  end
 end
 
-function _update()
-  mouse:update()
-  cursor:update()
-  foreach(widgets, function (w) w:update() end)
+-->8
+-- demo of mouse interface
+-- originally by dracus17
+-- modified by shane celis
+--
+--[[
+#include actor.p8
+if not _init then
+  function _init()
+    widgets = {}
+    cursor = actor:new {
+      sprite = 5,
+      frames = 3,
+      update =
+      function(self)
+        self.frame = 0
+        self.x, self.y = mouse.x, mouse.y
+        for w in all(widgets) do
+          if (w:in_bounds(mouse.x, mouse.y) and w.can_click) self.frame = 1
+        end
+        if (mouse:btn()) self.frame = 2
+      end
+    }
+    init_widgets(widgets)
+    mouse:init(false, false)
+  end
+
+  function _update()
+    mouse:update()
+    cursor:update()
+    foreach(widgets, function (w) w:update() end)
+  end
+
+  function _draw()
+    cls()
+    print("for testing purposes")
+    foreach(widgets, function (w) w:draw() end)
+    print("⬆️ click to reset",60,68,7)
+    cursor:draw()
+  end
+
+  -- widgets
+
+  --	 an example of a few widgets
+  -- which utilise the different
+  -- features of the interface
+
+  function init_widgets(list)
+    -- red button
+    add(list,
+        widget:new {
+          x = 40, y = 50,
+          can_click = true,
+          on_down = function (self)
+              sfx(0)
+              self.frame=1
+            end,
+          on_up = function (self)
+              self.frame=0
+            end,
+          sprite = 1,
+          frames = 2,
+    })
+
+    -- green button
+    -- lights up on hover
+    add(list,
+        widget:new {
+          x = 50, y = 50,
+          can_click = true,
+          on_down =
+            function (self)
+              sfx(1)
+              self.frame=1
+            end,
+          on_up =
+            function (self)
+              self.frame=0
+            end,
+          on_hover =
+            function (self, inside)
+              self.frame = inside and 2 or 0
+            end,
+          sprite = 17,
+          frames = 3,
+    })
+
+    -- screen which draws using
+    -- randomly coloured pixels
+    -- and clears after click
+    add(list,
+        widget:new {
+          x = 60, y = 50, width = 2, height = 2, pixels = {},
+          on_up =
+            function (self)
+              self.pixels = {}
+            end,
+          on_hover =
+            function (self, inside)
+              if (inside) add(self.pixels,{mouse.x,mouse.y,flr(rnd(17))})
+            end,
+          draw = function(self)
+            widget.draw(self)
+            foreach(self.pixels, function (p) pset(unpack(p)) end)
+          end,
+          sprite = 33,
+    })
+  end
 end
-
-function _draw()
-  cls()
-  print("for testing purposes")
-  foreach(widgets, function (w) w:draw() end)
-  print("⬆️ click to reset",60,68,7)
-  cursor:draw()
-end
-
--- widgets
-
---	 an example of a few widgets
--- which utilise the different
--- features of the interface
-
-function init_widgets(list)
-  -- red button
-  add(list,
-      widget:new {
-        x = 40, y = 50,
-        can_click = true,
-        on_down = function (self)
-            sfx(0)
-            self.frame=1
-          end,
-        on_up = function (self)
-            self.frame=0
-          end,
-        sprite = 1,
-        frames = 2,
-  })
-
-  -- green button
-  -- lights up on hover
-  add(list,
-      widget:new {
-        x = 50, y = 50,
-        can_click = true,
-        on_down = function (self)
-            sfx(1)
-            self.frame=1
-          end,
-        on_up = function (self)
-            self.frame=0
-          end,
-        on_hover = function (self, inside)
-            self.frame = inside and 2 or 0
-          end,
-        sprite = 17,
-        frames = 3,
-  })
-
-  -- screen which draws using
-  -- randomly coloured pixels
-  -- and clears after click
-  add(list,
-      widget:new {
-        x = 60, y = 50, width = 2, height = 2, pixels = {},
-        on_up = function (self)
-            self.pixels = {}
-          end,
-        on_hover = function (self, inside)
-            if (inside) add(self.pixels,{mouse.x,mouse.y,flr(rnd(17))})
-          end,
-        draw = function(self)
-          widget.draw(self)
-          foreach(self.pixels, function (p) pset(unpack(p)) end)
-        end,
-        sprite = 33,
-  })
-end
-
-
+--]]
+-- hi
 __gfx__
 0000000000888800000000000000000000000000010000000a000000080000000000000000000000000000000000000000000000000000000000000000000000
 000000008888888800888800000000000000000016100000a6a00000868000000000000000000000000000000000000000000000000000000000000000000000

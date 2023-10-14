@@ -41,17 +41,18 @@ function actor.is_sprite(a, s)
 	return s >= a.sprite and s < a.sprite + a.frames
 end
 
-widget = actor:new {
-  -- can_click
-}
-
-function widget:update()
-  local inside = self:in_bounds(mouse.x, mouse.y)
-  if (self.on_hover) self:on_hover(inside)
-  if inside then
-    if (mouse:btnp() and self.on_down) self:on_down()
-    if (mouse:btnp_up() and self.on_up) self:on_up()
-  end
+if mouse then
+  widget = actor:new {
+    -- can_click
+    update = function(self)
+      local inside = self:in_bounds(mouse.x, mouse.y)
+      if (self.on_hover) self:on_hover(inside)
+      if inside then
+        if (mouse:btnp() and self.on_down) self:on_down()
+        if (mouse:btnp_up() and self.on_up) self:on_up()
+      end
+    end
+  }
 end
 
 actor_with_particles = actor:new {

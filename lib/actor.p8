@@ -7,8 +7,8 @@ actor = {
 	sprite = nil, -- start sprite
 	x = nil,
 	y = nil,
-	width = 1,
-	height = 1,
+	w = 8,
+	h = 8,
 	frame = 0,
 	frames = 1,
 }
@@ -30,11 +30,11 @@ function actor:update()
 end
 
 function actor.draw(a)
-	spr(a.sprite + (flr(a.frame) % a.frames) * a.width, a.x, a.y, a.width, a.height)
+	spr(a.sprite + (flr(a.frame) % a.frames) * a.w / 8, a.x, a.y, a.w / 8, a.h / 8)
 end
 
 function actor:in_bounds(x, y)
-  return x >= self.x and x < (self.x + 8 * self.width) and y >= self.y and y < (self.y + 8 * self.height)
+  return x >= self.x and x < (self.x + self.w) and y >= self.y and y < (self.y + self.h)
 end
 
 function actor.is_sprite(a, s)

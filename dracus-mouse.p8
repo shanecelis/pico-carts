@@ -86,7 +86,7 @@ function init_widgets(list)
   -- and clears after click
   add(list,
       widget:new {
-        x = 60, y = 50, width = 2, height = 2, pixels = {},
+        x = 60, y = 50, w = 16, h = 16, pixels = {},
         on_up = function (self)
             self.pixels = {}
           end,

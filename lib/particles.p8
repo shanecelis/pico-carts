@@ -15,7 +15,7 @@ __lua__
   itch: https://maxwelldexter.itch.io/
   twitter: @KearneyMax
 ]]
-
+#include vector.p8
 -------------------------------------------------- globals
 
 -- efficiently remove all
@@ -118,44 +118,6 @@ rachet = {
     o.t %= #o
     return o[flr(o.t) + 1]
   end,
-}
-
--- a riff on this lib
--- https://github.com/automattf/vector.lua/blob/master/vector.lua
-vec = {
-  new = function (self, x, y)
-    local v = {x = x, y = y}
-    setmetatable(v, self)
-    self.__index = self
-    return v
-  end,
-
-  __add = function(a,b)
-    return vec:new(a.x + b.x, a.y + b.y)
-  end,
-
-  __sub = function(a,b)
-    return vec:new(a.x - b.x, a.y - b.y)
-  end,
-
-  __mul = function(a,b)
-    if type(a) == 'number' then
-      return vec:new(a * b.x, a * b.y)
-    elseif type(b) == 'number' then
-      return vec:new(a.x * b, a.y * b)
-    else
-      return vec:new(a.x * b.x, a.y * b.y)
-    end
-  end,
-
-  __div = function(a,b)
-    assert(type(b) == 'number' and type(a) ~= 'number')
-    return vec:new(a.x / b, a.y / b)
-  end,
-
-  map = function(a, f)
-    return vec:new(f(a.x), f(a.y))
-  end
 }
 
 

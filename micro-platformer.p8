@@ -11,7 +11,7 @@ __lua__
 --can learn from it too!
 --enjoy! 
 --@matthughson
-                
+
 --config
 --------------------------------
 #include lib/vector.p8
@@ -19,15 +19,15 @@ __lua__
 #include lib/platformer.p8
 --sfx
 snd=
-{
-	jump=0,
-}
+  {
+    jump=0,
+  }
 
 --music tracks
 mus=
-{
+  {
 
-}
+  }
 
 --square root.
 -- function sqr(a) return a*a end
@@ -41,96 +41,96 @@ mus=
 
 --make the camera.
 function m_cam(target)
-	local c=
-	{
-		tar=target,--target to follow.
-		pos=vec:new(target.x,target.y),
-		
-		--how far from center of screen target must
-		--be before camera starts following.
-		--allows for movement in center without camera
-		--constantly moving.
-		pull_threshold=16,
+  local c=
+    {
+      tar=target,--target to follow.
+      pos=vec:new(target.x,target.y),
 
-		--min and max positions of camera.
-		--the edges of the level.
-		pos_min=vec:new(64,64),
-		pos_max=vec:new(320,64),
-		
-		shake_remaining=0,
-		shake_force=0,
+      --how far from center of screen target must
+      --be before camera starts following.
+      --allows for movement in center without camera
+      --constantly moving.
+      pull_threshold=16,
 
-		update=function(self)
-      local pos, thresh, pos_min, pos_max = self.pos, self.pull_threshold, self.pos_min, self.pos_max
+      --min and max positions of camera.
+      --the edges of the level.
+      pos_min=vec:new(64,64),
+      pos_max=vec:new(320,64),
 
-			self.shake_remaining=max(0,self.shake_remaining-1)
-			
-			--follow target outside of
-			--pull range.
-      local delta = self.tar.x - pos.x - thresh
-			if delta > 0 then
-				pos.x+=min(delta,4)
-			end
+      shake_remaining=0,
+      shake_force=0,
 
-      delta = self.tar.x - pos.x + thresh
-			if delta < 0 then
-				pos.x+=min(delta,4)
-			end
+      update=function(self)
+        local pos, thresh, pos_min, pos_max = self.pos, self.pull_threshold, self.pos_min, self.pos_max
 
-      delta = self.tar.y - pos.y - thresh
-			if delta > 0 then
-				pos.y+=min(delta,4)
-			end
-      delta = self.tar.y - pos.y + thresh
-			if delta < 0 then
-				pos.y+=min(delta,4)
-			end
+        self.shake_remaining=max(0,self.shake_remaining-1)
 
-			--lock to edge
-      pos = pos:map(max, self.pos_min)
-      pos = pos:map(min, self.pos_max)
-      self.pos = pos
-			-- if(pos.x<pos_min.x)pos.x=pos_min.x
-			-- if(pos.x>pos_max.x)pos.x=pos_max.x
-			-- if(pos.y<pos_min.y)pos.y=pos_min.y
-			-- if(pos.y>pos_max.y)pos.y=pos_max.y
-		end,
+        --follow target outside of
+        --pull range.
+        local delta = self.tar.x - pos.x - thresh
+        if delta > 0 then
+          pos.x+=min(delta,4)
+        end
 
-		cam_pos=function(self)
-			--calculate camera shake.
-			local shk=vec:new(0,0)
-			if self.shake_remaining>0 then
-				shk.x=rnd(self.shake_force)-self.shake_force/2
-				shk.y=rnd(self.shake_force)-self.shake_force/2
-			end
-      local v = self.pos - vec:new(64, 64) + shk
-      return v.x, v.y
-			-- return self.pos.x-64+shk.x,self.pos.y-64+shk.y
-		end,
+        delta = self.tar.x - pos.x + thresh
+        if delta < 0 then
+          pos.x+=min(delta,4)
+        end
 
-		pull_max_x=function(self)
-			return self.pos.x+self.pull_threshold
-		end,
+        delta = self.tar.y - pos.y - thresh
+        if delta > 0 then
+          pos.y+=min(delta,4)
+        end
+        delta = self.tar.y - pos.y + thresh
+        if delta < 0 then
+          pos.y+=min(delta,4)
+        end
 
-		pull_min_x=function(self)
-			return self.pos.x-self.pull_threshold
-		end,
+        --lock to edge
+        pos = pos:map(max, self.pos_min)
+        pos = pos:map(min, self.pos_max)
+        self.pos = pos
+        -- if(pos.x<pos_min.x)pos.x=pos_min.x
+        -- if(pos.x>pos_max.x)pos.x=pos_max.x
+        -- if(pos.y<pos_min.y)pos.y=pos_min.y
+        -- if(pos.y>pos_max.y)pos.y=pos_max.y
+      end,
 
-		pull_max_y=function(self)
-			return self.pos.y+self.pull_threshold
-		end,
+      cam_pos=function(self)
+        --calculate camera shake.
+        local shk=vec:new(0,0)
+        if self.shake_remaining>0 then
+          shk.x=rnd(self.shake_force)-self.shake_force/2
+          shk.y=rnd(self.shake_force)-self.shake_force/2
+        end
+        local v = self.pos - vec:new(64, 64) + shk
+        return v.x, v.y
+        -- return self.pos.x-64+shk.x,self.pos.y-64+shk.y
+      end,
 
-		pull_min_y=function(self)
-			return self.pos.y-self.pull_threshold
-		end,
-		
-		shake=function(self,ticks,force)
-			self.shake_remaining=ticks
-			self.shake_force=force
-		end
-	}
+      pull_max_x=function(self)
+        return self.pos.x+self.pull_threshold
+      end,
 
-	return c
+      pull_min_x=function(self)
+        return self.pos.x-self.pull_threshold
+      end,
+
+      pull_max_y=function(self)
+        return self.pos.y+self.pull_threshold
+      end,
+
+      pull_min_y=function(self)
+        return self.pos.y-self.pull_threshold
+      end,
+
+      shake=function(self,ticks,force)
+        self.shake_remaining=ticks
+        self.shake_force=force
+      end
+    }
+
+  return c
 end
 
 --game flow
@@ -140,10 +140,10 @@ end
 --state. use this instead of
 --_init()
 function _init()
-	ticks=0
-	p1=jumper:new { x=64, y=100 }
-	p1:set_anim("walk")
-	cam=m_cam(p1)
+  ticks=0
+  p1=jumper:new { x=64, y=100 }
+  p1:set_anim("walk")
+  cam=m_cam(p1)
 end
 
 --p8 functions
@@ -151,27 +151,27 @@ end
 
 
 function _update60()
-	ticks+=1
-	p1:update()
-	cam:update()
-	--demo camera shake
-	if(btnp(4))cam:shake(15,2)
-end
+  ticks+=1
+  p1:update()
+  cam:update()
+  --demo camera shake
+  if(btnp(4))cam:shake(15,2)
+  end
 
 function _draw()
 
-	cls(0)
-	
-	camera(cam:cam_pos())
-	
-	map(0,0,0,0,128,128)
-	
-	p1:draw()
-	
-	--hud
-	camera(0,0)
+  cls(0)
 
-	print("adv. micro platformer",24,4,7,0,0)
+  camera(cam:cam_pos())
+
+  map(0,0,0,0,128,128)
+
+  p1:draw()
+
+  --hud
+  camera(0,0)
+
+  print("adv. micro platformer",24,4,7,0,0)
 
 end
 

@@ -24,30 +24,23 @@ jumper = actor:new {
       update=function(self)
         --start with assumption
         --that not a new press.
-        self.is_pressed=false
-        if btn(5) then
-          if not self.is_down then
-            self.is_pressed=true
-          end
-          self.is_down=true
+        -- self.is_pressed=false
+        -- self.is_pressed=btnp(5)
+        self.is_down=btn(5)
+        if self.is_down then
           self.ticks_down+=1
         else
-          self.is_down=false
-          self.is_pressed=false
           self.ticks_down=0
         end
       end,
       --state
-      is_pressed=false,--pressed this frame
       is_down=false,--currently down
       ticks_down=0,--how long down
     },
 
-  jump_hold_time=0,--how long jump is held
   min_jump_press=5,--min time jump can be held
   max_jump_press=16,--max time jump can be held
 
-  jump_btn_released=true,--can we jump again?
   grounded=false,--on ground
 
   airtime=0,--time since grounded
@@ -56,22 +49,22 @@ jumper = actor:new {
   --use with set_anim()
   anims=
     {
-      ["stand"]=
+      stand=
         {
           ticks=1,--how long is each frame shown.
           frames={2},--what frames are shown.
         },
-      ["walk"]=
+      walk=
         {
           ticks=5,
           frames={3,4,5,6},
         },
-      ["jump"]=
+      jump=
         {
           ticks=1,
           frames={1},
         },
-      ["slide"]=
+      slide=
         {
           ticks=1,
           frames={7},
@@ -138,24 +131,22 @@ jumper = actor:new {
       --is player on ground recently.
       --allow for jump right after
       --walking off ledge.
-      local on_ground=self.grounded or self.airtime<5
+      local on_ground=self.grounded or self.airtime<self.min_jump_press
       --was btn presses recently?
       --allow for pressing right before
       --hitting ground.
-      local new_jump_btn=self.jump_button.ticks_down<10
+      local jump_hold_time=self.jump_button.ticks_down - 1
+      local new_jump_btn=jump_hold_time<10
       --is player continuing a jump
       --or starting a new one?
-      if self.jump_hold_time>0 or (on_ground and new_jump_btn) then
-        if(self.jump_hold_time==0)sfx(snd.jump)--new jump snd
-        self.jump_hold_time+=1
+      if jump_hold_time>0 or (on_ground and new_jump_btn) then
+        if(jump_hold_time==0)sfx(snd.jump)--new jump snd
         --keep applying jump velocity
         --until max jump time.
-        if self.jump_hold_time<self.max_jump_press then
+        if jump_hold_time<self.max_jump_press then
           self.dy=self.jump_speed--keep going up while held
         end
       end
-    else
-      self.jump_hold_time=0
     end
 
     --move in y
@@ -197,14 +188,9 @@ jumper = actor:new {
     --anim tick
     self.animtick-=1
     if self.animtick<=0 then
-      -- self.curframe+=1
       local a=self.anims[self.curanim]
-
       self.curframe=self.curframe % #a.frames + 1
-      self.animtick=a.ticks--_init timer
-      -- if self.curframe>#a.frames then
-      --   self.curframe=1--loop
-      -- end
+      self.animtick=a.ticks -- init timer
     end
 
   end,
@@ -237,37 +223,11 @@ jumper = actor:new {
       local j=self.w*5/6
       if self.dx > 0 then -- going right
         if fget(mget((self.x+j)/8,(self.y+i)/8),0) then
-          -- stop()
           self.dx=0
           self.x=flr((self.x+j)/8)*8-1.01*j -- ugh!
           return true
         end
-      elseif self.dx < 0 then
-        -- self.dx < 0 -- going left
-        j = self.w/6
-        if fget(mget((self.x+j)/8,(self.y+i)/8),0) then
-          -- stop()
-          self.dx=0
-          self.x=flr((self.x+j)/8)*8+self.w-j
-          return true
-        end
-      end
-    end
-    --didn't hit a solid tile.
-    return false
-  end,
-
-  collide_side2 = function(self)
-    for   i in all({self.h/6, self.h*5/6}) do
-      local j=self.w*5/6
-      if self.dx > 0 then -- going right
-        if fget(mget((self.x+j)/8,(self.y+i)/8),0) then
-          self.dx=0
-          self.x=flr((self.x+j)/8)*8-j
-          return true
-        end
-      elseif self.dx < 0 then
-        -- self.dx < 0 -- going left
+      elseif self.dx < 0 then -- going left
         j = self.w/6
         if fget(mget((self.x+j)/8,(self.y+i)/8),0) then
           self.dx=0

@@ -39,7 +39,6 @@ mus=
 --objects
 --------------------------------
 
-
 --make the camera.
 function m_cam(target)
 	local c=
@@ -62,29 +61,39 @@ function m_cam(target)
 		shake_force=0,
 
 		update=function(self)
+      local pos, thresh, pos_min, pos_max = self.pos, self.pull_threshold, self.pos_min, self.pos_max
 
 			self.shake_remaining=max(0,self.shake_remaining-1)
 			
 			--follow target outside of
 			--pull range.
-			if self:pull_max_x()<self.tar.x then
-				self.pos.x+=min(self.tar.x-self:pull_max_x(),4)
+      local delta = self.tar.x - pos.x - thresh
+			if delta > 0 then
+				pos.x+=min(delta,4)
 			end
-			if self:pull_min_x()>self.tar.x then
-				self.pos.x+=min((self.tar.x-self:pull_min_x()),4)
+
+      delta = self.tar.x - pos.x + thresh
+			if delta < 0 then
+				pos.x+=min(delta,4)
 			end
-			if self:pull_max_y()<self.tar.y then
-				self.pos.y+=min(self.tar.y-self:pull_max_y(),4)
+
+      delta = self.tar.y - pos.y - thresh
+			if delta > 0 then
+				pos.y+=min(delta,4)
 			end
-			if self:pull_min_y()>self.tar.y then
-				self.pos.y+=min((self.tar.y-self:pull_min_y()),4)
+      delta = self.tar.y - pos.y + thresh
+			if delta < 0 then
+				pos.y+=min(delta,4)
 			end
 
 			--lock to edge
-			if(self.pos.x<self.pos_min.x)self.pos.x=self.pos_min.x
-			if(self.pos.x>self.pos_max.x)self.pos.x=self.pos_max.x
-			if(self.pos.y<self.pos_min.y)self.pos.y=self.pos_min.y
-			if(self.pos.y>self.pos_max.y)self.pos.y=self.pos_max.y
+      pos = pos:map(max, self.pos_min)
+      pos = pos:map(min, self.pos_max)
+      self.pos = pos
+			-- if(pos.x<pos_min.x)pos.x=pos_min.x
+			-- if(pos.x>pos_max.x)pos.x=pos_max.x
+			-- if(pos.y<pos_min.y)pos.y=pos_min.y
+			-- if(pos.y>pos_max.y)pos.y=pos_max.y
 		end,
 
 		cam_pos=function(self)

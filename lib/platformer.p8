@@ -45,7 +45,7 @@ jumper = actor:new {
 
   jump_hold_time=0,--how long jump is held
   min_jump_press=5,--min time jump can be held
-  max_jump_press=15,--max time jump can be held
+  max_jump_press=16,--max time jump can be held
 
   jump_btn_released=true,--can we jump again?
   grounded=false,--on ground
@@ -177,19 +177,11 @@ jumper = actor:new {
     --on the ground.
     if self.grounded then
       if br then
-        if self.dx<0 then
-          --pressing right but still moving left.
-          self:set_anim("slide")
-        else
-          self:set_anim("walk")
-        end
+        --pressing right but still moving left.
+        self:set_anim(self.dx<0 and "slide" or "walk")
       elseif bl then
-        if self.dx>0 then
-          --pressing left but still moving right.
-          self:set_anim("slide")
-        else
-          self:set_anim("walk")
-        end
+        --pressing left but still moving right.
+        self:set_anim(self.dx>0 and "slide" or "walk")
       else
         self:set_anim("stand")
       end
@@ -205,12 +197,14 @@ jumper = actor:new {
     --anim tick
     self.animtick-=1
     if self.animtick<=0 then
-      self.curframe+=1
+      -- self.curframe+=1
       local a=self.anims[self.curanim]
+
+      self.curframe=self.curframe % #a.frames + 1
       self.animtick=a.ticks--_init timer
-      if self.curframe>#a.frames then
-        self.curframe=1--loop
-      end
+      -- if self.curframe>#a.frames then
+      --   self.curframe=1--loop
+      -- end
     end
 
   end,

@@ -20,10 +20,11 @@ vec = {
   end,
 
   __mul = function(a,b)
+    assert(type(b) ~= 'number')
     if type(a) == 'number' then
       return vec:new(a * b.x, a * b.y)
-    elseif type(b) == 'number' then
-      return vec:new(a.x * b, a.y * b)
+    -- elseif type(b) == 'number' then
+    --   return vec:new(a.x * b, a.y * b)
     else
       return vec:new(a.x * b.x, a.y * b.y)
     end
@@ -44,7 +45,8 @@ vec = {
     return self / l:length()
   end,
 
-  map = function(a, f)
+  map = function(a, f, b)
+    if (b) return vec:new(f(a.x, b.x), f(a.y, b.y))
     return vec:new(f(a.x), f(a.y))
   end
 }

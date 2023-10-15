@@ -91,10 +91,12 @@ function m_cam(target)
 			--calculate camera shake.
 			local shk=vec:new(0,0)
 			if self.shake_remaining>0 then
-				shk.x=rnd(self.shake_force)-(self.shake_force/2)
-				shk.y=rnd(self.shake_force)-(self.shake_force/2)
+				shk.x=rnd(self.shake_force)-self.shake_force/2
+				shk.y=rnd(self.shake_force)-self.shake_force/2
 			end
-			return self.pos.x-64+shk.x,self.pos.y-64+shk.y
+      local v = self.pos - vec:new(64, 64) + shk
+      return v.x, v.y
+			-- return self.pos.x-64+shk.x,self.pos.y-64+shk.y
 		end,
 
 		pull_max_x=function(self)

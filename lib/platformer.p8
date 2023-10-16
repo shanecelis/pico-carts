@@ -213,11 +213,6 @@ jumper = actor:new {
         false)
   end,
 
-  -- intersects = function (a, b)
-  --   return abs(a.x - b.x)<0.5*(a.w + b.w)
-  --       or abs(a.y - b.y)<0.5*(a.h + b.h)
-  -- end,
-
   --check if pushing into side tile and resolve.
   --requires self.dx,self.x,self.y, and
   --assumes tile flag 0 == solid

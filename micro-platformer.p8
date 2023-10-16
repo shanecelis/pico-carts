@@ -19,23 +19,9 @@ __lua__
 #include lib/platformer.p8
 #include lib/dolly.p8
 
---square root.
--- function sqr(a) return a*a end
-
---round to the nearest whole number.
--- function round(a) return flr(a+0.5) end
-
-
---objects
---------------------------------
--- cam {
--- }
---game flow
---------------------------------
 
 --_init the game to its initial
---state. use this instead of
---_init()
+--state.
 function _init()
   p1=jumper:new { x=44, y=100 }
   p1:set_anim("walk")
@@ -44,7 +30,6 @@ end
 
 --p8 functions
 --------------------------------
-
 
 function _update60()
   p1:update()

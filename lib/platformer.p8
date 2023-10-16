@@ -124,9 +124,9 @@ jumper = actor:new {
 
     --jump is complex.
     --we allow jump if:
-    --	on ground
-    --	recently on ground
-    --	pressed btn right before landing
+    --  on ground
+    --  recently on ground
+    --  pressed btn right before landing
     --also, jump velocity is
     --not instant. it applies over
     --multiple frames.

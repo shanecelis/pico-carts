@@ -42,74 +42,72 @@ mus=
 -- }
 dolly = {
 
+  --target=target,--target to follow.
+  --pos=vec:new(target.x,target.y),
+
+  --how far from center of screen target must
+  --be before camera starts following.
+  --allows for movement in center without camera
+  --constantly moving.
+  pull_threshold=16,
+
+  --min and max positions of camera.
+  --the edges of the level.
+  pos_min=vec:new(64,64),
+  pos_max=vec:new(320,64),
+
+  shake_remaining=0,
+  shake_force=0,
+  new=function(self, o, t)
+    o = o or {}
+    setmetatable(o, self)
+    self.__index = self
+    t = t or o.target
+    o.target = t
+    o.pos=vec:new(t.x,t.y)
+    return o
+  end,
+
+  update=function(self)
+    local pos, thresh, pos_min, pos_max = self.pos, self.pull_threshold, self.pos_min, self.pos_max
+
+    self.shake_remaining-=1
+
+    --follow target outside of
+    --pull range.
+    local delta = self.target.x - pos.x - thresh
+    pos.x+=mid(0, delta, 4)
+
+    delta = self.target.x - pos.x + thresh
+    -- pos.x+=max(-4, delta, 0)
+    pos.x+=mid(-4, delta, 0)
+    delta = self.target.y - pos.y - thresh
+    pos.y+=mid(0, delta, 4)
+    delta = self.target.y - pos.y + thresh
+    pos.y+=mid(-4, delta, 0)
+
+    --lock to edge
+    pos = pos:map(max, self.pos_min)
+    pos = pos:map(min, self.pos_max)
+    self.pos = pos
+  end,
+
+  cam_pos=function(self)
+    --calculate camera shake.
+    local shk=vec:new(0)
+    if self.shake_remaining>0 then
+      shk=vec:new(self.shake_force)
+      shk = shk/-2 + shk:map(rnd)
+    end
+    local v = self.pos - vec:new(64, 64) + shk
+    return v.x, v.y
+  end,
+
+  shake=function(self,ticks,force)
+    self.shake_remaining=ticks
+    self.shake_force=force
+  end
 }
---make the camera.
-function m_cam(target)
-  local c=
-    {
-      tar=target,--target to follow.
-      pos=vec:new(target.x,target.y),
-
-      --how far from center of screen target must
-      --be before camera starts following.
-      --allows for movement in center without camera
-      --constantly moving.
-      pull_threshold=16,
-
-      --min and max positions of camera.
-      --the edges of the level.
-      pos_min=vec:new(64,64),
-      pos_max=vec:new(320,64),
-
-      shake_remaining=0,
-      shake_force=0,
-
-      update=function(self)
-        local pos, thresh, pos_min, pos_max = self.pos, self.pull_threshold, self.pos_min, self.pos_max
-
-        self.shake_remaining-=1
-
-        --follow target outside of
-        --pull range.
-        local delta = self.tar.x - pos.x - thresh
-        pos.x+=mid(0, delta, 4)
-
-        delta = self.tar.x - pos.x + thresh
-        pos.x+=max(-4, delta, 0)
-        delta = self.tar.y - pos.y - thresh
-        pos.y+=mid(0, delta, 4)
-        delta = self.tar.y - pos.y + thresh
-        pos.y+=mid(-4, delta, 0)
-
-        --lock to edge
-        pos = pos:map(max, self.pos_min)
-        pos = pos:map(min, self.pos_max)
-        self.pos = pos
-        -- if(pos.x<pos_min.x)pos.x=pos_min.x
-        -- if(pos.x>pos_max.x)pos.x=pos_max.x
-        -- if(pos.y<pos_min.y)pos.y=pos_min.y
-        -- if(pos.y>pos_max.y)pos.y=pos_max.y
-      end,
-
-      cam_pos=function(self)
-        --calculate camera shake.
-        local shk=vec:new(0,0)
-        if self.shake_remaining>0 then
-          shk.x=rnd(self.shake_force)-self.shake_force/2
-          shk.y=rnd(self.shake_force)-self.shake_force/2
-        end
-        local v = self.pos - vec:new(64, 64) + shk
-        return v.x, v.y
-      end,
-
-      shake=function(self,ticks,force)
-        self.shake_remaining=ticks
-        self.shake_force=force
-      end
-    }
-
-  return c
-end
 
 --game flow
 --------------------------------
@@ -119,9 +117,9 @@ end
 --_init()
 function _init()
   ticks=0
-  p1=jumper:new { x=64, y=100 }
+  p1=jumper:new { x=44, y=100 }
   p1:set_anim("walk")
-  cam=m_cam(p1)
+  cam=dolly:new(nil, p1)
 end
 
 --p8 functions

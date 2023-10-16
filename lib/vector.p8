@@ -5,7 +5,7 @@ __lua__
 -- https://github.com/automattf/vector.lua/blob/master/vector.lua
 vec = {
   new = function (self, x, y)
-    local v = {x = x, y = y}
+    local v = {x = x, y = y or x}
     setmetatable(v, self)
     self.__index = self
     return v
@@ -33,6 +33,11 @@ vec = {
   __div = function(a,b)
     assert(type(b) == 'number' and type(a) ~= 'number')
     return vec:new(a.x / b, a.y / b)
+  end,
+
+  -- negate the vector
+  __unm=function(self)
+    return vec:new(-self.x, -self.y)
   end,
 
   --get the length of the vector

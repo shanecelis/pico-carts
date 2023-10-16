@@ -14,6 +14,7 @@ jumper = actor:new {
   dcc=0.8,--decceleration
   air_dcc=1,--air decceleration
   gravity=0.15,
+  jump_snd=0,
 
 
   --helper for more complex
@@ -141,7 +142,7 @@ jumper = actor:new {
       --is player continuing a jump
       --or starting a new one?
       if self.jump_hold_time>0 or (on_ground and new_jump_btn) then
-        if(self.jump_hold_time==0)sfx(snd.jump)--new jump snd
+        if(self.jump_hold_time==0)sfx(jump_snd)--new jump snd
         self.jump_hold_time+=1
         --keep applying jump velocity
         --until max jump time.

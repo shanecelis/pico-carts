@@ -17,17 +17,13 @@ __lua__
 #include lib/vector.p8
 #include lib/actor.p8
 #include lib/platformer.p8
+#include lib/dolly.p8
 --sfx
 snd=
   {
     jump=0,
   }
 
---music tracks
-mus=
-  {
-
-  }
 
 --square root.
 -- function sqr(a) return a*a end
@@ -40,75 +36,6 @@ mus=
 --------------------------------
 -- cam {
 -- }
-dolly = {
-
-  --target=target,--target to follow.
-  --pos=vec:new(target.x,target.y),
-
-  --how far from center of screen target must
-  --be before camera starts following.
-  --allows for movement in center without camera
-  --constantly moving.
-  pull_threshold=16,
-
-  --min and max positions of camera.
-  --the edges of the level.
-  pos_min=vec:new(64,64),
-  pos_max=vec:new(320,64),
-
-  shake_remaining=0,
-  shake_force=0,
-  new=function(self, o, t)
-    o = o or {}
-    setmetatable(o, self)
-    self.__index = self
-    t = t or o.target
-    o.target = t
-    o.pos=vec:new(t.x,t.y)
-    return o
-  end,
-
-  update=function(self)
-    local pos, thresh, pos_min, pos_max = self.pos, self.pull_threshold, self.pos_min, self.pos_max
-
-    self.shake_remaining-=1
-
-    --follow target outside of
-    --pull range.
-    local delta = self.target.x - pos.x - thresh
-    pos.x+=mid(0, delta, 4)
-
-    delta = self.target.x - pos.x + thresh
-    -- pos.x+=max(-4, delta, 0)
-    pos.x+=mid(-4, delta, 0)
-    delta = self.target.y - pos.y - thresh
-    pos.y+=mid(0, delta, 4)
-    delta = self.target.y - pos.y + thresh
-    pos.y+=mid(-4, delta, 0)
-
-    --lock to edge
-    pos = pos:map(max, self.pos_min)
-    pos = pos:map(min, self.pos_max)
-    self.pos = pos
-  end,
-
-  cam_pos=function(self)
-    --calculate camera shake.
-    local shk=vec:new(0)
-    if self.shake_remaining>0 then
-      shk=vec:new(self.shake_force)
-      shk = shk/-2 + shk:map(rnd)
-    end
-    local v = self.pos - vec:new(64, 64) + shk
-    return v.x, v.y
-  end,
-
-  shake=function(self,ticks,force)
-    self.shake_remaining=ticks
-    self.shake_force=force
-  end
-}
-
 --game flow
 --------------------------------
 
@@ -429,6 +356,6 @@ __map__
 460060610000000000000060610000444300000000007341454200484946004846704a420000006465000000414970480000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 46000000000000737400000000000077000000000076414a4a460044474340484670704942000000000000414a7070480000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 4676000000007641420000000076000000000000744149704946007677007648464970704a4200737400414970704a480000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-49454545454545454545454545454545454545454548704a4a46454545454545004545454545454545454545454545000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+49004545454545454545454545454545454545454548704a4a46454545454545004545454545454545454545454545000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __sfx__
 01060000250512b051330513d05100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

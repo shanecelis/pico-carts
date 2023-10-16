@@ -38,9 +38,11 @@ jumper = actor:new {
       ticks_down=0,--how long down
     },
 
+  jump_hold_time=0,--how long jump is held
   min_jump_press=5,--min time jump can be held
   max_jump_press=16,--max time jump can be held
 
+  --jump_btn_released=true,--can we jump again?
   grounded=false,--on ground
 
   airtime=0,--time since grounded
@@ -135,18 +137,20 @@ jumper = actor:new {
       --was btn presses recently?
       --allow for pressing right before
       --hitting ground.
-      local jump_hold_time=self.jump_button.ticks_down - 1
-      local new_jump_btn=jump_hold_time<10
+      local new_jump_btn=self.jump_button.ticks_down<10
       --is player continuing a jump
       --or starting a new one?
-      if jump_hold_time>0 or (on_ground and new_jump_btn) then
-        if(jump_hold_time==0)sfx(snd.jump)--new jump snd
+      if self.jump_hold_time>0 or (on_ground and new_jump_btn) then
+        if(self.jump_hold_time==0)sfx(snd.jump)--new jump snd
+        self.jump_hold_time+=1
         --keep applying jump velocity
         --until max jump time.
-        if jump_hold_time<self.max_jump_press then
+        if self.jump_hold_time<self.max_jump_press then
           self.dy=self.jump_speed--keep going up while held
         end
       end
+    else
+      self.jump_hold_time=0
     end
 
     --move in y

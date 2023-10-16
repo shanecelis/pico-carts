@@ -18,12 +18,6 @@ __lua__
 #include lib/actor.p8
 #include lib/platformer.p8
 #include lib/dolly.p8
---sfx
-snd=
-  {
-    jump=0,
-  }
-
 
 --square root.
 -- function sqr(a) return a*a end
@@ -43,7 +37,6 @@ snd=
 --state. use this instead of
 --_init()
 function _init()
-  ticks=0
   p1=jumper:new { x=44, y=100 }
   p1:set_anim("walk")
   cam=dolly:new(nil, p1)
@@ -54,7 +47,6 @@ end
 
 
 function _update60()
-  ticks+=1
   p1:update()
   cam:update()
   --demo camera shake

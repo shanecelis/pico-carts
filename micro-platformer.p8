@@ -38,7 +38,11 @@ mus=
 
 --objects
 --------------------------------
+-- cam {
+-- }
+dolly = {
 
+}
 --make the camera.
 function m_cam(target)
   local c=
@@ -63,28 +67,19 @@ function m_cam(target)
       update=function(self)
         local pos, thresh, pos_min, pos_max = self.pos, self.pull_threshold, self.pos_min, self.pos_max
 
-        self.shake_remaining=max(0,self.shake_remaining-1)
+        self.shake_remaining-=1
 
         --follow target outside of
         --pull range.
         local delta = self.tar.x - pos.x - thresh
-        if delta > 0 then
-          pos.x+=min(delta,4)
-        end
+        pos.x+=mid(0, delta, 4)
 
         delta = self.tar.x - pos.x + thresh
-        if delta < 0 then
-          pos.x+=min(delta,4)
-        end
-
+        pos.x+=max(-4, delta, 0)
         delta = self.tar.y - pos.y - thresh
-        if delta > 0 then
-          pos.y+=min(delta,4)
-        end
+        pos.y+=mid(0, delta, 4)
         delta = self.tar.y - pos.y + thresh
-        if delta < 0 then
-          pos.y+=min(delta,4)
-        end
+        pos.y+=mid(-4, delta, 0)
 
         --lock to edge
         pos = pos:map(max, self.pos_min)
@@ -105,23 +100,6 @@ function m_cam(target)
         end
         local v = self.pos - vec:new(64, 64) + shk
         return v.x, v.y
-        -- return self.pos.x-64+shk.x,self.pos.y-64+shk.y
-      end,
-
-      pull_max_x=function(self)
-        return self.pos.x+self.pull_threshold
-      end,
-
-      pull_min_x=function(self)
-        return self.pos.x-self.pull_threshold
-      end,
-
-      pull_max_y=function(self)
-        return self.pos.y+self.pull_threshold
-      end,
-
-      pull_min_y=function(self)
-        return self.pos.y-self.pull_threshold
       end,
 
       shake=function(self,ticks,force)

@@ -8,7 +8,6 @@ __lua__
 #include lib/dolly.p8
 
 
-
 function std_anim(start, walk_speed)
   return {
     stand= {
@@ -36,7 +35,7 @@ function _init()
   { x=44, y=24,
 
     max_dx=0.8,--max x speed
-    anims= std_anim(145, 6),
+    anims=std_anim(145, 6),
     min_jump_press=2,
     max_jump_press=6,
   }
@@ -45,12 +44,11 @@ function _init()
   { x=44, y=24,
 
     max_dx=0.7,--max x speed
-    anims= std_anim(161, 5),
+    anims=std_anim(161, 5),
     min_jump_press=1,
     max_jump_press=3,
   }
   p1 = piglet
-  p1:set_anim("walk")
   cam=dolly:new(
     {
       pos_min=vec:new(64,64),

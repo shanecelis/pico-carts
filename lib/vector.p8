@@ -3,41 +3,34 @@ version 39
 __lua__
 -- a riff on this lib
 -- https://github.com/automattf/vector.lua/blob/master/vector.lua
-vec = {
-  new = function (self, x, y)
-    local v = {x = x, y = y or x}
-    setmetatable(v, self)
-    self.__index = self
-    return v
-  end,
-
+vector = {
   __add = function(a,b)
-    return vec:new(a.x + b.x, a.y + b.y)
+    return vec(a.x + b.x, a.y + b.y)
   end,
 
   __sub = function(a,b)
-    return vec:new(a.x - b.x, a.y - b.y)
+    return vec(a.x - b.x, a.y - b.y)
   end,
 
   __mul = function(a,b)
     assert(type(b) ~= 'number')
     if type(a) == 'number' then
-      return vec:new(a * b.x, a * b.y)
+      return vec(a * b.x, a * b.y)
     -- elseif type(b) == 'number' then
-    --   return vec:new(a.x * b, a.y * b)
+    --   return vec(a.x * b, a.y * b)
     else
-      return vec:new(a.x * b.x, a.y * b.y)
+      return vec(a.x * b.x, a.y * b.y)
     end
   end,
 
   __div = function(a,b)
     assert(type(b) == 'number' and type(a) ~= 'number')
-    return vec:new(a.x / b, a.y / b)
+    return vec(a.x / b, a.y / b)
   end,
 
   -- negate the vector
   __unm=function(self)
-    return vec:new(-self.x, -self.y)
+    return vec(-self.x, -self.y)
   end,
 
   --get the length of the vector
@@ -46,12 +39,19 @@ vec = {
   end,
 
   --get the normal of the vector
-  normalize=function(self)
+  normalized=function(self)
     return self / l:length()
   end,
 
   map = function(a, f, b)
-    if (b) return vec:new(f(a.x, b.x), f(a.y, b.y))
-    return vec:new(f(a.x), f(a.y))
+    if (b) return vec(f(a.x, b.x), f(a.y, b.y))
+    return vec(f(a.x), f(a.y))
   end
 }
+vector.__index = vector
+
+function vec(x,y)
+  local v = {x = x, y = y or x}
+  setmetatable(v, vector)
+  return v
+end

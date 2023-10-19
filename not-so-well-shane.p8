@@ -3,46 +3,74 @@ version 41
 __lua__
 
 #include lib/vector.p8
+#include lib/scene.p8
 #include lib/actor.p8
 #include lib/platformer.p8
 #include lib/dolly.p8
 
 
---_init the game to its initial
---state.
-function _init()
-  p1=jumper:new { x=44, y=30 }
-  p1:set_anim("walk")
-  cam=dolly:new(nil, p1)
-end
+p1=jumper:new { x=44, y=30 }
+intro = scene:new {
+  update = function(self)
+    p1:update()
+  end,
 
---p8 functions
---------------------------------
+  draw = function(self)
 
-function _update60()
-  p1:update()
-  cam:update()
-  --demo camera shake
-  if(btnp(4))cam:shake(15,2)
+    cls(12)
+
+
+    p1:draw()
+    map(0,0,0,0,128,128)
+
+    --hud
+    -- camera(0,0)
+    print("not so well (shane)",24,4,7,0,0)
   end
+}
 
-function _draw()
 
-  cls(12)
+game = scene:new {
+  cam=dolly:new(nil, p1),
+  update = function(self)
+    p1:update()
+    self.cam:update()
+  end,
 
-  camera(cam:cam_pos())
+  draw = function(self)
 
-  map(0,0,0,0,128,128)
+    cls(0)
 
-  p1:draw()
+    camera(self.cam:cam_pos())
 
-  --hud
-  camera(0,0)
-  spr(46, 4*8, 7*8)
-  spr(46, 4*8, 8*8)
-  print("adv. micro platformer",24,4,7,0,0)
+    p1:draw()
+    map(0,0,0,0,128,128)
 
-end
+    --hud
+    -- camera(0,0)
+    print("not so well (shane)",24,4,7,0,0)
+  end,
+}
+
+intro:install()
+
+-- --_init the game to its initial
+-- --state.
+-- function _init()
+--   p1=jumper:new { x=44, y=30 }
+--   cam=dolly:new(nil, p1)
+-- end
+
+-- --p8 functions
+-- --------------------------------
+
+-- function _update60()
+--   p1:update()
+--   cam:update()
+--   --demo camera shake
+--   if(btnp(4))cam:shake(15,2)
+--   end
+
 __gfx__
 01234567004004000000000000000000000000000004004004004000000404000000008800000011000000110004040033333b33444444440000000000000000
 89abcdef00144100000000000000000000000000000141000014100000014100088008880880010101100101000141003b33b3b3444444440000000000000000

@@ -8,18 +8,18 @@ __lua__
 dolly = {
 
   --target=target,--target to follow.
-  --pos=vec:new(target.x,target.y),
+  --pos=vec(target.x,target.y),
 
   --how far from center of screen target must
   --be before camera starts following.
   --allows for movement in center without camera
   --constantly moving.
-  pull_threshold=vec:new(16,32),
+  pull_threshold=vec(16,32),
 
   --min and max positions of camera.
   --the edges of the level.
-  pos_min=vec:new(64,64),
-  pos_max=vec:new(320,128),
+  pos_min=vec(64,64),
+  pos_max=vec(320,128),
 
   shake_remaining=0,
   -- shake_force=0,
@@ -29,7 +29,7 @@ dolly = {
     self.__index = self
     t = t or o.target
     o.target = t
-    o.pos=vec:new(t.x,t.y)
+    o.pos=vec(t.x,t.y)
     return o
   end,
 
@@ -52,12 +52,12 @@ dolly = {
 
   cam_pos=function(self)
     --calculate camera shake.
-    local shk=vec:new(0)
+    local shk=vec(0)
     if self.shake_remaining>0 then
-      shk = vec:new(self.shake_force)
+      shk = vec(self.shake_force)
       shk = shk:map(rnd) - shk/2
     end
-    local v = self.pos - vec:new(64, 64) + shk
+    local v = self.pos - vec(64, 64) + shk
     return v.x, v.y
   end,
 

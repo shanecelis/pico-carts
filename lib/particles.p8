@@ -138,12 +138,12 @@ particle = {
   end,
 
   set_values = function (self, x, y, external_force, colours, sprites, life, angle, speed_initial, speed_final, size_initial, size_final)
-    self.pos = vec:new(x,y)
+    self.pos = vec(x,y)
     self.life_initial, self.life, self.external_force = life, life, external_force
 
-    self.velocity = speed_initial * vec:new(cos(angle), sin(angle))
+    self.velocity = speed_initial * vec(cos(angle), sin(angle))
     self.vel_initial = 1 * self.velocity
-    self.vel_final = speed_final * vec:new(cos(angle), sin(angle))
+    self.vel_final = speed_final * vec(cos(angle), sin(angle))
 
     self.size, self.size_initial, self.size_final = size_initial, size_initial, size_final
 
@@ -249,7 +249,7 @@ emitter = {
     o.p_speed = variate:new({}, 10, 0)
     o.p_size = variate:new({}, 1, 0)
 
-    o.pos = o.pos or vec:new(x,y)
+    o.pos = o.pos or vec(x,y)
     o.frequency = frequency or o.frequency
     o.max_p = max_p or o.max_p
     o.burst = burst or o.burst
@@ -329,7 +329,7 @@ emitter = {
     -- (x, y, gravity, colours, sprites, life, angle, speed_initial, speed_final, size_initial, size_final)
     p:set_values (
       pos.x, pos.y, -- pos
-      self.gravity and vec:new(0, 50) or nil, -- gravity a and b or c === a ? b : c
+      self.gravity and vec(0, 50) or nil, -- gravity a and b or c === a ? b : c
       {self.p_colours:eval() or flr(rnd(16))}, -- color
       sprites, -- graphics
       self.p_life:eval(), -- life
@@ -402,7 +402,7 @@ end
 -- stars credits
 function stars()
   local front = emitter:new({}, 0, 64, 0.2, 0)
-  front.area = vec:new(0, 128)
+  front.area = vec(0, 128)
   front.p_colours:set({7})
   front.p_size:set(0)
   front.p_speed:set(34, 10)
@@ -433,7 +433,7 @@ function stars()
   front:add(back)
   local special = emitter:new({}, 64, 64, 0.2, 0)
 
-  special.area = vec:new(128, 128)
+  special.area = vec(128, 128)
   special.p_angle:set(0)
   special.frequency = 0.01
   special.p_sprites = {107, 108, 109, 110}

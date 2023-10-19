@@ -13,6 +13,12 @@ p1=jumper:new { x=44, y=30 }
 intro = scene:new {
   update = function(self)
     p1:update()
+
+    if p1.y > 128 then
+      p1.x = 18 * 8
+      p1.y = 0
+      return game
+    end
   end,
 
   draw = function(self)
@@ -31,7 +37,11 @@ intro = scene:new {
 
 
 game = scene:new {
-  cam=dolly:new(nil, p1),
+  cam=dolly:new(
+    {
+      pos_min = vec(128 + 64, 64)
+
+    }, p1),
   update = function(self)
     p1:update()
     self.cam:update()

@@ -3,13 +3,15 @@ version 41
 __lua__
 
 -- https://www.lexaloffle.com/bbs/?tid=31079
--- 130 tokens
+-- 139 tokens
 
 do
   local _co, _key
   keyboard = {
     --- if true, echo the input.
     -- echo = nil
+    --- resume this coroutine if it exists
+    -- awaiter = nil
 
     --- if true, disables the
     --- menu when return is
@@ -62,6 +64,7 @@ do
         s, r = coresume(_co, _key)
       until s
     end
+    if (r and self.awaiter and not coresume(self.awaiter, r)) self.awaiter = nil
     return r
   end
 
@@ -84,7 +87,81 @@ do
 end
 
 -->8
--- hi
+-- lemons game
+#include timer.p8
+function _init()
+  keyboard.echo = true
+  keyboard:init()
+  cls()
+  game = cocreate(lemons_game)
+  coresume(game)
+  -- lemons_game()
+end
+
+function _draw()
+
+end
+
+function _update()
+  -- coroutines:update()
+  local result = keyboard:update()
+  if (result) coresume(game, result)
+end
+
+function prompt(message)
+  print(message)
+  local result = yield()
+  print("")
+  return result
+end
+
+function shuffle(tbl)
+  for i = #tbl, 2, -1 do
+    local j = flr(rnd(i)) + 1
+    tbl[i], tbl[j] = tbl[j], tbl[i]
+  end
+end
+
+function lemons_game()
+  print("lemons game")
+  local count = tonum(prompt("how many pairs? \0"))
+  boys = {}
+  for i=1, count do
+    local name = prompt(i..") name of person? \0")
+    add(boys, name)
+  end
+
+  actions = {}
+  for i=1, count do
+    local name = prompt(i..") what have you done to a\n lemon? \0")
+    add(actions, name)
+  end
+
+  girls = {}
+  for i=1, count do
+    local name = prompt(i..") name of a person or \ncelebrity? \0")
+    add(girls, name)
+  end
+
+  bodyparts = {}
+  for i=1, count do
+    local name = prompt(i..") name of a body part? \0")
+    add(bodyparts, name)
+  end
+
+  print("mixing lemons...")
+  shuffle(boys)
+  shuffle(girls)
+  shuffle(actions)
+  shuffle(bodyparts)
+
+  for i=1, count do
+    print(boys[i].." "..actions[i].." "..girls[i].."'s "..bodyparts[i].."!")
+  end
+
+  print("thanks for playing!")
+  stop()
+end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

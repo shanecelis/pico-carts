@@ -15,7 +15,7 @@ __lua__
   itch: https://maxwelldexter.itch.io/
   twitter: @KearneyMax
 ]]
-#include vector.p8
+-- #include vector.p8
 -------------------------------------------------- globals
 
 -- efficiently remove all
@@ -31,7 +31,7 @@ function table_remove(t, fn)
       -- keep this one
       if (i ~= j) t[j], t[i] = t[i], nil
       j += 1
-      end
+    end
   end
 end
 
@@ -70,7 +70,6 @@ nopool = pool:new {
   get = function(p) return p.create() end,
   release = function(p) end
 }
-
 
 variate = {
   new = function (self, o, value, spread)
@@ -123,18 +122,17 @@ rachet = {
 
 -------------------------------------------------- particle
 particle = {
-  prev_time = time(), -- for calculating dt
-  delta_time = nil, -- the change in time
-  update_time = function ()
-    particle.delta_time = time()-particle.prev_time
-    particle.prev_time = time()
-  end,
 
   new = function (self, o)
     o = o or {}
     setmetatable(o, self)
     self.__index = self
     return o
+  end,
+
+  delta_time = function()
+    local fps = stat(8)
+    return 1 / fps
   end,
 
   set_values = function (self, x, y, external_force, colours, sprites, life, angle, speed_initial, speed_final, size_initial, size_final)
@@ -171,9 +169,10 @@ particle = {
 
   -- update: handles all of the values changing like life, gravity, size/life, vel/life, movement and dying
   update = function (self, dt)
+    dt = dt or particle.delta_time()
     self.life -= dt
 
-    if (self.external_force) self.velocity += particle.delta_time * self.external_force
+    if (self.external_force) self.velocity += dt * self.external_force
     -- if (self.gravity) self:apply_gravity()
 
     -- size over lifetime
@@ -231,6 +230,7 @@ emitter = {
   emit_time = 0,
   max_p = 100,
   gravity = false,
+  particle_class = particle,
   -- burst = nil,
 
   -- particle factory stuff
@@ -254,7 +254,7 @@ emitter = {
     o.max_p = max_p or o.max_p
     o.burst = burst or o.burst
     o.gravity = gravity or o.gravity
-    o.pool = nopool:new({}, function() return particle:new() end)
+    o.pool = nopool:new({}, function() return o.particle_class:new() end)
     -- o.pool = pool:new({}, function() return particle:new() end)
     o.p_speed_final = o.p_speed_final or o.p_speed:new()
     o.p_size_final = o.p_size_final or o.p_size:new()
@@ -271,8 +271,8 @@ emitter = {
   -- tells all of the particles to
   -- update and removes any that
   -- are dead.
-  update = function (self)
-    local dt = particle.delta_time
+  update = function (self, dt)
+    dt = dt or particle.delta_time()
     self:emit(dt)
     for p in all(self.particles) do
       p:update(dt)

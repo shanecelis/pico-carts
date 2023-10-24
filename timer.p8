@@ -3,18 +3,6 @@ version 39
 __lua__
 -- timer
 
--- timer = {
--- }
-
--- function timer:new(o, func, wait)
---   o = o or {}
---   setmetatable(o, self)
---   self.__index = self
---   o.start = time()
---   o.stop = o.start + wait
---   return o
--- end
-
 function wait_frames(f)
   for _=1,f do
     yield()
@@ -55,3 +43,6 @@ function coroutines:update()
   end
 end
 
+
+-- set ourselves up to get called each update.
+if (scene) add(scene, coroutines)

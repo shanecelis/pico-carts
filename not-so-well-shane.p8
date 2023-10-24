@@ -2,6 +2,7 @@ pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
 
+#include lib/particles.p8
 #include lib/vector.p8
 #include lib/scene.p8
 #include lib/actor.p8
@@ -66,14 +67,13 @@ intro = scene:new {
     if p1.y > 128 then
       p1.x = 18 * 8
       p1.y = 0
-      return game
+      -- return game
+      return falling
     end
   end,
 
   draw = function(self)
-
     cls(12)
-
 
     p1:draw()
     trickyshadow:draw()
@@ -84,6 +84,41 @@ intro = scene:new {
     print("not so well (shane)",24,4,7,0,0)
   end
 }
+
+function strokes()
+  local front = emitter:new(
+    {
+      particle_class = particle:new {
+        draw = function(self)
+          line(self.pos.x, self.pos.y, self.pos.x, self.pos.y + self.size, self.colour)
+        end
+      }
+    }, 64, 128, 0.2, 0)
+  front.area = vec(128, 0)
+  front.p_colours:set({7})
+  front.p_size:set(5, 5)
+  front.p_speed:set(64, 10)
+  front.p_speed_final:set(84)
+  front.p_life:set(1.5, 1)
+  front.p_angle:set(90)
+  return front
+end
+
+falling = scene:new {
+
+  draw = function(self)
+
+    scene.draw(self)
+    p1:draw()
+    -- map(0,0,0,0,128,128)
+
+    --hud
+    -- camera(0,0)
+    -- print("not so well (shane)",24,4,7,0,0)
+  end
+}
+add(falling,
+    strokes())
 
 
 game = scene:new {
@@ -103,7 +138,6 @@ game = scene:new {
   end,
 
   draw = function(self)
-
     cls(0)
 
     camera(self.cam:cam_pos())

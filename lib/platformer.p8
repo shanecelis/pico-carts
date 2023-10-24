@@ -22,12 +22,12 @@ jumper = actor:new {
   --todo: generalize button index.
   jump_button=
     {
-      update=function(self)
+      update=function(self, jumpbtn)
         --start with assumption
         --that not a new press.
         -- self.is_pressed=false
         -- self.is_pressed=btnp(5)
-        self.is_down=btn(5)
+        self.is_down=jumpbtn
         if self.is_down then
           self.ticks_down+=1
         else
@@ -86,15 +86,20 @@ jumper = actor:new {
     self.curanim=anim
     self.curframe=1
   end,
+  
+  update=function(self)
+    local bl=btn(0) --left
+    local br=btn(1) --right
+    self:move(bl,br, btn(5))
+  end,
 
   --call once per tick.
-  update=function(self)
+  move=function(self, bl, br, jump)
 
     --todo: kill enemies.
 
     --track button presses
-    local bl=btn(0) --left
-    local br=btn(1) --right
+    
 
     --move left/right
     if bl then
@@ -120,7 +125,7 @@ jumper = actor:new {
     self:collide_side()
 
     --jump buttons
-    self.jump_button:update()
+    self.jump_button:update(jump)
 
     --jump is complex.
     --we allow jump if:

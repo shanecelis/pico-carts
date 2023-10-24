@@ -13,11 +13,11 @@ vector = {
   end,
 
   __mul = function(a,b)
-    assert(type(b) ~= 'number')
+    -- assert(type(b) ~= 'number')
     if type(a) == 'number' then
       return vec(a * b.x, a * b.y)
-    -- elseif type(b) == 'number' then
-    --   return vec(a.x * b, a.y * b)
+    elseif type(b) == 'number' then
+      return vec(a.x * b, a.y * b)
     else
       return vec(a.x * b.x, a.y * b.y)
     end

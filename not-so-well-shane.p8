@@ -105,16 +105,25 @@ function strokes()
 end
 
 falling = scene:new {
+  y = 0,
 
   draw = function(self)
 
     scene.draw(self)
     p1:draw()
+    spr(1, 64, self.y)
+    self.y += 1
     -- map(0,0,0,0,128,128)
 
     --hud
     -- camera(0,0)
     -- print("not so well (shane)",24,4,7,0,0)
+  end,
+  
+  update = function(self)
+    if self.y > 148 then
+      return game
+    end
   end
 }
 add(falling,

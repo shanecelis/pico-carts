@@ -48,10 +48,10 @@ scene = {
     end
 
     function _update60()
-      -- if scene.text == nil then
-      -- particle.update_time()
-      -- coroutines:update()
-      -- end
+      -- these are for global updates.
+      for e in all(scene) do
+        e:update()
+      end
       local next = scene:update()
       if next ~= nil then
         scene:exit()

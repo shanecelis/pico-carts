@@ -88,9 +88,7 @@ end
 
 -->8
 -- lemons game
-#include timer.p8
 function _init()
-  keyboard.echo = true
   keyboard:init()
   cls()
   game = cocreate(lemons_game)
@@ -110,7 +108,9 @@ end
 
 function prompt(message)
   print(message)
+  keyboard.echo = true
   local result = yield()
+  keyboard.echo = false
   print("")
   return result
 end
@@ -149,7 +149,8 @@ function lemons_game()
     add(bodyparts, name)
   end
 
-  print("mixing lemons...")
+  cls()
+  print("mixing lemons...\n")
   shuffle(boys)
   shuffle(girls)
   shuffle(actions)
@@ -159,8 +160,8 @@ function lemons_game()
     print(boys[i].." "..actions[i].." "..girls[i].."'s "..bodyparts[i].."!")
   end
 
-  print("thanks for playing!")
-  stop()
+  print("\nthanks for playing!")
+  -- stop()
 end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

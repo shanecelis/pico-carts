@@ -14,20 +14,30 @@ physics = {
   wire_radius = 32,
 }
 tick = 0
+bead_count = 1
 
 bead = actor:new(
   {
     pos = vec(64 + 32, 64),
     prev_pos = vec(0),
     vel = vec(0),
+    radius = 4,
+    mass = 1,
+    color = 8,
+
     draw = function(self)
-      spr(self.sprite, self.pos.x - 4, self.pos.y - 4)
+      circfill(self.pos.x, self.pos.y, self.radius, self.color)
+      -- spr(self.sprite, self.pos.x - 4, self.pos.y - 4)
     end,
+
     start_step = function(self, dt, force)
-      self.vel = self.vel + (dt * force)
+      self.vel = self.vel + force * dt
+
       self.prev_pos = vec(self.pos.x, self.pos.y)
-      self.pos += dt * self.vel
+      -- self.prev_pos.x, self.prev_pos.y = self.pos.x, self.pos.y
+      self.pos = self.pos + self.vel * dt
     end,
+
     keep_on_wire = function(self, center, radius)
       local dir, len, lambda
       dir = self.pos - center
@@ -42,17 +52,58 @@ bead = actor:new(
     end_step = function(self, dt)
       self.vel = 1 / dt * (self.pos - self.prev_pos)
     end,
+
+    collide = function(bead1, bead2)
+      local restitution = 1
+      local dir = bead1.pos - bead2.pos
+      local d = dir:length()
+      if (d == 0.0 or d > bead1.radius - bead2.radius) return
+      dir /= d
+      local corr = (bead1.radius - bead2.radius - d) / 2
+      bead1.pos += (-corr * dir)
+      bead2.pos += ( corr * dir)
+      local v1, v2 = bead1.vel:dot(dir), bead2.vel:dot(dir)
+      local m1, m2 = bead1.mass, bead2.mass
+      local v1p = (m1 * v1 + m2 * v2 - m2 * (v1 - v2) * restitution) / (m1 + m2)
+      local v2p = (m1 * v1 + m2 * v2 - m1 * (v2 - v1) * restitution) / (m1 + m2)
+      bead1.vel += (v1p - v1) * dir
+      bead2.vel += (v2p - v2) * dir
+    end
   },
   1,
   64 + 32, 64)
 
+function _init()
+  beads = {}
+  for i =1, bead_count do
+    local angle = rnd()
+    local r = flr(rnd(3)) + 2
+    local pos = physics.wire_center + physics.wire_radius * vec(cos(angle), sin(angle))
+    add(beads, bead:new({ pos = pos, radius = r, mass = 3.14 * r * r, color = flr(rnd(16)) }, 1, pos.x, pos.y))
+  end
+
+end
+
 function _update()
   local sdt, lambda = physics.dt / physics.steps
   for step = 1, physics.steps do
-    bead:start_step(sdt, physics.gravity)
-    lambda = bead:keep_on_wire(physics.wire_center,
-                               physics.wire_radius)
-    bead:end_step(sdt)
+    for bead in all(beads) do
+      bead:start_step(sdt, physics.gravity)
+    end
+    for bead in all(beads) do
+      lambda = bead:keep_on_wire(physics.wire_center,
+                                 physics.wire_radius)
+    end
+    for bead in all(beads) do
+      bead:end_step(sdt)
+    end
+    for i=2,#beads do
+      for j=1, i - 1 do
+        -- print("collide "..i.." "..j)
+        beads[i]:collide(beads[j])
+      end
+    end
+    -- stop()
   end
 
   tick += 1
@@ -62,9 +113,12 @@ function _draw()
   cls()
   circ(physics.wire_center.x,
        physics.wire_center.y,
-       physics.wire_radius)
-  bead:draw()
-  -- print("tick "..tick, 0,0)
+       physics.wire_radius,
+       7)
+
+  for bead in all(beads) do
+    bead:draw()
+  end
 
 end
 

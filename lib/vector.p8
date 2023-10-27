@@ -1,5 +1,5 @@
 pico-8 cartridge // http://www.pico-8.com
-version 39
+version 41
 __lua__
 -- a riff on this lib
 -- https://github.com/automattf/vector.lua/blob/master/vector.lua
@@ -39,10 +39,16 @@ vector = {
   end,
 
   --get the normal of the vector
-  normalized=function(self)
-    return self / l:length()
+  normalize=function(self)
+    local l = self:length()
+    self.x /= l
+    self.y /= l
   end,
-
+  
+  cross = function(a, b)
+				return a.x * b.y - b.x * a.y
+  end,
+  
   map = function(a, f, b)
     if (b) return vec(f(a.x, b.x), f(a.y, b.y))
     return vec(f(a.x), f(a.y))

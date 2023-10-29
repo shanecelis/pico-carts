@@ -5,6 +5,7 @@ __lua__
 
 #include lib/vector.p8
 #include lib/actor.p8
+#include lib/repr.p8
 
 physics = {
   gravity = vec(0, 10),
@@ -30,7 +31,7 @@ bead =
       circfill(self.pos.x, self.pos.y, 2)
     end,
     start_step = function(self, dt, force)
-      self.vel = self.vel + (dt * force)
+      self.vel = self.vel + dt * self.w * force
       self.prev_pos = vec(self.pos.x, self.pos.y)
       self.pos += dt * self.vel
     end,
@@ -73,26 +74,94 @@ constraint = {
     class.__index = class
     return o
   end,
+
+  project = function(self, ...)
+    local c = self:eval(...)
+    if (self.is_inequality and c<0 or c == 0) return
+    local particles = select('#', ...) > 0 and {...} or self
+    local grads = self:grad(...)
+    assert(#grads == self.cardinality)
+    -- assert(#self == self.cardinality)
+    local s = 0
+    local w = 0
+    for i=1,self.cardinality do
+      w += particles[i].w
+      s += particles[i].w * grads[i]:dot(grads[i])
+    end
+    s = c / s
+    for i=1,self.cardinality do
+
+      -- print("project delta "..repr(s * self[i].w * grads[i]).." c ".. c)
+      -- stop()
+      particles[i].pos -= s * particles[i].w * grads[i]
+    end
+  end
 }
 
 plane_constraint = constraint:new {
   n = vec(0, -1),
-  r = vec(0, 64),
+  r = vec(0, 120),
   is_inequality = true,
   eval = function(self, p)
-      return p.pos:dot(self.n - self.r)
+    p = p or self[1]
+    return self.n:dot(self.r - p.pos)
   end,
   grad = function(self, p)
-    return self.n
+    p = p or self[1]
+    -- stop("grad plane for "..tostr(self:eval(p)))
+    return {-self.n}
   end
 }
 
-function detect_collisions(ps)
+distance_constraint = constraint:new {
+  rest_length = 1,
+  cardinality = 2,
+  eval = function(self, a, b)
+    a = a or self[1]
+    b = b or self[2]
+    return (a.pos - b.pos):length() - self.rest_length
+  end,
+  grad = function(self, a, b)
+    a = a or self[1]
+    b = b or self[2]
+    local n = a.pos - b.pos
+    n:normalize()
+    return {n, -n}
+  end
+}
 
-  for p in all(ps) do
-    if p.pos:dot(plane_n) - d >= 0 then
-      -- add(constraints,
+area_constraint = constraint:new {
+  rest_area = 1,
+  cardinality = 4,
+  eval = function(self, a, b, c, d)
+    a = a or self[1]
+    b = b or self[2]
+    c = c or self[3]
+    d = d or self[4]
+    return square_area(a.pos, b.pos, c.pos, d.pos) - self.rest_area
+  end,
+
+  grad = function(self, a, b, c, d)
+    a = a or self[1]
+    b = b or self[2]
+    c = c or self[3]
+    d = d or self[4]
+    local x1,x2,x3,x4 = a.pos,b.pos,c.pos,d.pos
+    local grads = {(2 * x1 - x3 - x2),
+            -(2 * x3 - x1 - x4),
+            -(2 * x2 - x1 - x4),
+            (2 * x4 - x3 - x2)}
+    for grad in all(grads) do
+      grad:normalize()
     end
+    return grads
+  end
+
+}
+
+function detect_collisions(ps)
+  for p in all(ps) do
+    plane_constraint:project(p)
   end
 end
   
@@ -149,27 +218,39 @@ end
 
 function _init()
   beads = {
-    bead:new { pos = vec(64,64), w = 0 },
+    -- bead:new { pos = vec(64,64), w = 0 },
+    bead:new { pos = vec(64,64), w = 1 },
     bead:new { pos = vec(74,64) },
     bead:new { pos = vec(64,74) },
     bead:new { pos = vec(74,74) }
   }
-  active = { beads[2], beads[3], beads[4] }
+  -- active = { beads[2], beads[3], beads[4] }
+  constraints = {
+    distance_constraint:new {rest_length = 10, beads[1], beads[2]},
+    distance_constraint:new {rest_length = 10, beads[1], beads[3]},
+    distance_constraint:new {rest_length = 10, beads[2], beads[4]},
+    distance_constraint:new {rest_length = 10, beads[3], beads[4]},
+    area_constraint:new { rest_area = 100, beads[1], beads[2], beads[3], beads[4] }
+  }
 end
 
 function _update()
   local sdt, lambda = physics.dt / physics.steps
   for step = 1, physics.steps do
-    for bead in all(active) do
+    for bead in all(beads) do
       bead:start_step(sdt, physics.gravity)
     end
-    distance_joint(10, beads[1], beads[2])
-    distance_joint(10, beads[1], beads[3])
-    distance_joint(10, beads[2], beads[4])
-    distance_joint(10, beads[3], beads[4])
-    conserve_area(100, beads)
+    for constraint in all(constraints) do
+      constraint:project()
+    end
+    detect_collisions(beads)
+    -- distance_joint(10, beads[1], beads[2])
+    -- distance_joint(10, beads[1], beads[3])
+    -- distance_joint(10, beads[2], beads[4])
+    -- distance_joint(10, beads[3], beads[4])
+    -- conserve_area(100, beads)
     --lambda = bead:keep_on_wire(physics.wire_center,
-    for bead in all(active) do
+    for bead in all(beads) do
       bead:end_step(sdt)
     end
     --beads[1].pos = vec(64,64)

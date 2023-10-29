@@ -52,6 +52,11 @@ vector = {
   map = function(a, f, b)
     if (b) return vec(f(a.x, b.x), f(a.y, b.y))
     return vec(f(a.x), f(a.y))
+  end,
+
+  dot = function(a, b)
+
+    return a.x * b.x + a.y * b.y
   end
 }
 vector.__index = vector

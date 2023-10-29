@@ -59,6 +59,42 @@ function distance_joint(rest_length, a, b)
   a.pos -= a.w / w * c * n
   b.pos += b.w / w * c * n
 end
+
+constraint = {
+  -- if true, eval() >= 0, otherwise eval(...) = 0.
+  is_inequality = false,
+  --eval = function(...) return c end,
+  k = 0,
+  cardinality = 1,
+  particles = {},
+  new = function(class, o)
+    o = o or {}
+    setmetatable(o, class)
+    class.__index = class
+    return o
+  end,
+}
+
+plane_constraint = constraint:new {
+  n = vec(0, -1),
+  r = vec(0, 64),
+  is_inequality = true,
+  eval = function(self, p)
+      return p.pos:dot(self.n - self.r)
+  end,
+  grad = function(self, p)
+    return self.n
+  end
+}
+
+function detect_collisions(ps)
+
+  for p in all(ps) do
+    if p.pos:dot(plane_n) - d >= 0 then
+      -- add(constraints,
+    end
+  end
+end
   
 function conserve_area(a_rest, beads)
   local x1,x2,x3,x4 = beads[1].pos, beads[2].pos, beads[3].pos, beads[4].pos

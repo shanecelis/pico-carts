@@ -67,6 +67,7 @@ constraint = {
   --eval = function(...) return c end,
   k = 0,
   cardinality = 1,
+  compliance = 0,
   particles = {},
   new = function(class, o)
     o = o or {}
@@ -75,7 +76,7 @@ constraint = {
     return o
   end,
 
-  project = function(self, ...)
+  project = function(self, dt, lambda, ...)
     local c = self:eval(...)
     if (self.is_inequality and c<0 or c == 0) return
     local particles = select('#', ...) > 0 and {...} or self
@@ -84,18 +85,22 @@ constraint = {
     -- assert(#self == self.cardinality)
     local s = 0
     local w = 0
+    
     for i=1,self.cardinality do
       w += particles[i].w
-      s += particles[i].w * grads[i]:dot(grads[i])
+      s += particles[i].w 
+         * grads[i]:dot(grads[i])
     end
-    s = c / s
+    local alpha = self.compliance / dt / dt
+    s = (c - alpha * lambda) / (s + alpha)
     for i=1,self.cardinality do
 
       -- print("project delta "..repr(s * self[i].w * grads[i]).." c ".. c)
       -- stop()
       particles[i].pos -= s * particles[i].w * grads[i]
     end
-  end
+  end,
+  draw = function() end,
 }
 
 plane_constraint = constraint:new {
@@ -107,10 +112,18 @@ plane_constraint = constraint:new {
     return self.n:dot(self.r - p.pos)
   end,
   grad = function(self, p)
-    p = p or self[1]
+    --p = p or self[1]
     -- stop("grad plane for "..tostr(self:eval(p)))
     return {-self.n}
-  end
+  end,
+  find_y = function(self, x)
+    return (self.n:dot(self.r) - x * self.n.x) / self.n.y
+  end,
+  draw = function(self)
+    local x1,x2 = 0, 128 * 8
+    local y1,y2 = self:find_y(x1), self:find_y(x2)
+    line(x1, y1, x2, y2)
+  end,
 }
 
 distance_constraint = constraint:new {
@@ -127,6 +140,11 @@ distance_constraint = constraint:new {
     local n = a.pos - b.pos
     n:normalize()
     return {n, -n}
+  end,
+  draw = function(self, a, b)
+    a = a or self[1]
+    b = b or self[2]
+    line(a.pos.x, a.pos.y, b.pos.x, b.pos.y)
   end
 }
 
@@ -161,7 +179,7 @@ area_constraint = constraint:new {
 
 function detect_collisions(ps)
   for p in all(ps) do
-    plane_constraint:project(p)
+    plane_constraint:project(1/stat(8), 0, p)
   end
 end
   
@@ -224,13 +242,17 @@ function _init()
     bead:new { pos = vec(64,74) },
     bead:new { pos = vec(74,74) }
   }
+  local alpha = 0.0001
   -- active = { beads[2], beads[3], beads[4] }
   constraints = {
-    distance_constraint:new {rest_length = 10, beads[1], beads[2]},
-    distance_constraint:new {rest_length = 10, beads[1], beads[3]},
-    distance_constraint:new {rest_length = 10, beads[2], beads[4]},
-    distance_constraint:new {rest_length = 10, beads[3], beads[4]},
-    area_constraint:new { rest_area = 100, beads[1], beads[2], beads[3], beads[4] }
+    distance_constraint:new {rest_length = 10, compliance = alpha, beads[1], beads[2]},
+    distance_constraint:new {rest_length = 10, compliance = alpha, beads[1], beads[3]},
+    distance_constraint:new {rest_length = 10, compliance = alpha, beads[2], beads[4]},
+    distance_constraint:new {rest_length = 10, compliance = alpha, beads[3], beads[4]},
+    area_constraint:new { 
+    rest_area = 100, 
+    compliance = alpha,
+    beads[1], beads[2], beads[3], beads[4] }
   }
 end
 
@@ -241,7 +263,7 @@ function _update()
       bead:start_step(sdt, physics.gravity)
     end
     for constraint in all(constraints) do
-      constraint:project()
+      constraint:project(1/stat(8), 0)
     end
     detect_collisions(beads)
     -- distance_joint(10, beads[1], beads[2])
@@ -261,16 +283,14 @@ end
 
 function _draw()
   cls()
-  circ(physics.wire_center.x,
-       physics.wire_center.y,
-       physics.wire_radius)
   for bead in all(beads) do
     bead:draw()
   end
---      conserve_area(100, beads)
 
-  -- print("tick "..tick, 0,0)
-
+  for constraint in all(constraints) do
+    constraint:draw()
+  end
+  plane_constraint:draw()
 end
 
 __gfx__

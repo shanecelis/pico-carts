@@ -4,7 +4,6 @@ __lua__
 -- bead-pbd.p8
 
 #include lib/vector.p8
-#include lib/actor.p8
 
 physics = {
   gravity = vec(0, 1000),
@@ -12,18 +11,25 @@ physics = {
   steps = 10,
   wire_center = vec(64,64),
   wire_radius = 32,
+  restitution = 1
 }
 tick = 0
-bead_count = 1
+bead_count = 4
 
-bead = actor:new(
-  {
+bead = {
     pos = vec(64 + 32, 64),
     prev_pos = vec(0),
     vel = vec(0),
     radius = 4,
     mass = 1,
     color = 8,
+
+    new = function(class, o)
+      o = o or {}
+      setmetatable(o, class)
+      class.__index = class
+      return o
+    end,
 
     draw = function(self)
       circfill(self.pos.x, self.pos.y, self.radius, self.color)
@@ -44,7 +50,7 @@ bead = actor:new(
       len = dir:length()
       if (len == 0) return nil;
       dir /= len
-      lambda = physics.wire_radius - len
+      lambda = radius - len
       self.pos += lambda * dir
       return lambda
     end,
@@ -54,14 +60,14 @@ bead = actor:new(
     end,
 
     collide = function(bead1, bead2)
-      local restitution = 1
+      local restitution = physics.restitution
       local dir = bead1.pos - bead2.pos
       local d = dir:length()
-      if (d == 0.0 or d > bead1.radius - bead2.radius) return
+      if (d == 0.0 or d > bead1.radius + bead2.radius) return
       dir /= d
       local corr = (bead1.radius - bead2.radius - d) / 2
-      bead1.pos += (-corr * dir)
-      bead2.pos += ( corr * dir)
+      bead1.pos += -corr * dir
+      bead2.pos +=  corr * dir
       local v1, v2 = bead1.vel:dot(dir), bead2.vel:dot(dir)
       local m1, m2 = bead1.mass, bead2.mass
       local v1p = (m1 * v1 + m2 * v2 - m2 * (v1 - v2) * restitution) / (m1 + m2)
@@ -69,9 +75,7 @@ bead = actor:new(
       bead1.vel += (v1p - v1) * dir
       bead2.vel += (v2p - v2) * dir
     end
-  },
-  1,
-  64 + 32, 64)
+  }
 
 function _init()
   beads = {}
@@ -79,13 +83,14 @@ function _init()
     local angle = rnd()
     local r = flr(rnd(3)) + 2
     local pos = physics.wire_center + physics.wire_radius * vec(cos(angle), sin(angle))
-    add(beads, bead:new({ pos = pos, radius = r, mass = 3.14 * r * r, color = flr(rnd(16)) }, 1, pos.x, pos.y))
+    add(beads, bead:new { pos = pos, radius = r, mass = 3.14 * r * r, color = flr(rnd(15)) + 1 })
   end
 
 end
 
-function _update()
-  local sdt, lambda = physics.dt / physics.steps
+function _update60()
+  local dt = 1 / stat(8)
+  local sdt, lambda = dt / physics.steps
   for step = 1, physics.steps do
     for bead in all(beads) do
       bead:start_step(sdt, physics.gravity)

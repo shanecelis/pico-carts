@@ -18,8 +18,8 @@ dolly = {
 
   --min and max positions of camera.
   --the edges of the level.
-  pos_min=vec(64,64),
-  pos_max=vec(320,128),
+  pos_min=vec(0,64),
+  pos_max=vec(128 * 8,32 * 8),
 
   shake_remaining=0,
   -- shake_force=0,

@@ -57,7 +57,11 @@ vector = {
   dot = function(a, b)
 
     return a.x * b.x + a.y * b.y
-  end
+  end,
+
+  reflect = function(self, mirror)
+    return 2 * self:dot(mirror) * mirror - self
+  end,
 }
 vector.__index = vector
 

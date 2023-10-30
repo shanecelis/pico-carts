@@ -10,8 +10,8 @@ __lua__
 physics = {
   gravity = vec(0, 10),
   dt = 1 / 30,
-  steps = 1,
-  solver_steps = 2,
+  steps = 10,
+  solver_steps = 1,
   wire_center = vec(64,64),
   wire_radius = 32,
 }
@@ -36,19 +36,8 @@ bead =
       self.prev_pos = vec(self.pos.x, self.pos.y)
       self.pos += dt * self.vel
     end,
-    keep_on_wire = function(self, center, radius)
-      local dir, len, lambda
-      dir = self.pos - center
-      len = dir:length()
-      if (len == 0) return nil;
-      dir /= len
-      lambda = physics.wire_radius - len
-      self.pos += lambda * dir
-      return lambda
-    end,
-
     end_step = function(self, dt)
-      self.vel = 1 / dt * (self.pos - self.prev_pos)
+      self.vel = (self.pos - self.prev_pos) / dt
     end,
   }
   
@@ -106,6 +95,9 @@ plane_constraint = constraint:new {
   n = vec(0, -1),
   r = vec(0, 120),
   is_inequality = true,
+  -- restitution = 1,
+  restitution = 0.8,
+  damping = 0.5,
   eval = function(self, p)
     p = p or self[1]
     return self.n:dot(self.r - p.pos)
@@ -122,6 +114,12 @@ plane_constraint = constraint:new {
     local x1,x2 = 0, 128 * 8
     local y1,y2 = self:find_y(x1), self:find_y(x2)
     line(x1, y1, x2, y2)
+  end,
+  resolve_collision = function(self, n, p)
+    p = p or self[1]
+    n = n or self.n
+    -- p.vel -= (1 - self.restitution) * n:dot(p.vel) * n
+    p.vel = n:dot(p.vel)*self.damping * self.restitution * n + (1 - self.damping) * p.vel
   end,
 }
 
@@ -176,7 +174,7 @@ area_constraint = constraint:new {
 
 }
 
-function detect_collisions(dt, ps)
+function detect_collisions(ps)
   local list = {}
   for p in all(ps) do
     if plane_constraint:is_violated(p) then
@@ -203,8 +201,9 @@ function _init()
     bead:new { pos = vec(64,74) },
     bead:new { pos = vec(74,74) }
   }
-  local alpha = 0
+  -- local alpha = 0
   -- local alpha = 0.0001
+  local alpha = 0.001
   -- active = { beads[2], beads[3], beads[4] }
   constraints = {
     distance_constraint:new {rest_length = 10, compliance = alpha, beads[1], beads[2]},
@@ -247,6 +246,10 @@ function _update()
 
     for bead in all(beads) do
       bead:end_step(sdt)
+    end
+
+    for constraint in all(collisions) do
+      constraint:resolve_collision()
     end
   end
 end

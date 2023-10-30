@@ -46,7 +46,7 @@ vector = {
   end,
   
   cross = function(a, b)
-				return a.x * b.y - b.x * a.y
+    return a.x * b.y - b.x * a.y
   end,
   
   map = function(a, f, b)

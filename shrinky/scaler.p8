@@ -1,5 +1,5 @@
 pico-8 cartridge // http://www.pico-8.com
-version 39
+version 41
 __lua__
 -- scaling pico sprites
 -- by @mykie on twitter
@@ -23,6 +23,19 @@ function _init()
  cls()
 end
 
+function _update()
+  if (btn(1)) ang+=3
+  if (btn(0)) ang-=3
+  if (btn(2)) scale+=scale_adjust
+  if (btn(3)) scale-=scale_adjust
+ -- if scale>=5 then
+ --  scale_adjust=-0.1
+ -- elseif scale<=1 then
+ --  scale_adjust=0.1
+ -- end
+end
+
+
 function _draw()
  cls()
  print((stat(1)*100).."% cpu",0,0,9)
@@ -41,8 +54,8 @@ function _draw()
  -- fill_rect(mulv(mulm(translate(64,64),mulm(_scale(1),rotate(45/360))), box(16)), 7)
  -- fill_rect(mulv(mulm(translate(64,64),mulm(_scale(1),rotate(290/360))), box(16)), 7)
  -- render_poly(mulv(mulm(translate(64,64),mulm(_scale(scale),rotate(-ang/360))), box(16)))
- sprr(1,32,64,1,1,true,true,scale,ang, 4, 4)
- -- sprr2(1,96,64,1,1,true,true,scale,ang, 4, 4)
+ -- sprr(1,32,64,1,1,true,true,scale,ang, 4, 4)
+ sprr2(1,96,64,1,1,true,true,scale,ang, 4, 4)
  -- drawpixel(32,32, 10, ang, 7)
  -- local vs = mulv(translate(32,64),box(16))
  -- raster({vs[1], vs[2]}, {vs[7], vs[8]}, {vs[4], vs[5]}, 7)
@@ -258,16 +271,6 @@ function angle(x,y,r,a)
  return {x=x2,y=y2}
 end
 
-function _update()
- ang+=3
- scale+=scale_adjust
- if scale>=5 then
-  scale_adjust=-0.1
- elseif scale<=1 then
-  scale_adjust=0.1
- end
-end
-
 -- polyfill from user scgrn on
 --  lexaloffle forums
 --  https://www.lexaloffle.com/bbs/?tid=28312
@@ -350,7 +353,10 @@ end
 
 fill_rect = function(vs, cs)
   raster({vs[1], vs[2]}, {vs[7], vs[8]}, {vs[4], vs[5]}, {cs[1],cs[2]}, {cs[5],cs[6]}, {cs[3],cs[4]})
+  pal(8, 11)
+  pal(2, 3)
   raster({vs[1], vs[2]}, {vs[10], vs[11]}, {vs[7], vs[8]}, {cs[1],cs[2]}, {cs[7],cs[8]}, {cs[5],cs[6]})
+  pal()
 end
 
 -- https://www.lexaloffle.com/bbs/?tid=2171
@@ -479,17 +485,17 @@ function edge(a, b, c)
 end
 
 function raster(v0,v1,v2,c0,c1,c2)
-  local lx = min(v0[1], min(v1[1], v2[1]))
-  local ux = max(v0[1], max(v1[1], v2[1]))
-  local ly = min(v0[2], min(v1[2], v2[2]))
-  local uy = max(v0[2], max(v1[2], v2[2]))
+  local lx = flr(min(v0[1], min(v1[1], v2[1]))) - 1
+  local ux = ceil(max(v0[1], max(v1[1], v2[1]))) + 1
+  local ly = flr(min(v0[2], min(v1[2], v2[2]))) - 1
+  local uy = ceil(max(v0[2], max(v1[2], v2[2]))) + 1
   local area = edge(v0,v1,v2)
   local c = c0
   local p,w0,w1,w2
 
   for j=ly,uy do
     for i=lx,ux do
-      p = {i - 0.5, j - 0.5};
+      p = {i + 0.5, j + 0.5};
       w0 = edge(v1, v2, p);
       w1 = edge(v2, v0, p);
       w2 = edge(v0, v1, p);
@@ -502,7 +508,7 @@ function raster(v0,v1,v2,c0,c1,c2)
           local cj = w0 * c0[2] + w1 * c1[2] + w2 * c2[2];
           c = sget(ci, cj)
         end
-        pset(i, j, c)
+        pset(i, j, peek(0x5f00 + c))
       end
     end
   end

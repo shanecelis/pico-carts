@@ -89,15 +89,13 @@ intro = scene:new {
     p1:update()
     p2:update()
 
-    if p1.y > 128 then
-    if p2.y > 128 then
+    if p1.y > 128 or p2.y > 128 then
 --      p1.x = 18 * 8
 --      p2.x = 18 * 8
 --      p1.y = 0
 --      p2.y = 0
       -- return game
       return falling
-    end
     end
   end,
 
@@ -141,10 +139,12 @@ falling = scene:new {
   end,
 
   draw = function(self)
-    cls()
-    camera(0,0)
+    scene.draw(self)
+    -- cls()
+    -- camera(0,0)
     --scene.draw(self)
     p1:draw()
+    p2:draw()
     
     
     -- map(0,0,0,0,128,128)
@@ -155,8 +155,10 @@ falling = scene:new {
   end,
   
   update = function(self)
+    scene.update(self)
     p1.y += 1
-    if p1.y > 148 then
+    p2.y += 1
+    if p1.y > 148 and p2.y > 148 then
       return game
     end
   end
@@ -171,6 +173,12 @@ game = scene:new {
       pos_min = vec(128 + 64, 64)
 
     }, p1),
+  enter = function(self)
+    p1.x = 18 * 8
+    p2.x = 22 * 8
+    p1.y = 0
+    p2.y = 0
+  end,
   update = function(self)
     p1:update()
     p2:update()

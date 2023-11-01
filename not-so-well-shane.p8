@@ -37,6 +37,7 @@ x=44,
 y=30,
 health=4,
 fur_color=4,
+player=0,
 anims = std_anim(1),
 draw = function(self)
   pal(4, self.fur_color)
@@ -44,22 +45,17 @@ draw = function(self)
   pal()
 end,
 update = function(self)
-  self:move(btn(0,1), 
-            btn(1,1), 
-            btn(5,1))
+  self:move(btn(0,self.player),
+            btn(1,self.player),
+            btn(5,self.player))
 end,
 }
-p2=jumper:new { 
+
+p2=p1:new {
 x=54, 
 y=30,
-health=4,
 fur_color=15,
-anims = std_anim(1),
-draw = function(self)
-  pal(4, self.fur_color)
-  jumper.draw(self)
-  pal()
-end,
+player=1,
 }
 
 

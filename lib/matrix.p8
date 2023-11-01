@@ -27,23 +27,37 @@ matrix = {
     elseif type(b) == 'number' then
       return a:map(function(x) return b * x end, r)
     else
+      local m,n,o = a:rows(), a:cols(), b:cols()
+      -- a.col = a:cols()
+      -- b.col = b:cols()
+      -- assert(b:rows() == n)
+      r = r or mat{col = o}
 
       -- https://rosettacode.org/wiki/Matrix_multiplication#Lua
-      -- for i=1,#a do
-      --   r[i] = 0
+      for i=0,m-1 do
+        for j=0,o-1 do
+
+          r[i*o + j + 1] = 0
+          for k=0,n-1 do
+            -- print("i,j,k"..tostr(i)..tostr(j)..tostr(k))
+            r[i*o + j + 1] += a[i*n + k + 1] * b[k*o + j + 1]
+          end
+        end
+      end
+      return r
 
       -- this should be generic actually.
-      r[1] = a[1]*b[1] + a[2]*b[4] + a[3]*b[7]
-      r[2] = a[1]*b[2] + a[2]*b[5] + a[3]*b[8]
-      r[3] = a[1]*b[3] + a[2]*b[6] + a[3]*b[9]
+      -- r[1] = a[1]*b[1] + a[2]*b[4] + a[3]*b[7]
+      -- r[2] = a[1]*b[2] + a[2]*b[5] + a[3]*b[8]
+      -- r[3] = a[1]*b[3] + a[2]*b[6] + a[3]*b[9]
 
-      r[4] = a[4]*b[1] + a[5]*b[4] + a[6]*b[7]
-      r[5] = a[4]*b[2] + a[5]*b[5] + a[6]*b[8]
-      r[6] = a[4]*b[3] + a[5]*b[6] + a[6]*b[9]
+      -- r[4] = a[4]*b[1] + a[5]*b[4] + a[6]*b[7]
+      -- r[5] = a[4]*b[2] + a[5]*b[5] + a[6]*b[8]
+      -- r[6] = a[4]*b[3] + a[5]*b[6] + a[6]*b[9]
 
-      r[7] = a[7]*b[1] + a[8]*b[4] + a[9]*b[7]
-      r[8] = a[7]*b[2] + a[8]*b[5] + a[9]*b[8]
-      r[9] = a[7]*b[3] + a[8]*b[6] + a[9]*b[9]
+      -- r[7] = a[7]*b[1] + a[8]*b[4] + a[9]*b[7]
+      -- r[8] = a[7]*b[2] + a[8]*b[5] + a[9]*b[8]
+      -- r[9] = a[7]*b[3] + a[8]*b[6] + a[9]*b[9]
     end
   end,
 
@@ -83,7 +97,7 @@ matrix = {
   end,
 
   cols = function(a)
-    return a.col and a.col or 1
+    return a.col or 1
   end,
 
   transpose = function(a)
@@ -94,8 +108,15 @@ matrix = {
     else
       assert(false)
     end
-    return a
   end,
+
+  clone = function(a)
+    local b = mat {col = a:cols()}
+    for i,v in ipairs(a) do
+      b[i] = v
+    end
+    return b
+  end
 
 }
 matrix.__index = matrix
@@ -162,5 +183,22 @@ my_tinytests = {
     b = a:map(function(x) return x * 3 end)
     t:ok(b[1] == 3)
     t:ok(b[2] == 6)
+  end,
+
+  test_mulm = function(t)
+    a = mat{1, 2}
+    b = mat{col=2, 1, 2}
+    -- b = a:clone()
+    -- b:transpose()
+    t:eq(2, a:rows(), "rows")
+    t:eq(1, a:cols(), "cols")
+    t:eq(2, b:cols())
+    -- interior product
+    c = b * a
+    t:eq(1, #c)
+    t:eq(5, c[1])
+    -- exterior product
+    d = a * b
+    t:eq(4, #d)
   end,
 }

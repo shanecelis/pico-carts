@@ -221,8 +221,8 @@ tinytest = {
   end,
 
   -- assert something is equal.
-  eq = function(self, expected, actual)
-    if (expected ~= actual) self:fail('"' .. expected .. '" ~= "' .. actual .. '"', 'not eq: ')
+  eq = function(self, expected, actual, msg)
+    if (expected ~= actual) self:fail('"' .. expected .. '" ~= "' .. actual .. '" '..msg, 'not eq: ')
   end,
 
 }

@@ -98,7 +98,7 @@ __lua__
 
 -- define my_tintests in yourcart.
 -- #include yourcart.p8
-
+#include lib/matrix.p8
 -- try runs the given function
 -- t() first. on errors call
 -- c(e). finally call f() when
@@ -222,7 +222,7 @@ tinytest = {
 
   -- assert something is equal.
   eq = function(self, expected, actual, msg)
-    if (expected ~= actual) self:fail('"' .. expected .. '" ~= "' .. actual .. '" '..msg, 'not eq: ')
+    if (expected ~= actual) self:fail('"' .. expected .. '" ~= "' .. actual .. '" '..(msg or ''), 'not eq: ')
   end,
 
 }

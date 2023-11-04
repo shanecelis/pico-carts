@@ -24,9 +24,9 @@ __lua__
 -- flexible this way.
 --
 -- ```
--- #include tinytest.p8
+-- #include tinytest.p8:0
 --
--- tinytest:new().run({
+-- tinytest:new():run({
 --   demo_pass = function(t)
 --     t:ok(true, "hi")
 --   end,
@@ -75,7 +75,7 @@ __lua__
 --
 -- ```
 -- -- tinytest.p8
--- #include yourcart.p8:1
+-- #include yourcart.p8
 -- ```
 --
 -- load tinytest.p8 and on every
@@ -209,10 +209,14 @@ tinytest = {
 
   -- report an unconditional failure.
   fail = function(self, msg, header)
+    if not msg then
+      msg = ''
+      header = header or 'fail'
+    end
     if self.false_is_error then
-      assert(false,      (header or 'fail: ') .. msg)
+      assert(false,      header .. msg)
     else
-      add(self.failures, (header or 'fail: ') .. msg)
+      add(self.failures, header .. msg)
     end
   end,
 

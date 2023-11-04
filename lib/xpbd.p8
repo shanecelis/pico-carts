@@ -9,7 +9,7 @@ xpbd = {
   gravity = vec(0, 10),
   -- dt = 1 / 30,
   steps = 10,
-  solver_steps = 1,
+  -- solver_steps = 1,
   -- particles = {},
   -- constraints = {},
 
@@ -22,30 +22,24 @@ xpbd = {
 
   update = function(self)
     local dt,particles,constraints = 1/stat(8), self.particles, self.constraints
-    local sdt, lambda = dt / self.steps, {}
-    local collisions = detect_collisions(particles)
+    local sdt = dt / self.steps
+    local collisions = {} --detect_collisions(particles)
     for step = 1, self.steps do
       for particle in all(particles) do
         particle:start_step(sdt, self.gravity)
       end
-      for i=1,self.solver_steps do
-        local j = 1
-
-        for constraint in all(constraints) do
-          local l = lambda[j] or 0
-          if #constraint > 0 then
-            lambda[j] = l + constraint:project(sdt, l)
-          else
-
+      for constraint in all(constraints) do
+        if #constraint > 0 then
+          constraint:project(sdt, 0, unpack(constraint))
+        else
+          for particle in all(particles) do
+            constraint:project(sdt, 0, particle)
           end
-          j+=1
         end
+      end
 
-        for constraint in all(collisions) do
-          local l = lambda[j] or 0
-          lambda[j] = l + constraint:project(sdt, l)
-          j+=1
-        end
+      for constraint in all(collisions) do
+        constraint:project(sdt, 0)
       end
 
       for particle in all(particles) do
@@ -87,7 +81,6 @@ constraint = {
   -- if true, eval() >= 0, otherwise eval(...) = 0.
   is_inequality = false,
   --eval = function(...) return c end,
-  k = 0,
   cardinality = 1,
   compliance = 0,
 
@@ -100,7 +93,7 @@ constraint = {
 
   is_violated = function(self, ...)
     local c = self:eval(...)
-    return not (self.is_inequality and c<0 or c == 0)
+    return not (self.is_inequality and c < 0 or c == 0)
   end,
 
   project = function(self, dt, lambda, ...)
@@ -116,7 +109,7 @@ constraint = {
     for i=1,self.cardinality do
       w += particles[i].w
       s += particles[i].w
-        * grads[i]:dot(grads[i])
+         * grads[i]:dot(grads[i])
     end
     local alpha = self.compliance / dt / dt
     s = (c - alpha * lambda) / (s + alpha)
@@ -129,7 +122,7 @@ constraint = {
       -- deltas[i] = s * particles[i].w * grads[i]
     end
     return s
-    end,
+  end,
   draw = function() end,
 }
 
@@ -289,6 +282,7 @@ bead = particle:new {
       bead2.vel += (v2p - v2) * dir
     end
   }
+
 function _init()
   -- what compliance? http://blog.mmacklin.com
   local alpha = 0.001 -- compliance
@@ -319,9 +313,10 @@ function _init()
   bead_sim = xpbd:new {
     particles = { a_bead },
     constraints = {
-      circle_constraint:new { radius = 32, a_bead }
+      circle_constraint:new { radius = 32 } --, a_bead }
     }
   }
+  -- add(bead_sim.constraints[1], a_bead)
 
   local bead_count = 4
   local beads = {}
@@ -329,15 +324,12 @@ function _init()
   for i =1, bead_count do
     local angle = rnd()
     local r = flr(rnd(3)) + 2
-    local pos = circle.pos + circle.radius * vec(cos(angle), sin(angle))
-    local b = bead:new { pos = pos, radius = r, w = 1/(3.14 * r * r), color = flr(rnd(15)) + 1 }
+    local p = circle.pos + circle.radius * vec(cos(angle), sin(angle))
+    local b = bead:new { pos = p, radius = r, w = 100/(3.14 * r * r), color = flr(rnd(15)) + 1 }
     add(beads, b)
-    add(circle, b)
   end
-  add(circle, a_bead)
   beads_sim = xpbd:new {
-    particles = {a_bead},
-    -- constraints = {}
+    particles = beads,
     constraints = { circle },
   }
 
@@ -346,7 +338,6 @@ function _init()
   -- sim = squishy_sim
 
 end
-
 
 function _update()
   sim:update()

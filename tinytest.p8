@@ -75,7 +75,7 @@ __lua__
 --
 -- ```
 -- -- tinytest.p8
--- #include yourcart.p8
+-- #include yourcart.p8:1
 -- ```
 --
 -- load tinytest.p8 and on every
@@ -98,7 +98,7 @@ __lua__
 
 -- define my_tintests in yourcart.
 -- #include yourcart.p8
-#include lib/matrix.p8
+-- #include lib/matrix.p8
 -- try runs the given function
 -- t() first. on errors call
 -- c(e). finally call f() when
@@ -198,6 +198,7 @@ tinytest = {
 
         for _, error in ipairs(errors_map[testname]) do
           print("  \f8error line\f6 " .. sub(error,32))
+          print(error)
         end
       else
         print("  \fbpass\f6")
@@ -226,6 +227,8 @@ tinytest = {
   end,
 
 }
+
+-->8
 
 -- add image and sounds to unit
 -- test report. must have

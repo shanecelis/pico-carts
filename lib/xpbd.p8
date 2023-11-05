@@ -1,17 +1,74 @@
 pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
+-- copyright (c) 2023 shane celis[1]
+-- released under the mit license[2]
+--
 -- xpbd.p8
+--   page 0, library - 1368 tokens
+--   page 1, demo    -  698 tokens
+--
+-- eXtended Position Based
+-- Dynamics (xpbd)
+--
+-- # demo
+--
+-- * a single bead on a ring
+-- * multiple beads on a ring
+-- * a squishy square
+-- * an about page with particles
+--
+-- the bead examples are ports
+-- of matthias muller's [ten
+-- minute physics][10min]
+-- examples.
+--
+-- # usage
+--
+-- include the first page for
+-- the library contents without
+-- any demo code.
+--
+-- ```
+-- #include xpbd.p8:0
+-- ```
+--
+-- see demos for how to setup.
+-- after setup, call
+-- sim:update() to simulate and
+-- sim:draw() to draw.
+--
+-- # acknowlegments
+--
+-- many thanks to matthias
+-- muller and his collaborators
+-- for xpbd papers, code,
+-- examples, and videos that
+-- illucidate a refreshingly
+-- simple way to simulate
+-- physics.
+--
+-- [1]: https://mastodon.gamedev.place/@shanecelis
+-- [2]: https://opensource.org/licenses/MIT
+-- [10min]: https://matthias-research.github.io/pages/tenMinutePhysics/index.html
 
 #include vector.p8
 
+-- an xpbd physics simulator
 xpbd = {
   gravity = vec(0, 10),
   -- dt = 1 / 30,
   steps = 10,
+  --- particles in this simulation.
   -- particles = {},
+  --- constraints in this simulation.
   -- constraints = {},
+  --- collision detectors in this simulation.
   -- detectors = {},
+
+  -- note: this fields are
+  -- commented out to save
+  -- tokens.
 
   new = function(class, o)
     o = o or {}
@@ -20,6 +77,7 @@ xpbd = {
     return o
   end,
 
+  -- run the simulation.
   update = function(self)
     local dt,particles,constraints = 1/stat(8), self.particles, self.constraints
     local sdt = dt / self.steps
@@ -56,6 +114,7 @@ xpbd = {
     end
   end,
 
+  -- draw the constraints and particles.
   draw = function(self)
     for c in all(self.constraints) do
       c:draw()
@@ -67,19 +126,18 @@ xpbd = {
   end
 }
 
+-- an xpbd particle
 particle = {
   pos = vec(0, 0),
   -- prev_pos = vec(0),
   vel = vec(0),
+  -- w is the inverse mass of the particle
   w = 1,
   new = function(class, o)
     o = o or {}
     setmetatable(o, class)
     class.__index = class
     return o
-  end,
-  draw = function(self)
-    circfill(self.pos.x, self.pos.y, 2)
   end,
   start_step = function(self, dt, force)
     self.vel = self.vel + dt * self.w * force
@@ -89,8 +147,12 @@ particle = {
   end_step = function(self, dt)
     self.vel = (self.pos - self.prev_pos) / dt
   end,
+  draw = function(self)
+    circfill(self.pos.x, self.pos.y, 2)
+  end,
 }
 
+-- an xpbd constraint
 constraint = {
   -- if true, eval() >= 0
   -- satisfies the constraint.
@@ -112,8 +174,12 @@ constraint = {
     class.__index = class
     return o
   end,
-  -- eval returns the constraint value c.
-  --eval = function(self, ...) return c end,
+
+  --- eval returns the constraint value c.
+  -- eval = function(self, ...) return c end,
+  --
+  --- return the gradients of c: del_c1, del_c2, ....
+  -- grad = function(self, ...) return [del_c1, del_c2, ...] end,
 
   -- equality constraints are violated if c ~= 0
   -- inequality constraints are violated if c < 0
@@ -123,6 +189,7 @@ constraint = {
     return c ~= 0
   end,
 
+  -- project particles to satisfy this constraint.
   project = function(self, dt, lambda, ...)
     local c = self:eval(...)
 
@@ -151,37 +218,53 @@ constraint = {
     end
     return s
   end,
+
   draw = function() end,
 }
 
+-- a 2d plane is a line, yes?
+-- can be used to construct an
+-- infinite ground for instance.
 plane_constraint = constraint:new {
+  -- normal points up from the plane
   n = vec(0, -1),
   pos = vec(0, 128),
   is_inequality = true,
   restitution = 1,
   damping = 0.5,
+  -- evaluate the constraint for c.
   eval = function(self, p)
     p = p or self[1]
     return self.n:dot(p.pos - self.pos)
   end,
+  -- return the del_c or gradients of c.
   grad = function(self, p)
     -- p = p or self[1]
     return {self.n}
   end,
+  -- given an x find the y. used for drawing.
   find_y = function(self, x)
     return (self.n:dot(self.pos) - x * self.n.x) / self.n.y
   end,
+
   draw = function(self)
     local x1,x2 = 0, 128 * 8
     local y1,y2 = self:find_y(x1), self:find_y(x2)
     line(x1, y1, x2, y2)
   end,
+  -- collisions ought to do a little something
+  -- in the loop, but this is the most poorly
+  -- fleshed out right now.
   resolve_collision = function(self, n, p)
     p = p or self[1]
     n = n or self.n
     -- p.vel -= (1 - self.restitution) * n:dot(p.vel) * n
     p.vel = n:dot(p.vel)*self.damping * self.restitution * n + (1 - self.damping) * p.vel
   end,
+  -- this constraint is also a
+  -- collision detector add
+  -- found collisions to the
+  -- list.
   add_collisions = function(self, xpbd, list)
     for p in all(xpbd.particles) do
       if self:is_violated(p) then
@@ -191,6 +274,11 @@ plane_constraint = constraint:new {
   end
 }
 
+-- keep two particles separated
+-- a certain distance.
+--
+-- use compliance to make it
+-- hard or soft.
 distance_constraint = constraint:new {
   rest_length = 1,
   cardinality = 2,
@@ -213,6 +301,7 @@ distance_constraint = constraint:new {
   end
 }
 
+-- keep two particles with radii separated.
 particle_constraint = distance_constraint:new {
   is_inequality = true,
   restitution = 1,
@@ -253,6 +342,9 @@ particle_constraint = distance_constraint:new {
   end,
 }
 
+-- preserve an area. (like a
+-- volume constraint but for
+-- 2d.)
 area_constraint = constraint:new {
   rest_area = 1,
   cardinality = 4,
@@ -261,7 +353,7 @@ area_constraint = constraint:new {
     b = b or self[2]
     c = c or self[3]
     d = d or self[4]
-    return square_area(a.pos, b.pos, c.pos, d.pos) - self.rest_area
+    return quad_area(a.pos, b.pos, c.pos, d.pos) - self.rest_area
   end,
 
   grad = function(self, a, b, c, d)
@@ -281,6 +373,7 @@ area_constraint = constraint:new {
   end
 }
 
+-- keep a particle on a circle.
 circle_constraint = constraint:new {
   radius = 100,
   pos = vec(64,64),
@@ -301,18 +394,21 @@ circle_constraint = constraint:new {
   end,
 }
 
+-- returns area of triangle.
 function tri_area(x1,x2,x3)
   return abs((x2 - x1):cross(x3 - x1))/2
 end
 
-function square_area(x1,x2,x3,x4)
+-- returns area of a quadrilateral.
+function quad_area(x1,x2,x3,x4)
   return tri_area(x1,x2,x3) + tri_area(x4,x2,x3)
 end
 
 -->8
---
---
+-- demo
 
+-- remove items from a table efficiently.
+-- note: reorders table.
 function table_remove(t, fn)
   local j = 1
   for i=1,#t do
@@ -336,12 +432,15 @@ about = xpbd:new {
 
 
 
+
 xpbd examples by shane celis.
 released under the mit license.
 
 informed by matthias muller's
-ten minute physics and xpbd
+ten minute physics and eXtended
+Position Based Dynamics (xpbd)
 papers.
+
 ]])
     xpbd.draw(self)
   end,
@@ -370,6 +469,7 @@ bead = particle:new {
     end,
   }
 
+-- print centered
 function printc(str, y, c)
   print(str, (128 - #str * 4)/2, y, c)
 end

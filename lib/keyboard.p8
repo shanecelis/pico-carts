@@ -2,8 +2,8 @@ pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
 -- keyboard-lemons.p8
---   page 1, library - 181 tokens
---   page 2, demo    - 256 tokens
+--   page 0, library - 181 tokens
+--   page 1, demo    - 256 tokens
 --
 -- this cart is principally a
 -- library for interacting with
@@ -14,7 +14,7 @@ __lua__
 -- in your own cart by including
 -- only the first page:
 --
--- #include keyboard.p8:1
+-- #include keyboard.p8:0
 --
 -- the second page includes a
 -- demo with an old kids' game

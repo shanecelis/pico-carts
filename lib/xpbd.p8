@@ -1,15 +1,15 @@
 pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
+-- eXtended Position Based
+-- Dynamics (xpbd)
+--
 -- copyright (c) 2023 shane celis[1]
 -- released under the mit license[2]
 --
 -- xpbd.p8
 --   page 0, library - 1368 tokens
 --   page 1, demo    -  698 tokens
---
--- eXtended Position Based
--- Dynamics (xpbd)
 --
 -- # demo
 --
@@ -530,7 +530,7 @@ function _init()
     detectors = { particle_constraint:new { restitution = 0.8 } },
   }
   sims = { bead_sim, beads_sim, squishy_sim, about }
-  sim_index = 1
+  sim_index = 0
   sim = sims[sim_index + 1]
 end
 

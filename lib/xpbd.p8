@@ -23,7 +23,11 @@ xpbd = {
   update = function(self)
     local dt,particles,constraints = 1/stat(8), self.particles, self.constraints
     local sdt = dt / self.steps
-    local collisions = {} --detect_collisions(particles)
+    local collisions = {}
+
+    for collision_detector in all(self.collision_detectors) do
+      collision_detector:collect_collisions(self, collisions)
+    end
     for step = 1, self.steps do
       for particle in all(particles) do
         particle:start_step(sdt, self.gravity)
@@ -50,12 +54,22 @@ xpbd = {
         constraint:resolve_collision()
       end
     end
+  end,
+
+  draw = function(self)
+    for constraint in all(self.constraints) do
+      constraint:draw()
+    end
+
+    for particle in all(self.particles) do
+      particle:draw()
+    end
   end
 }
 
 particle = {
   pos = vec(64 + 32, 64),
-  prev_pos = vec(0),
+  -- prev_pos = vec(0),
   vel = vec(0),
   w = 1,
   new = function(class, o)
@@ -91,14 +105,19 @@ constraint = {
     return o
   end,
 
+  -- equality constraints are violated if c ~= 0
+  -- inequality constraints are violated if c < 0
   is_violated = function(self, ...)
     local c = self:eval(...)
-    return not (self.is_inequality and c < 0 or c == 0)
+    if (self.is_inequality) return c < 0
+    return c ~= 0
   end,
 
   project = function(self, dt, lambda, ...)
     local c = self:eval(...)
-    if (self.is_inequality and c<0 or c == 0) return 0
+
+    if (self.is_inequality and c >= 0) return 0
+    if (not self.is_inequality and c == 0) return 0
     local particles = select('#', ...) > 0 and {...} or self
     local grads = self:grad(...)
     assert(#grads == self.cardinality, "grad did not match cardinality")
@@ -126,7 +145,6 @@ constraint = {
   draw = function() end,
 }
 
-
 plane_constraint = constraint:new {
   n = vec(0, -1),
   r = vec(0, 120),
@@ -136,12 +154,12 @@ plane_constraint = constraint:new {
   damping = 0.5,
   eval = function(self, p)
     p = p or self[1]
-    return self.n:dot(self.r - p.pos)
+    return self.n:dot(p.pos - self.r)
   end,
   grad = function(self, p)
     --p = p or self[1]
     -- stop("grad plane for "..tostr(self:eval(p)))
-    return {-self.n}
+    return {self.n}
   end,
   find_y = function(self, x)
     return (self.n:dot(self.r) - x * self.n.x) / self.n.y
@@ -157,6 +175,13 @@ plane_constraint = constraint:new {
     -- p.vel -= (1 - self.restitution) * n:dot(p.vel) * n
     p.vel = n:dot(p.vel)*self.damping * self.restitution * n + (1 - self.damping) * p.vel
   end,
+  collect_collisions = function(self, xpbd, list)
+    for p in all(xpbd.particles) do
+      if self:is_violated(p) then
+        add(list, self:new { p })
+      end
+    end
+  end
 }
 
 distance_constraint = constraint:new {
@@ -179,6 +204,50 @@ distance_constraint = constraint:new {
     b = b or self[2]
     line(a.pos.x, a.pos.y, b.pos.x, b.pos.y)
   end
+}
+
+particle_constraint = distance_constraint:new {
+  is_inequality = true,
+  restitution = 1,
+  eval = function(self, a, b)
+    a = a or self[1]
+    b = b or self[2]
+    assert(a)
+    assert(b)
+    local c = ((a.pos - b.pos):length() - (a.radius + b.radius))
+    -- if (rnd(1.0) < 0.01) stop("c " .. tostr(c) .. " " .. tostr(self:is_violated(a, b)))
+    return c
+  end,
+
+  collect_collisions = function(self, xpbd, list)
+    local beads = xpbd.particles
+    for i=2,#beads do
+      for j=1, i - 1 do
+        if self:is_violated(beads[i], beads[j]) then
+          add(list, self:new { beads[i], beads[j] })
+        end
+      end
+    end
+  end,
+
+  resolve_collision = function(self, a, b)
+    a = a or self[1]
+    b = b or self[2]
+    -- local dir = a.pos - b.pos
+    -- local d = dir:length()
+    -- dir /= d
+    -- local corr = (a.radius - b.radius - d) / 2
+    -- a.pos += -corr * dir
+    -- b.pos +=  corr * dir
+    -- local v1, v2 = a.vel:dot(dir), b.vel:dot(dir)
+    -- local m1, m2 = 1/a.w, 1/b.w
+    -- local v1p = (m1 * v1 + m2 * v2 - m2 * (v1 - v2) * self.restitution) / (m1 + m2)
+    -- local v2p = (m1 * v1 + m2 * v2 - m1 * (v2 - v1) * self.restitution) / (m1 + m2)
+    -- a.vel += (v1p - v1) * dir
+    -- b.vel += (v2p - v2) * dir
+    a.vel *= self.restitution
+    b.vel *= self.restitution
+  end,
 }
 
 area_constraint = constraint:new {
@@ -207,15 +276,11 @@ area_constraint = constraint:new {
     end
     return grads
   end
-
 }
-
 
 circle_constraint = constraint:new {
   radius = 100,
   pos = vec(64,64),
-  -- is_inequality = true,
-  -- restitution = 1,
   restitution = 0.8,
   damping = 0.5,
   eval = function(self, p)
@@ -226,25 +291,12 @@ circle_constraint = constraint:new {
     p = p or self[1]
     local dir = (self.pos - p.pos)
     dir:normalize()
-    --p = p or self[1]
-    -- stop("grad plane for "..tostr(self:eval(p)))
     return {-dir}
   end,
   draw = function(self)
     circ(self.pos.x, self.pos.y, self.radius, 7)
   end,
 }
-
-function detect_collisions(ps)
-  local list = {}
-  for p in all(ps) do
-    if plane_constraint:is_violated(p) then
-      add(list,
-          plane_constraint:new { p })
-    end
-  end
-  return list
-end
 
 function tri_area(x1,x2,x3)
   return abs((x2 - x1):cross(x3 - x1))/2
@@ -256,6 +308,55 @@ end
 
 -->8
 --
+--
+
+function table_remove(t, fn)
+  local j = 1
+  for i=1,#t do
+    if fn(t[i]) then
+      -- toss this one
+      t[i] = nil
+    else
+      -- keep this one
+      if (i ~= j) t[j], t[i] = t[i], nil
+      j += 1
+    end
+  end
+end
+
+about = xpbd:new {
+  name = "about",
+  particles = {},
+
+  draw = function(self)
+    print([[
+
+
+
+xpbd examples by shane celis.
+released under the mit license.
+
+informed by matthias muller's
+ten minute physics and xpbd
+papers.
+]])
+    xpbd.draw(self)
+  end,
+  update = function(self)
+
+    -- why not add a little particle simulation?
+    if rnd() < 0.2 then
+      local angle = 0.0 + rnd(0.5)
+      local r = ceil(rnd(3))
+      local p = vec(64, 128)
+      local v = 30 * vec(cos(angle), sin(angle))
+
+      add(self.particles, bead:new { pos = p, radius = r, vel = v, color = flr(rnd(15)) + 1 })
+      table_remove(self.particles, function(p) return p.pos.y > 128 end)
+    end
+    xpbd.update(self)
+  end
+}
 
 bead = particle:new {
     radius = 4,
@@ -283,17 +384,23 @@ bead = particle:new {
     end
   }
 
+function printc(str, y, c)
+  print(str, (128 - #str * 4)/2, y, c)
+end
+
 function _init()
   -- what compliance? http://blog.mmacklin.com
-  local alpha = 0.001 -- compliance
+  local alpha = 0.05 -- compliance
+  local x, y = 59, 59
   local particles = {
     -- particle:new { pos = vec(64,64), w = 0 },
-    particle:new { pos = vec(64,64), w = 1 },
-    particle:new { pos = vec(74,64) },
-    particle:new { pos = vec(64,74) },
-    particle:new { pos = vec(74,74) }
+    particle:new { pos = vec(x     , y     ), w = 1 },
+    particle:new { pos = vec(x + 10, y     ) },
+    particle:new { pos = vec(x     , y + 10) },
+    particle:new { pos = vec(x + 10, y + 10) }
   }
   squishy_sim = xpbd:new {
+    name = "squishy square",
     particles = particles,
     constraints = {
       distance_constraint:new {rest_length = 10, compliance = alpha, particles[1], particles[2]},
@@ -303,7 +410,8 @@ function _init()
       area_constraint:new {
       rest_area = 100,
       compliance = alpha,
-      particles[1], particles[2], particles[3], particles[4] }
+      particles[1], particles[2], particles[3], particles[4] },
+      plane_constraint:new {}
     }
   }
 
@@ -311,12 +419,12 @@ function _init()
     pos = vec(96, 64)
   }
   bead_sim = xpbd:new {
+    name = "one bead on circle",
     particles = { a_bead },
     constraints = {
-      circle_constraint:new { radius = 32 } --, a_bead }
+      circle_constraint:new { radius = 32 },
     }
   }
-  -- add(bead_sim.constraints[1], a_bead)
 
   local bead_count = 4
   local beads = {}
@@ -329,28 +437,26 @@ function _init()
     add(beads, b)
   end
   beads_sim = xpbd:new {
+    name = "many beads on circle",
     particles = beads,
+    -- steps = 20,
     constraints = { circle },
+    collision_detectors = { particle_constraint:new { restitution = 0.8 } },
   }
-
-  sim = beads_sim
-  -- sim = bead_sim
-  -- sim = squishy_sim
-
+  sims = { bead_sim, beads_sim, squishy_sim, about }
+  sim_index = 3
+  sim = sims[sim_index + 1]
 end
 
 function _update()
+  if (btnp(1)) sim_index += 1; sim = sims[sim_index % #sims + 1]
+  if (btnp(0)) sim_index -= 1; sim = sims[sim_index % #sims + 1]
   sim:update()
 end
 
 function _draw()
   cls()
-  for constraint in all(sim.constraints) do
-    constraint:draw()
-  end
-
-  for particle in all(sim.particles) do
-    particle:draw()
-  end
-
+  sim:draw()
+  printc("xpbd example "..tostr(sim_index % #sims + 1).."/"..tostr(#sims), 0, 7)
+  print(sim.name, 64 - #sim.name/2 * 4 , 10, 7)
 end

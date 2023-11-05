@@ -9,9 +9,9 @@ xpbd = {
   gravity = vec(0, 10),
   -- dt = 1 / 30,
   steps = 10,
-  -- solver_steps = 1,
   -- particles = {},
   -- constraints = {},
+  -- detectors = {},
 
   new = function(class, o)
     o = o or {}
@@ -25,50 +25,50 @@ xpbd = {
     local sdt = dt / self.steps
     local collisions = {}
 
-    for collision_detector in all(self.collision_detectors) do
-      collision_detector:collect_collisions(self, collisions)
+    for d in all(self.detectors) do
+      d:add_collisions(self, collisions)
     end
     for step = 1, self.steps do
-      for particle in all(particles) do
-        particle:start_step(sdt, self.gravity)
+      for p in all(particles) do
+        p:start_step(sdt, self.gravity)
       end
-      for constraint in all(constraints) do
-        if #constraint > 0 then
-          constraint:project(sdt, 0, unpack(constraint))
+      for c in all(constraints) do
+        if #c > 0 then
+          c:project(sdt, 0, unpack(c))
         else
-          for particle in all(particles) do
-            constraint:project(sdt, 0, particle)
+          for p in all(particles) do
+            c:project(sdt, 0, p)
           end
         end
       end
 
-      for constraint in all(collisions) do
-        constraint:project(sdt, 0)
+      for c in all(collisions) do
+        c:project(sdt, 0)
       end
 
-      for particle in all(particles) do
-        particle:end_step(sdt)
+      for p in all(particles) do
+        p:end_step(sdt)
       end
 
-      for constraint in all(collisions) do
-        constraint:resolve_collision()
+      for c in all(collisions) do
+        c:resolve_collision()
       end
     end
   end,
 
   draw = function(self)
-    for constraint in all(self.constraints) do
-      constraint:draw()
+    for c in all(self.constraints) do
+      c:draw()
     end
 
-    for particle in all(self.particles) do
-      particle:draw()
+    for p in all(self.particles) do
+      p:draw()
     end
   end
 }
 
 particle = {
-  pos = vec(64 + 32, 64),
+  pos = vec(0, 0),
   -- prev_pos = vec(0),
   vel = vec(0),
   w = 1,
@@ -92,10 +92,18 @@ particle = {
 }
 
 constraint = {
-  -- if true, eval() >= 0, otherwise eval(...) = 0.
+  -- if true, eval() >= 0
+  -- satisfies the constraint.
+  -- otherwise only eval() = 0
+  -- satisfies the constraint.
   is_inequality = false,
-  --eval = function(...) return c end,
   cardinality = 1,
+  -- compliance is the inverse
+  -- of stiffness k. a
+  -- compliance of 0 is
+  -- infinitely stiff.
+  -- compliance is oftenly a
+  -- surprisingly small number.
   compliance = 0,
 
   new = function(class, o)
@@ -104,6 +112,8 @@ constraint = {
     class.__index = class
     return o
   end,
+  -- eval returns the constraint value c.
+  --eval = function(self, ...) return c end,
 
   -- equality constraints are violated if c ~= 0
   -- inequality constraints are violated if c < 0
@@ -132,7 +142,6 @@ constraint = {
     end
     local alpha = self.compliance / dt / dt
     s = (c - alpha * lambda) / (s + alpha)
-    -- local deltas = {}
     for i=1,self.cardinality do
 
       -- print("project delta "..repr(s * self[i].w * grads[i]).." c ".. c)
@@ -147,22 +156,20 @@ constraint = {
 
 plane_constraint = constraint:new {
   n = vec(0, -1),
-  r = vec(0, 120),
+  pos = vec(0, 128),
   is_inequality = true,
-  -- restitution = 1,
-  restitution = 0.8,
+  restitution = 1,
   damping = 0.5,
   eval = function(self, p)
     p = p or self[1]
-    return self.n:dot(p.pos - self.r)
+    return self.n:dot(p.pos - self.pos)
   end,
   grad = function(self, p)
-    --p = p or self[1]
-    -- stop("grad plane for "..tostr(self:eval(p)))
+    -- p = p or self[1]
     return {self.n}
   end,
   find_y = function(self, x)
-    return (self.n:dot(self.r) - x * self.n.x) / self.n.y
+    return (self.n:dot(self.pos) - x * self.n.x) / self.n.y
   end,
   draw = function(self)
     local x1,x2 = 0, 128 * 8
@@ -175,7 +182,7 @@ plane_constraint = constraint:new {
     -- p.vel -= (1 - self.restitution) * n:dot(p.vel) * n
     p.vel = n:dot(p.vel)*self.damping * self.restitution * n + (1 - self.damping) * p.vel
   end,
-  collect_collisions = function(self, xpbd, list)
+  add_collisions = function(self, xpbd, list)
     for p in all(xpbd.particles) do
       if self:is_violated(p) then
         add(list, self:new { p })
@@ -212,14 +219,10 @@ particle_constraint = distance_constraint:new {
   eval = function(self, a, b)
     a = a or self[1]
     b = b or self[2]
-    assert(a)
-    assert(b)
-    local c = ((a.pos - b.pos):length() - (a.radius + b.radius))
-    -- if (rnd(1.0) < 0.01) stop("c " .. tostr(c) .. " " .. tostr(self:is_violated(a, b)))
-    return c
+    return (a.pos - b.pos):length() - (a.radius + b.radius)
   end,
 
-  collect_collisions = function(self, xpbd, list)
+  add_collisions = function(self, xpbd, list)
     local beads = xpbd.particles
     for i=2,#beads do
       for j=1, i - 1 do
@@ -268,9 +271,9 @@ area_constraint = constraint:new {
     d = d or self[4]
     local x1,x2,x3,x4 = a.pos,b.pos,c.pos,d.pos
     local grads = {(2 * x1 - x3 - x2),
-        -(2 * x3 - x1 - x4),
-        -(2 * x2 - x1 - x4),
-      (2 * x4 - x3 - x2)}
+                  -(2 * x3 - x1 - x4),
+                  -(2 * x2 - x1 - x4),
+                   (2 * x4 - x3 - x2)}
     for grad in all(grads) do
       grad:normalize()
     end
@@ -365,23 +368,6 @@ bead = particle:new {
     draw = function(self)
       circfill(self.pos.x, self.pos.y, self.radius, self.color)
     end,
-
-    collide = function(bead1, bead2)
-      local restitution = physics.restitution
-      local dir = bead1.pos - bead2.pos
-      local d = dir:length()
-      if (d == 0.0 or d > bead1.radius + bead2.radius) return
-      dir /= d
-      local corr = (bead1.radius - bead2.radius - d) / 2
-      bead1.pos += -corr * dir
-      bead2.pos +=  corr * dir
-      local v1, v2 = bead1.vel:dot(dir), bead2.vel:dot(dir)
-      local m1, m2 = bead1.mass, bead2.mass
-      local v1p = (m1 * v1 + m2 * v2 - m2 * (v1 - v2) * restitution) / (m1 + m2)
-      local v2p = (m1 * v1 + m2 * v2 - m1 * (v2 - v1) * restitution) / (m1 + m2)
-      bead1.vel += (v1p - v1) * dir
-      bead2.vel += (v2p - v2) * dir
-    end
   }
 
 function printc(str, y, c)
@@ -411,7 +397,7 @@ function _init()
       rest_area = 100,
       compliance = alpha,
       particles[1], particles[2], particles[3], particles[4] },
-      plane_constraint:new {}
+      plane_constraint:new { pos = vec(0, 120), restitution = 0.8 }
     }
   }
 
@@ -441,10 +427,10 @@ function _init()
     particles = beads,
     -- steps = 20,
     constraints = { circle },
-    collision_detectors = { particle_constraint:new { restitution = 0.8 } },
+    detectors = { particle_constraint:new { restitution = 0.8 } },
   }
   sims = { bead_sim, beads_sim, squishy_sim, about }
-  sim_index = 3
+  sim_index = 1
   sim = sims[sim_index + 1]
 end
 

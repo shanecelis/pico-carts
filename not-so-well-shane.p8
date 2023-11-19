@@ -9,26 +9,6 @@ __lua__
 #include lib/platformer.p8
 #include lib/dolly.p8
 
-function std_anim(start, walk_speed)
-  return {
-    stand= {
-      ticks=1,--how long is each frame shown.
-      frames={start+1},--what frames are shown.
-    },
-    walk= {
-      ticks=walk_speed or 5,
-      frames={start+2,start+3,start+4,start+5},
-    },
-    jump= {
-      ticks=1,
-      frames={start},
-    },
-    slide= {
-      ticks=1,
-      frames={start+6},
-    },
-  }
-end
 ----------------
 -- 5 hits=die
 -- 3 -sprite 9

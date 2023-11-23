@@ -3,21 +3,6 @@ version 41
 __lua__
 #include lib/keyboard.p8:0
 
-function _init()
-  keyboard:init()
-  keyboard.echo = true
-  cls()
-  -- create the game coroutine.
-  game = cocreate(game)
-  coresume(game)
-end
-
-function _update()
-
-  -- resume the game coroutine.
-  coresume(game)
-end
-
 -- have fun, do math!
 function game()
   while true do
@@ -61,4 +46,19 @@ function wait(t)
   while time() - start < t do
     yield()
   end
+end
+
+function _init()
+  keyboard:init()
+  keyboard.echo = true
+  cls()
+  -- create the game coroutine.
+  game = cocreate(game)
+  coresume(game)
+end
+
+function _update()
+
+  -- resume the game coroutine.
+  coresume(game)
 end

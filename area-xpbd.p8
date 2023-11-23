@@ -201,6 +201,7 @@ function _init()
     bead:new { pos = vec(64,74) },
     bead:new { pos = vec(74,74) }
   }
+  -- what compliance? http://blog.mmacklin.com
   -- local alpha = 0
   -- local alpha = 0.0001
   local alpha = 0.001

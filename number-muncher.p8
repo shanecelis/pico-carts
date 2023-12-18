@@ -157,7 +157,7 @@ function game_draw()
   pl:draw()
  end
  
- if(hints)print(nu:hint(),0,58,13)
+ if(hints)print(nu:hint() or "",0,58,13)
 end
 -->8
 --player
@@ -282,7 +282,7 @@ numbers = {
     end
     for i=1,grid.xc*grid.yc do
       if s.nums[i]<10 then
-        s.nums[i]=" "..s.nums[i]
+        -- s.nums[i]=" "..s.nums[i]
       end
     end
     -- shuffle
@@ -298,7 +298,13 @@ numbers = {
         local n=s.nums[(y*6)+x]
         local xx, yy = grid:trans(x-1, y, 2, 3)
         -- if (n!=0) print(n,1+x*8,18+y*8,13)
-        if (n!=0) print(n,xx,yy,13)
+        if (n==0) goto continue
+        if n >= 10 then
+          print(n,xx,yy,13)
+        else
+          print(" "..n,xx,yy,13)
+        end
+        ::continue::
       end
     end
   end,

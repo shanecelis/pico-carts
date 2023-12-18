@@ -45,7 +45,7 @@ function game_init()
  step=0
  mult=rand(2,9)
  pl=player_new(0,0)
- nu=numbers_new()
+ nu=numbers:new()
  troggles={}
  troggle_gen()
  if gameover then
@@ -256,71 +256,73 @@ function player_draw(s)
 end
 
 -->8
-function numbers_new()
- s={}
- s.nums={}
- s.gen=numbers_generate
- s.eat=numbers_eat
- s.update=numbers_update
- s.draw=numbers_draw
- s:gen()
- return s
-end
 
-function numbers_eat(s,x,y)
- n=s.nums[((y-1)*6)+x]
- if n%mult==0 then
-  s.nums[((y-1)*6)+x]=0
-  for n in all(s.nums) do
-   debug=n
-   if (n!=0 and n%mult==0) return
+numbers = {
+
+  new = function(class, o)
+    o = o or {}
+    o.nums = {}
+    o.mult = mult
+    setmetatable(o, class)
+    class.__index = class
+    o:gen()
+    return o
+  end,
+
+  eat = function(s,x,y)
+    n=s.nums[((y-1)*grid.xc)+x]
+    if n%s.mult==0 then
+      s.nums[((y-1)*grid.xc)+x]=0
+      for n in all(s.nums) do
+      debug=n
+      if (n!=0 and n%s.mult==0) return
+      end
+      levelup=true
+      _update=title_update
+      troggles={}
+      sfx(3)
+    else
+      gameover=true
+      pl.x=-100
+      sfx(4)
+    end
+  end,
+
+  gen = function(s)
+    -- generate answers
+    for i=1,6 do
+      s.nums[i]=mult*rand(1,10)
+    end
+    for i=7,30 do
+      s.nums[i]=rand(1,99)
+    end
+    for i=1,30 do
+      if s.nums[i]<10 then
+      s.nums[i]="0"..s.nums[i]
+      end
+    end
+    -- shuffle
+    for i=#s.nums,1,-1 do
+      rn=ceil(rnd(i))
+      s.nums[i],s.nums[rn]=s.nums[rn],s.nums[i]
+    end
+    for n in all(s.nums) do
+      debug=n
+      if (n!=0 and n%mult==0) return
+    end
+  end,
+
+  draw = function(s)
+    for y=0,4 do
+      for x=1,6 do
+      n=s.nums[(y*6)+x]
+      local xx, yy = grid:trans(x-1, y, 2, 3)
+      -- if (n!=0) print(n,1+x*8,18+y*8,13)
+      if (n!=0) print(n,xx,yy,13)
+      end
+    end
   end
-  levelup=true
-  _update=title_update
-  troggles={}
-  sfx(3)
- else
-  gameover=true
-  pl.x=-100
-  sfx(4)
- end
-end
-
-function numbers_generate(s)
- for i=1,6 do
-  s.nums[i]=mult*rand(1,10)
- end
- for i=7,30 do
-  s.nums[i]=rand(1,99)
- end
- for i=1,30 do
-  if s.nums[i]<10 then
-   s.nums[i]="0"..s.nums[i]
-  end
- end
- for i=#s.nums,1,-1 do
-  rn=ceil(rnd(i))
-  s.nums[i],s.nums[rn]=s.nums[rn],s.nums[i]
- end
- for n in all(s.nums) do
-  debug=n
-  if (n!=0 and n%mult==0) return
- end
-end
-
-function numbers_update(s)
-end
-
-function numbers_draw(s)
- for y=0,4 do
-  for x=1,6 do
-   n=s.nums[(y*6)+x]
-   local xx, yy = grid:trans(x-1, y, 2, 3)
-   -- if (n!=0) print(n,1+x*8,18+y*8,13)
-   if (n!=0) print(n,xx,yy,13)
-  end
- end
-end
+}
 
 -->8
 --troggle

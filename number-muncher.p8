@@ -12,17 +12,14 @@ end
 -->8
 --game
 -- globals
-debug=""
 pl={}
-nu={}
 step=0
 gameover=true
-mult=0
 troggles={}
 level=1
 level_text="01"
 levelup=false
-hints="off"
+hints=false
 
 -- utility
 function rand(l,h)
@@ -30,22 +27,18 @@ function rand(l,h)
 end
 
 function toggle_hints()
- if hints=="on" then
-  hints="off"
- else
-  hints="on"
-  for n in all(nu.nums) do
-   debug=n
-   if (n!=0 and n%mult==0) return
-  end
- end
-end 
+  hints = not hints
+end
 
 function game_init()
+
+  nu=multiples:new {
+    max = 20,
+    mult = rand(2,9),
+  }
+  nu:gen()
  step=0
- mult=rand(2,9)
  pl=player_new(0,0)
- nu=numbers:new()
  troggles={}
  troggle_gen()
  if gameover then
@@ -150,7 +143,8 @@ function game_draw()
 
  -- title
  rectfill(0,0,64,7,1)
- print(" multiples of "..mult,0,1,6)
+ -- print(" multiples of "..mult,0,1,6)
+ print(nu:title(),0,1,6)
  print(level_text,57,58,13)
  grid:draw()
  
@@ -163,13 +157,12 @@ function game_draw()
  
  if levelup then
   rectfill(9,17,55,55,1)
-  print("stage clear",11,9,7)
+  print("stage clear",11,19,7)
   print("❎ next",18,58,7)
   pl:draw()
  end
  
- 
- if(hints=="on")print(debug,0,58,13)
+ if(hints)print(nu:hint(),0,58,13)
 end
 -->8
 --player
@@ -258,25 +251,24 @@ end
 -->8
 
 numbers = {
+  min = 1,
+  max = 99,
+  answer_count=6,
 
   new = function(class, o)
     o = o or {}
     o.nums = {}
-    o.mult = mult
+    -- o.mult = mult
     setmetatable(o, class)
     class.__index = class
-    o:gen()
     return o
   end,
 
   eat = function(s,x,y)
     n=s.nums[((y-1)*grid.xc)+x]
-    if n%s.mult==0 then
+    if s:is_answer(n) then
       s.nums[((y-1)*grid.xc)+x]=0
-      for n in all(s.nums) do
-      debug=n
-      if (n!=0 and n%s.mult==0) return
-      end
+      if (s:hint()) return
       levelup=true
       _update=title_update
       troggles={}
@@ -290,25 +282,21 @@ numbers = {
 
   gen = function(s)
     -- generate answers
-    for i=1,6 do
-      s.nums[i]=mult*rand(1,10)
+    for i=1,s.answer_count do
+      s.nums[i]=s:gen_answer()
     end
-    for i=7,30 do
-      s.nums[i]=rand(1,99)
+    for i=s.answer_count+1,grid.xc*grid.yc do
+      s.nums[i]=rand(s.min,s.max)
     end
-    for i=1,30 do
+    for i=1,grid.xc*grid.yc do
       if s.nums[i]<10 then
-      s.nums[i]="0"..s.nums[i]
+        s.nums[i]=" "..s.nums[i]
       end
     end
     -- shuffle
     for i=#s.nums,1,-1 do
       rn=ceil(rnd(i))
       s.nums[i],s.nums[rn]=s.nums[rn],s.nums[i]
-    end
-    for n in all(s.nums) do
-      debug=n
-      if (n!=0 and n%mult==0) return
     end
   end,
 
@@ -321,6 +309,24 @@ numbers = {
       if (n!=0) print(n,xx,yy,13)
       end
     end
+  end,
+
+  hint = function(s)
+    for n in all(nu.nums) do
+      if (n!=0 and s:is_answer(n)) return n
+    end
+  end
+}
+
+multiples = numbers:new {
+  title = function(s)
+    return " multiples of "..s.mult
+  end,
+  gen_answer = function(s)
+    return s.mult*rand(1,10)
+  end,
+  is_answer = function(s,n)
+    return n%s.mult == 0
   end
 }
 

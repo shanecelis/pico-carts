@@ -123,17 +123,6 @@ grid = {
   end,
 }
 
--- function draw_grid(xc,yc,w,h,sx,sy,c)
---   -- xc -= 1
---   -- yc -= 1
---   for i=0,xc do
---     line(sx + w * i, sy, sx + w * i, sy + h * yc, c)
---   end
---   for j=0,yc do
---     line(sx, sy + h * j, sx + w * xc, sy + h * j, c)
---   end
--- end
-
 function game_draw()
  cls(1)
  -- map(0,0,0,0,8,8)
@@ -176,8 +165,6 @@ end
 function player_new(i,j)
  s={}
  s.x,s.y = grid:trans(i, j, 2, 2)
- -- s.x=x
- -- s.y=y
  s.tx=s.x
  s.ty=s.y
  s.bx=i+1
@@ -264,7 +251,6 @@ numbers = {
   new = function(class, o)
     o = o or {}
     o.nums = {}
-    -- o.mult = mult
     setmetatable(o, class)
     class.__index = class
     return o
@@ -309,10 +295,10 @@ numbers = {
   draw = function(s)
     for y=0,4 do
       for x=1,6 do
-      n=s.nums[(y*6)+x]
-      local xx, yy = grid:trans(x-1, y, 2, 3)
-      -- if (n!=0) print(n,1+x*8,18+y*8,13)
-      if (n!=0) print(n,xx,yy,13)
+        local n=s.nums[(y*6)+x]
+        local xx, yy = grid:trans(x-1, y, 2, 3)
+        -- if (n!=0) print(n,1+x*8,18+y*8,13)
+        if (n!=0) print(n,xx,yy,13)
       end
     end
   end,
@@ -384,6 +370,7 @@ primes = numbers:new {
     return n
   end,
   is_answer = function(s,n)
+    if (n == 1) return false
     for i = 2, n^(1/2) do
         if (n % i) == 0 then
             return false
@@ -392,6 +379,46 @@ primes = numbers:new {
     return true
   end
 }
+
+-- equality = numbers:new {
+--   max=9,
+--   title = function(s)
+--     return " equals "..s.topic
+--   end,
+--   gen = function(s)
+--     for i=1,s.answer_count do
+--       s.nums[i]=s:gen_answer()
+--     end
+--     for i=s.answer_count+1,grid.xc*grid.yc do
+--       s.nums[i]=rand(s.min,s.max)
+--     end
+--     for i=1,grid.xc*grid.yc do
+--       if s.nums[i]<10 then
+--         s.nums[i]=" "..s.nums[i]
+--       end
+--     end
+--     -- shuffle
+--     for i=#s.nums,1,-1 do
+--       rn=ceil(rnd(i))
+--       s.nums[i],s.nums[rn]=s.nums[rn],s.nums[i]
+--     end
+--   end,
+--   gen_answer = function(s)
+--     local n = rand(s.min, s.max)
+--     while not s:is_answer(n) do
+--       n -= 1
+--     end
+--     return n
+--   end,
+--   is_answer = function(s,n)
+--     for i = 2, n^(1/2) do
+--         if (n % i) == 0 then
+--             return false
+--         end
+--     end
+--     return true
+--   end
+-- }
 
 
 -->8

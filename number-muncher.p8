@@ -32,9 +32,15 @@ end
 
 function game_init()
 
-  nu=multiples:new {
+  -- nu=multiples:new {
+  --   max = 20,
+  --   mult = rand(2,9),
+  -- }
+  -- nu=factors:new {
+  --   max = 20,
+  -- }
+  nu=primes:new {
     max = 20,
-    mult = rand(2,9),
   }
   nu:gen()
  step=0
@@ -329,6 +335,64 @@ multiples = numbers:new {
     return n%s.mult == 0
   end
 }
+
+factors = numbers:new {
+  count = 4,
+  title = function(s)
+    return " factors of "..s.topic
+  end,
+  find_factors = function(n)
+    local accum = {}
+    for i=1,flr(sqrt(n)) do
+      if n%i == 0 then
+        add(accum, i)
+        if (flr(n/i) ~= i) then
+          add(accum, flr(n/i))
+        end
+      end
+    end
+    return accum
+  end,
+  gen = function(s)
+    local accum
+    repeat
+      s.topic = rand(s.min + 1, s.max)
+      s.factors = s.find_factors(s.topic)
+    until #s.factors > 2
+    numbers.gen(s)
+  end,
+  gen_answer = function(s)
+    return s.factors[rand(1, #s.factors)]
+  end,
+  is_answer = function(s,n)
+    for x in all(s.factors) do
+      if (x == n) return true
+    end
+    return false
+  end
+}
+
+primes = numbers:new {
+  title = function(s)
+    return " prime numbers"
+  end,
+  gen_answer = function(s)
+    local n = rand(s.min, s.max)
+    while not s:is_answer(n) do
+      n -= 1
+    end
+    return n
+  end,
+  is_answer = function(s,n)
+    for i = 2, n^(1/2) do
+        if (n % i) == 0 then
+            return false
+        end
+    end
+    return true
+  end
+}
+
 
 -->8
 --troggle

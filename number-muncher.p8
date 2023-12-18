@@ -2,7 +2,7 @@ pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
 function _init()
- poke(0x5f2c, 3) -- small
+  poke(0x5f2c, 3) -- small
 	game_init()
  _update=title_update
  _draw=title_draw
@@ -96,9 +96,45 @@ function game_update()
  end
 end
 
+grid = {
+  xc = 6,
+  yc = 5,
+  w = 10,
+  h = 10,
+  sx = 2,
+  sy = 7,
+  c = 7,
+
+  draw = function(self)
+    xc,yc,w,h,sx,sy,c = self.xc,self.yc,self.w,self.h,self.sx,self.sy,self.c
+    for i=0,xc do
+      line(sx + w * i, sy, sx + w * i, sy + h * yc, c)
+    end
+    for j=0,yc do
+      line(sx, sy + h * j, sx + w * xc, sy + h * j, c)
+    end
+  end,
+
+  trans = function(self, i, j, x, y)
+    return self.sx + self.w * i + x, self.sy + self.h * j + y
+  end
+}
+
+-- function draw_grid(xc,yc,w,h,sx,sy,c)
+--   -- xc -= 1
+--   -- yc -= 1
+--   for i=0,xc do
+--     line(sx + w * i, sy, sx + w * i, sy + h * yc, c)
+--   end
+--   for j=0,yc do
+--     line(sx, sy + h * j, sx + w * xc, sy + h * j, c)
+--   end
+-- end
+
 function game_draw()
- cls()
+ cls(1)
  map(0,0,0,0,8,8)
+ -- draw_grid(6, 5, 10, 10, 2, 8, 7)
 
  nu:draw()
  pl:draw()
@@ -112,6 +148,7 @@ function game_draw()
  rectfill(0,0,64,7,1)
  print(" multiples of "..mult,0,1,6)
  print(level_text,57,58,13)
+ grid:draw()
  
  if gameover then
   rectfill(9,33,55,47,1)
@@ -273,7 +310,9 @@ function numbers_draw(s)
  for y=0,4 do
   for x=1,6 do
    n=s.nums[(y*6)+x]
-   if (n!=0) print(n,1+x*8,18+y*8,13)
+   local xx, yy = grid:trans(x-1, y, 2, 3)
+   -- if (n!=0) print(n,1+x*8,18+y*8,13)
+   if (n!=0) print(n,xx,yy,13)
   end
  end
 end
@@ -303,12 +342,21 @@ end
 
 function troggle_gen()
  dir=rand(1,4)
- y=rand(0,4)*8
- x=rand(0,5)*8
- if (dir==1) add(troggles,troggle_new(-8,y+16,8,0,20))
- if (dir==2) add(troggles,troggle_new(64,y+16,-8,0,20))
- if (dir==3) add(troggles,troggle_new(x+8,0,0,8,20))
- if (dir==4) add(troggles,troggle_new(x+8,64,0,-8,20))
+ -- y=rand(0,4)*8
+ -- x=rand(0,5)*8
+ i=rand(0,4)
+ j=rand(0,5)
+
+ local xx, yy = grid:trans(i, j, 2, 4)
+ local dx, dy = 0,0
+ if (dir==1) xx,dx = grid.sx - grid.w,-1
+ -- if (dir==2) add(troggles,troggle_new(64,y+16,-8,0,20))
+ if (dir==2) xx,dx = grid.sx + grid.xc * grid.w, 1
+ -- if (dir==3) add(troggles,troggle_new(x+8,0,0,8,20))
+ if (dir==3) yy,dy = grid.sy - grid.h,1
+ -- if (dir==4) add(troggles,troggle_new(x+8,64,0,-8,20))
+ if (dir==4) yy,dy = grid.sy + grid.yc * grid.h,-1
+ add(troggles,troggle_new(xx,yy,dx * grid.w,dy * grid.h,20))
 end
 
 function troggle_moving(s)

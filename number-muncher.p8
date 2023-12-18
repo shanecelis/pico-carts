@@ -44,7 +44,7 @@ end
 function game_init()
  step=0
  mult=rand(2,9)
- pl=player_new(8,16)
+ pl=player_new(0,0)
  nu=numbers_new()
  troggles={}
  troggle_gen()
@@ -103,7 +103,7 @@ grid = {
   h = 10,
   sx = 2,
   sy = 7,
-  c = 7,
+  c = 14,
 
   draw = function(self)
     xc,yc,w,h,sx,sy,c = self.xc,self.yc,self.w,self.h,self.sx,self.sy,self.c
@@ -117,7 +117,11 @@ grid = {
 
   trans = function(self, i, j, x, y)
     return self.sx + self.w * i + x, self.sy + self.h * j + y
-  end
+  end,
+
+  trans_inv = function(self, x, y)
+    return flr((x - self.sx)/self.w), flr((y - self.sy)/self.h)
+  end,
 }
 
 -- function draw_grid(xc,yc,w,h,sx,sy,c)
@@ -133,7 +137,7 @@ grid = {
 
 function game_draw()
  cls(1)
- map(0,0,0,0,8,8)
+ -- map(0,0,0,0,8,8)
  -- draw_grid(6, 5, 10, 10, 2, 8, 7)
 
  nu:draw()
@@ -170,14 +174,15 @@ end
 -->8
 --player
 
-function player_new(x,y)
+function player_new(i,j)
  s={}
- s.x=x
- s.y=y
- s.tx=x
- s.ty=y
- s.bx=1
- s.by=1
+ s.x,s.y = grid:trans(i, j, 2, 2)
+ -- s.x=x
+ -- s.y=y
+ s.tx=s.x
+ s.ty=s.y
+ s.bx=i+1
+ s.by=j+1
  s.f=16
  s.flip=false
  s.moving=false
@@ -219,17 +224,17 @@ end
 
 function player_update(s)
  if btnp(⬆️) and s.by>1 then
-  s.ty-=8
+  s.ty-=grid.h
   s.by-=1
  elseif btnp(⬇️) and s.by<5 then
-  s.ty+=8
+  s.ty+=grid.h
   s.by+=1
  elseif btnp(➡️) and s.bx<6 then
-  s.tx+=8
+  s.tx+=grid.w
   s.bx+=1
   s.flip=false
  elseif btnp(⬅️) and s.bx>1 then
-  s.tx-=8
+  s.tx-=grid.w
   s.bx-=1
   s.flip=true
  end
@@ -319,16 +324,17 @@ end
 
 -->8
 --troggle
-function troggle_new(x,y,dx,dy,r)
+function troggle_new(i,j,dx,dy,r)
  s={}
- s.x=x
- s.y=y
- s.dx=dx
- s.dy=dy
- s.tx=x
- s.ty=y
- s.bx=0
- s.by=0
+ s.x,s.y = grid:trans(i, j, 2, 2)
+ -- s.x=x
+ -- s.y=y
+ s.dx=dx*grid.w
+ s.dy=dy*grid.h
+ s.tx=s.x
+ s.ty=s.y
+ s.bx=i
+ s.by=j
  s.f=32
  s.wait=r
  s.rest=r
@@ -342,21 +348,17 @@ end
 
 function troggle_gen()
  dir=rand(1,4)
- -- y=rand(0,4)*8
- -- x=rand(0,5)*8
  i=rand(0,4)
  j=rand(0,5)
+ i=3
+ j=3
 
- local xx, yy = grid:trans(i, j, 2, 4)
  local dx, dy = 0,0
- if (dir==1) xx,dx = grid.sx - grid.w,-1
- -- if (dir==2) add(troggles,troggle_new(64,y+16,-8,0,20))
- if (dir==2) xx,dx = grid.sx + grid.xc * grid.w, 1
- -- if (dir==3) add(troggles,troggle_new(x+8,0,0,8,20))
- if (dir==3) yy,dy = grid.sy - grid.h,1
- -- if (dir==4) add(troggles,troggle_new(x+8,64,0,-8,20))
- if (dir==4) yy,dy = grid.sy + grid.yc * grid.h,-1
- add(troggles,troggle_new(xx,yy,dx * grid.w,dy * grid.h,20))
+ if (dir==1) i,dx = -1,1
+ if (dir==2) i,dx = grid.xc + 1,-1
+ if (dir==3) j,dy = -1,1
+ if (dir==4) j,dy = grid.yc + 1,-1
+ add(troggles,troggle_new(i,j,dx,dy,20))
 end
 
 function troggle_moving(s)
@@ -364,19 +366,20 @@ function troggle_moving(s)
  s.f=35+step%2
  if s.y != s.ty then
   dy = s.ty - s.y
-  s.y = s.y + (dy/abs(dy))
+  s.y = s.y + sgn(dy)
   s.moving=true
  end
  if s.x != s.tx then
 		dx = s.tx - s.x
-  s.x = s.x + (dx/abs(dx))
+  s.x = s.x + sgn(dx)
   s.moving=true
  end
  if not s.moving then
   s.update=troggle_update
   s.f=32
-  s.bx=s.x/8
-  s.by=(s.y/8)-1
+  s.bx, s.by = grid:trans_inv(s.x, s.y)
+  -- s.bx=s.x/
+  -- s.by=(s.y/8)-1
  end
 end
 

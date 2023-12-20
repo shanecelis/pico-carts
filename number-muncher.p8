@@ -2,18 +2,12 @@ pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
 
-function _init()
-  poke(0x5f2c, 3) -- small
-  game_init()
-  _update=title_update
-  _draw=title_draw
+#include lib/scene.p8:0
+#include lib/actor.p8:0
 
-  menuitem(1, "toggle hints",toggle_hints)
-end
 -->8
 --game
 -- globals
-pl={}
 step=0
 gameover=true
 troggles={}
@@ -30,71 +24,112 @@ end
 function toggle_hints()
   hints = not hints
 end
+menuitem(1, "toggle hints",toggle_hints)
+poke(0x5f2c, 3) -- small
 
-function game_init()
-
-  nu=multiples:new {
-    max = 20,
-    mult = rand(2,9),
-  }
-  -- nu=factors:new {
-  --   max = 20,
-  -- }
-  --  nu=primes:new {
-  --    max = 20,
-  --  }
-  nu:gen()
-  step=0
-  pl=player_new(0,0)
-  troggles={}
-  troggle_gen()
-  if gameover then
-    gameover=false
-    level=1
-    level_text="01"
-    return
-  end
-  if levelup then
-    levelup=false
-    level+=1
-    level_text=level
-    if (level<10) level_text="0"..level
+game = scene:new {
+  new = function(class, o)
+    o = scene.new(class, o)
+    nu=multiples:new {
+      max = 20,
+      mult = rand(2,9),
+    }
+    -- nu=factors:new {
+    --   max = 20,
+    -- }
+    --  nu=primes:new {
+    --    max = 20,
+    --  }
+    nu:gen()
+    step=0
+    pl=player:new(nil,0,0)
+    troggles={}
+    troggle_gen()
+    if gameover then
+      gameover=false
+      level=1
+      level_text="01"
+    elseif levelup then
+      levelup=false
+      level+=1
+      level_text=level
+      if (level<10) level_text="0"..level
     end
-end
+    return o
+  end,
 
-function title_update()
-  step+=1
-  if btnp(❎) or btnp(🅾️) then
-    game_init()
-    _update=game_update
-    _draw=game_draw
-    sfx(1)
-  end
-  for t in all(troggles) do
-    t:update()
-  end
-end
-
-function title_draw()
-  cls()
-  map(8,0,0,0,8,8)
-  print("❎ start",16,54,1)
-end
-
-function game_update()
-  step+=1
-  pl:update()
-  for t in all(troggles) do
-    t:update()
-    if t.x<-8 or t.x>72 or
-      t.y<-8 or t.y>72 then
-      del(troggles,t)
+  update = function (s)
+    step+=1
+    if gameover then
+      if (btnp(❎) or btnp(🅾️)) return game:new()
+      return
     end
-    if #troggles<min(10,level) then
-      troggle_gen()
+    pl:update()
+    for t in all(troggles) do
+      t:update()
+      if t.x<-8 or t.x>72 or
+        t.y<-8 or t.y>72 then
+        del(troggles,t)
+      end
+      if #troggles<min(10,level) then
+        troggle_gen()
+      end
     end
+  end,
+
+
+  draw = function (s)
+    cls(1)
+
+    -- title
+    rectfill(0,0,64,7,1)
+    print(nu:title(),0,1,6)
+    grid:draw()
+    nu:draw()
+    pl:draw()
+
+    --print(pl.bx.." "..pl.by,1,58,13)
+    for t in all(troggles) do
+      t:draw()
+    end
+
+    print(level_text,57,58,13)
+
+    if gameover then
+      rectfill(9,33,55,47,1)
+      print("game over",15,34,7)
+      print("❎ replay",15,42,13)
+      -- _update=title_update
+    end
+
+    if levelup then
+      rectfill(9,17,55,55,1)
+      print("stage clear",11,19,7)
+      print("❎ next",18,58,7)
+      pl:draw()
+    end
+
+    if(hints)print(nu:hint() or "",0,58,13)
   end
-end
+}
+
+title = scene:new {
+  update = function (s)
+    step+=1
+    if btnp(❎) or btnp(🅾️) then
+      sfx(1)
+      return game:new()
+    end
+  end,
+  draw = function (s)
+    cls()
+    map(8,0,0,0,8,8)
+    print("❎ start",16,54,1)
+  end
+}
+
+scene.install(title)
+
 
 grid = {
   xc = 6,
@@ -124,117 +159,85 @@ grid = {
   end,
 }
 
-function game_draw()
-  cls(1)
-  -- map(0,0,0,0,8,8)
-  -- draw_grid(6, 5, 10, 10, 2, 8, 7)
-
-  nu:draw()
-  pl:draw()
-
-  --print(pl.bx.." "..pl.by,1,58,13)
-  for t in all(troggles) do
-    t:draw()
-  end
-
-  -- title
-  rectfill(0,0,64,7,1)
-  -- print(" multiples of "..mult,0,1,6)
-  print(nu:title(),0,1,6)
-  print(level_text,57,58,13)
-  grid:draw()
-
-  if gameover then
-    rectfill(9,33,55,47,1)
-    print("game over",15,34,7)
-    print("❎ replay",15,42,13)
-    _update=title_update
-  end
-
-  if levelup then
-    rectfill(9,17,55,55,1)
-    print("stage clear",11,19,7)
-    print("❎ next",18,58,7)
-    pl:draw()
-  end
-
-  if(hints)print(nu:hint() or "",0,58,13)
-  end
 -->8
 --player
 
-function player_new(i,j)
-  s={}
-  s.x,s.y = grid:trans(i, j, 2, 2)
-  s.tx=s.x
-  s.ty=s.y
-  s.bx=i+1
-  s.by=j+1
-  s.f=16
-  s.flip=false
-  s.update=player_update
-  s.draw=player_draw
-  return s
-end
+player = actor:new {
+  sprite = 16,
+  frames = 5,
 
-function player_moving(s)
-  s.f=19+step%2
-  if s.y != s.ty then
-    dy = s.ty - s.y
-    s.y = s.y + (dy/abs(dy))
-  elseif s.x != s.tx then
-    dx = s.tx - s.x
-    s.x = s.x + (dx/abs(dx))
-  else
-    s.update=player_update
-    s.f=16
-  end
-end
-
-function player_eating(s)
-  s.eating-=1
-  if step%3==0 then
-    s.f=17+step%2
-  end
-  if s.eating==0 then
-    nu:eat(s.bx,s.by)
-    s.f=16
-    s.update=player_update
-  end
-end
-
-function player_update(s)
-  if btnp(⬆️) and s.by>1 then
-    s.ty-=grid.h
-    s.by-=1
-  elseif btnp(⬇️) and s.by<5 then
-    s.ty+=grid.h
-    s.by+=1
-  elseif btnp(➡️) and s.bx<6 then
-    s.tx+=grid.w
-    s.bx+=1
+  new = function (class,s,i,j)
+    s = actor.new(class, s)
+    s.x,s.y = grid:trans(i, j, 2, 2)
+    s.tx=s.x
+    s.ty=s.y
+    s.bx=i+1
+    s.by=j+1
     s.flip=false
-  elseif btnp(⬅️) and s.bx>1 then
-    s.tx-=grid.w
-    s.bx-=1
-    s.flip=true
-  end
+    s.update = s.input
+    return s
+  end,
 
-  if s.x!=s.tx or s.y!=s.ty then
-    s.update=player_moving
-    return
-  end
+  draw = function (a)
+    spr(a.sprite + (flr(a.frame) % a.frames) * a.w / 8, a.x, a.y, a.w / 8, a.h / 8, a.flip)
+  end,
 
-  if btnp(❎) or btnp(🅾️) then
-    s.eating=15
-    s.update=player_eating
-    sfx(1)
-  end
-end
+  input = function (s)
+    if btnp(⬆️) and s.by>1 then
+      s.ty-=grid.h
+      s.by-=1
+    elseif btnp(⬇️) and s.by<5 then
+      s.ty+=grid.h
+      s.by+=1
+    elseif btnp(➡️) and s.bx<6 then
+      s.tx+=grid.w
+      s.bx+=1
+      s.flip=false
+    elseif btnp(⬅️) and s.bx>1 then
+      s.tx-=grid.w
+      s.bx-=1
+      s.flip=true
+    end
 
-function player_draw(s)
-  spr(s.f,s.x,s.y,1,1,s.flip)
-end
+    if s.x!=s.tx or s.y!=s.ty then
+      s.update=s.moving
+      return
+    end
+
+    if btnp(❎) or btnp(🅾️) then
+      s.eating_time=15
+      s.update=s.eating
+      sfx(1)
+    end
+  end,
+
+  moving = function (s)
+    s.frame=3+step%2
+    if s.y != s.ty then
+      dy = s.ty - s.y
+      s.y = s.y + (dy/abs(dy))
+    elseif s.x != s.tx then
+      dx = s.tx - s.x
+      s.x = s.x + (dx/abs(dx))
+    else
+      s.update=s.input
+      s.frame=0
+    end
+  end,
+
+
+  eating = function (s)
+    s.eating_time-=1
+    if step%3==0 then
+      s.frame=1+step%2
+    end
+    if s.eating_time<=0 then
+      nu:eat(s.bx,s.by)
+      s.frame=0
+      s.update=s.input
+    end
+  end,
+}
 
 -->8
 
@@ -462,19 +465,14 @@ function troggle_gen()
   end
 
 function troggle_moving(s)
-  s.moving=false
   s.f=35+step%2
   if s.y != s.ty then
     dy = s.ty - s.y
     s.y = s.y + sgn(dy)
-    s.moving=true
-  end
-  if s.x != s.tx then
+  elseif s.x != s.tx then
     dx = s.tx - s.x
     s.x = s.x + sgn(dx)
-    s.moving=true
-  end
-  if not s.moving then
+  else
     s.update=troggle_update
     s.f=32
     s.bx, s.by = grid:trans_inv(s.x, s.y)

@@ -41,27 +41,27 @@ scene = {
   -- warning: do not use if those
   -- functions are already
   -- defined.
-  install = function (scene)
+  install = function (ascene)
     function _init()
       prev_time = time()
-      scene:enter()
+      ascene:enter()
     end
 
     function _update60()
       -- these are for global updates.
-      for e in all(scene) do
+      for e in all(ascene) do
         e:update()
       end
-      local next = scene:update()
+      local next = ascene:update()
       if next ~= nil then
-        scene:exit()
-        scene = next
-        scene:enter()
+        ascene:exit()
+        ascene = next
+        ascene:enter()
       end
     end
 
     function _draw()
-      scene:draw()
+      ascene:draw()
     end
   end,
 }

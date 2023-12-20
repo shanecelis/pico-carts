@@ -4,6 +4,7 @@ __lua__
 
 #include lib/scene.p8:0
 #include lib/actor.p8:0
+#include lib/menu.p8:0
 
 -->8
 --game
@@ -12,11 +13,11 @@ step=0
 gameover=true
 troggles={}
 level=1
-level_text="01"
 levelup=false
 hints=false
 
 -- utility
+-- return a random number [l,h]
 function rand(l,h)
   return l+flr(rnd(h-l+1))
 end
@@ -24,16 +25,22 @@ end
 function toggle_hints()
   hints = not hints
 end
+
 menuitem(1, "toggle hints",toggle_hints)
-poke(0x5f2c, 3) -- small
+poke(0x5f2c, 3) -- small screen 64x64
 
 game = scene:new {
   new = function(class, o)
     o = scene.new(class, o)
-    nu=multiples:new {
-      max = 20,
-      mult = rand(2,9),
-    }
+    step = 0
+    nu.topic = rand(2,9)
+    -- nu=multiples:new {
+    --   max = 20,
+    --   topic = rand(2,9),
+    -- }
+    -- nu=evens:new()
+    -- nu=odds:new()
+    -- nu=greater:new { max=20, topic = rand(2,9) }
     -- nu=factors:new {
     --   max = 20,
     -- }
@@ -41,19 +48,15 @@ game = scene:new {
     --    max = 20,
     --  }
     nu:gen()
-    step=0
     pl=player:new()
     troggles={}
     troggle.gen()
     if gameover then
       gameover=false
       level=1
-      level_text="01"
     elseif levelup then
       levelup=false
       level+=1
-      level_text=level
-      if (level<10) level_text="0"..level
     end
     return o
   end,
@@ -61,7 +64,8 @@ game = scene:new {
   update = function (s)
     step+=1
     if gameover then
-      if (btnp(❎) or btnp(🅾️)) return game:new()
+      -- if (btnp(❎) or btnp(🅾️)) return game:new()
+      if (btnp(❎) or btnp(🅾️)) return game_menu
       return
     end
 
@@ -72,8 +76,8 @@ game = scene:new {
     end
     for t in all(troggles) do
       t:update()
-      if t.x<-8 or t.x>72 or
-        t.y<-8 or t.y>72 then
+      if t.x<-grid.w or t.x>64 or
+        t.y<-grid.h or t.y>64 then
         del(troggles,t)
       end
       if #troggles<min(10,level) then
@@ -81,7 +85,6 @@ game = scene:new {
       end
     end
   end,
-
 
   draw = function (s)
     cls(1)
@@ -93,12 +96,11 @@ game = scene:new {
     nu:draw()
     pl:draw()
 
-    --print(pl.i.." "..pl.j,1,58,13)
     for t in all(troggles) do
       t:draw()
     end
 
-    print(level_text,57,58,13)
+    print("l "..level,46,59,13)
 
     if gameover then
       rectfill(9,33,55,47,1)
@@ -110,11 +112,11 @@ game = scene:new {
     if levelup then
       rectfill(9,17,55,55,1)
       print("stage clear",11,19,7)
-      print("❎ next",18,58,7)
+      print("❎ next",18,48,7)
       pl:draw()
     end
 
-    if(hints)print(nu:hint() or "",0,58,13)
+    if(hints)print("hint: "..(nu:hint() or ""),2,59,13)
   end
 }
 
@@ -123,7 +125,8 @@ title = scene:new {
     step+=1
     if btnp(❎) or btnp(🅾️) then
       sfx(1)
-      return game:new()
+      -- return game:new()
+      return game_menu:new()
     end
   end,
   draw = function (s)
@@ -133,17 +136,19 @@ title = scene:new {
   end
 }
 
-scene.install(title)
-
 grid = {
+  -- count
   xc = 6,
   yc = 5,
+  -- width and height of cells in grid
   w = 10,
   h = 10,
+  -- start
   sx = 2,
   sy = 7,
   color = 14,
 
+  -- draw the grid
   draw = function(self)
     xc,yc,w,h,sx,sy,c = self.xc,self.yc,self.w,self.h,self.sx,self.sy,self.color
     for i=0,xc do
@@ -154,10 +159,12 @@ grid = {
     end
   end,
 
+  -- return cell position + (x,y) for the ith column and jth row, zero-based
   trans = function(self, i, j, x, y)
     return self.sx + self.w * i + x, self.sy + self.h * j + y
   end,
 
+  -- return the closest ith column and jth row for position (x,y).
   trans_inv = function(self, x, y)
     return flr((x - self.sx)/self.w), flr((y - self.sy)/self.h)
   end,
@@ -268,6 +275,7 @@ numbers = {
 
   eat = function(s,i,j)
     n=s.nums[(j*grid.xc)+i+1]
+    if (n == 0) return
     if s:is_answer(n) then
       s.nums[(j*grid.xc)+i+1]=0
       if (s:hint()) return
@@ -288,7 +296,9 @@ numbers = {
       s.nums[i]=s:gen_answer()
     end
     for i=s.answer_count+1,grid.xc*grid.yc do
-      s.nums[i]=rand(s.min,s.max)
+      repeat
+        s.nums[i]=rand(s.min,s.max)
+      until not s:is_answer(s.nums[i])
     end
     for i=1,grid.xc*grid.yc do
       if s.nums[i]<10 then
@@ -329,13 +339,56 @@ numbers = {
 
 multiples = numbers:new {
   title = function(s)
-    return " multiples of "..s.mult
+    return " multiples of "..s.topic
   end,
   gen_answer = function(s)
-    return s.mult*rand(1,10)
+    return s.topic*rand(1,10)
   end,
   is_answer = function(s,n)
-    return n%s.mult == 0
+    return n%s.topic == 0
+  end
+}
+
+greater = numbers:new {
+  title = function(s)
+    return " greater than "..s.topic
+  end,
+  gen_answer = function(s)
+    return s.topic+rand(1,10)
+  end,
+  is_answer = function(s,n)
+    return n > s.topic
+  end
+}
+
+lesser = numbers:new {
+  title = function(s)
+    return " less than "..s.topic
+  end,
+  gen_answer = function(s)
+    return rand(1,s.topic-1)
+  end,
+  is_answer = function(s,n)
+    return n < s.topic
+  end
+}
+
+evens = multiples:new {
+  topic=2,
+  title = function(s)
+    return " even numbers"
+  end,
+}
+
+odds = evens:new {
+  title = function(s)
+    return " odd numbers"
+  end,
+  gen_answer = function(s)
+    return s.topic*rand(1,10) + 1
+  end,
+  is_answer = function(s,n)
+    return n%s.topic == 1
   end
 }
 
@@ -396,6 +449,34 @@ primes = numbers:new {
     return true
     end
 }
+
+game_menu = menu:new {
+  y=1,
+  x=0,
+  line_height=8,
+  items = {"evens",
+           "odds",
+           "greater",
+           "lesser",
+           "multiples",
+           "factors",
+           "primes" },
+
+  objects = { evens,
+              odds,
+              greater,
+              lesser,
+              multiples,
+              factors,
+              primes },
+
+  selected = function(s, i)
+    nu = (s.objects[i]):new()
+    return game:new()
+  end
+}
+
+
 
 -- equality = numbers:new {
 --   max=9,
@@ -462,8 +543,8 @@ troggle = player:new {
 
   gen = function ()
     local dir=rand(1,4)
-    local i,j=rand(0,grid.xc-1),rand(0,grid.yc-1)
-    -- i,j=3,j
+    local min=(step == 0) and 1 or 0
+    local i,j=rand(min,grid.xc-1),rand(min,grid.yc-1)
 
     local dx, dy = 0,0
     if (dir==1) i,dx = -1,1
@@ -512,8 +593,6 @@ troggle = player:new {
       pl.y<=s.y+7 then
       pl.x=s.x
       pl.y=s.y
-      -- pl.update=function() end
-      -- pl.draw=function() end
       pl.x=-100
       s.co=s.eating
       gameover=true
@@ -529,8 +608,6 @@ troggle = player:new {
         t.y<=s.y+7 then
         t.x=s.x
         t.y=s.y
-        -- t.update=function() end
-        -- t.draw=function() end
         s.co=s.eating
         sfx(2)
         del(troggles,t)
@@ -538,6 +615,9 @@ troggle = player:new {
     end
   end
 }
+
+-- start with the title scene
+scene.install(title)
 
 __gfx__
 0000000011111111eeeeeeeeeeeeeeeeeeeeeeeee1111111e1111111ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000

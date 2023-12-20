@@ -42,9 +42,9 @@ game = scene:new {
     --  }
     nu:gen()
     step=0
-    pl=player:new(nil,0,0)
+    pl=player:new()
     troggles={}
-    troggle_gen()
+    troggle.gen()
     if gameover then
       gameover=false
       level=1
@@ -64,7 +64,12 @@ game = scene:new {
       if (btnp(❎) or btnp(🅾️)) return game:new()
       return
     end
-    pl:update()
+
+    if levelup then
+      if (btnp(❎) or btnp(🅾️)) return game:new()
+    else
+      pl:update()
+    end
     for t in all(troggles) do
       t:update()
       if t.x<-8 or t.x>72 or
@@ -72,7 +77,7 @@ game = scene:new {
         del(troggles,t)
       end
       if #troggles<min(10,level) then
-        troggle_gen()
+        troggle.gen()
       end
     end
   end,
@@ -88,7 +93,7 @@ game = scene:new {
     nu:draw()
     pl:draw()
 
-    --print(pl.bx.." "..pl.by,1,58,13)
+    --print(pl.i.." "..pl.j,1,58,13)
     for t in all(troggles) do
       t:draw()
     end
@@ -137,10 +142,10 @@ grid = {
   h = 10,
   sx = 2,
   sy = 7,
-  c = 14,
+  color = 14,
 
   draw = function(self)
-    xc,yc,w,h,sx,sy,c = self.xc,self.yc,self.w,self.h,self.sx,self.sy,self.c
+    xc,yc,w,h,sx,sy,c = self.xc,self.yc,self.w,self.h,self.sx,self.sy,self.color
     for i=0,xc do
       line(sx + w * i, sy, sx + w * i, sy + h * yc, c)
     end
@@ -164,16 +169,15 @@ grid = {
 player = actor:new {
   sprite = 16,
   frames = 5,
+  i=0,
+  j=0,
 
-  new = function (class,s,i,j)
+  new = function (class,s)
     s = actor.new(class, s)
-    s.x,s.y = grid:trans(i, j, 2, 2)
+    if (s.i and s.j) s.x,s.y = grid:trans(s.i, s.j, 2, 2)
     s.tx=s.x
     s.ty=s.y
-    s.bx=i+1
-    s.by=j+1
     s.flip=false
-    s.update = s.input
     return s
   end,
 
@@ -182,6 +186,29 @@ player = actor:new {
   end,
 
   input = function (s)
+    if btnp(⬆️) and s.j>0 then
+      s.ty-=grid.h
+      s.j-=1
+    elseif btnp(⬇️) and s.j<4 then
+      s.ty+=grid.h
+      s.j+=1
+    elseif btnp(➡️) and s.i<5 then
+      s.tx+=grid.w
+      s.i+=1
+      s.flip=false
+    elseif btnp(⬅️) and s.i>0 then
+      s.tx-=grid.w
+      s.i-=1
+      s.flip=true
+    end
+
+    if btnp(❎) or btnp(🅾️) then
+      s.co=cocreate(s.eating)
+      sfx(1)
+    end
+  end,
+
+  update = function(s)
     if s.co then
       if coresume(s.co, s) then
         return
@@ -189,31 +216,10 @@ player = actor:new {
         s.co = nil
       end
     end
-    if btnp(⬆️) and s.by>1 then
-      s.ty-=grid.h
-      s.by-=1
-    elseif btnp(⬇️) and s.by<5 then
-      s.ty+=grid.h
-      s.by+=1
-    elseif btnp(➡️) and s.bx<6 then
-      s.tx+=grid.w
-      s.bx+=1
-      s.flip=false
-    elseif btnp(⬅️) and s.bx>1 then
-      s.tx-=grid.w
-      s.bx-=1
-      s.flip=true
-    end
+    if (s.input) s:input()
 
     if s.x!=s.tx or s.y!=s.ty then
       s.co = cocreate(s.moving)
-      -- s.update=s.moving
-      return
-    end
-
-    if btnp(❎) or btnp(🅾️) then
-      s.co=cocreate(s.eating)
-      sfx(1)
     end
   end,
 
@@ -227,12 +233,11 @@ player = actor:new {
     while s.x != s.tx do
       s.frame=3+step%2
       dx = s.tx - s.x
-      s.x = s.x + (dx/abs(dx))
+      s.x = s.x + sgn(dx)
       yield()
     end
     s.frame=0
   end,
-
 
   eating = function (s)
     for i=1,15 do
@@ -241,7 +246,7 @@ player = actor:new {
       end
       yield()
     end
-    nu:eat(s.bx,s.by)
+    nu:eat(s.i,s.j)
     s.frame=0
   end,
 }
@@ -261,10 +266,10 @@ numbers = {
     return o
   end,
 
-  eat = function(s,x,y)
-    n=s.nums[((y-1)*grid.xc)+x]
+  eat = function(s,i,j)
+    n=s.nums[(j*grid.xc)+i+1]
     if s:is_answer(n) then
-      s.nums[((y-1)*grid.xc)+x]=0
+      s.nums[(j*grid.xc)+i+1]=0
       if (s:hint()) return
         levelup=true
       _update=title_update
@@ -298,16 +303,17 @@ numbers = {
   end,
 
   draw = function(s)
-    for y=0,4 do
-      for x=1,6 do
-        local n=s.nums[(y*6)+x]
-        local xx, yy = grid:trans(x-1, y, 2, 3)
+    for j=0,4 do
+      for i=0,5 do
+        local n=s.nums[(j*grid.xc)+i+1]
+        assert(n, "i ".. i .. "j" ..j)
+        local x,y=grid:trans(i, j, 2, 3)
         -- if (n!=0) print(n,1+x*8,18+y*8,13)
         if (n==0) goto continue
         if n >= 10 then
-          print(n,xx,yy,13)
+          print(n,x,y,13)
         else
-          print(" "..n,xx,yy,13)
+          print(" "..n,x,y,13)
         end
         ::continue::
         end
@@ -431,123 +437,113 @@ primes = numbers:new {
 --   end
 -- }
 
-
 -->8
 --troggle
-function troggle_new(i,j,dx,dy,r)
-  s={}
-  s.x,s.y = grid:trans(i, j, 2, 2)
-  -- s.x=x
-  -- s.y=y
-  s.dx=dx*grid.w
-  s.dy=dy*grid.h
-  s.tx=s.x
-  s.ty=s.y
-  s.bx=i
-  s.by=j
-  s.f=32
-  s.wait=r
-  s.rest=r
-  s.flip=dx==-8 or dy==-8
-  s.moving=false
-  s.update=troggle_update
-  s.draw=troggle_draw
-  s.attack=troggle_attack
-  return s
-end
+troggle = player:new {
+  sprite = 32,
+  frames = 5,
+  wait=20,
 
-function troggle_gen()
-  dir=rand(1,4)
-  i=rand(0,4)
-  j=rand(0,5)
-  i=3
-  j=3
+  new = function (class, s)
+    s = player.new(class, s)
+    -- assert(i ~= nil)
+    s.x,s.y = grid:trans(s.i, s.j, 2, 2)
+    -- s.x=x
+    -- s.y=y
+    s.dx=s.dx*grid.w
+    s.dy=s.dy*grid.h
+    s.i=i
+    s.j=j
+    s.flip=s.dx<0 or s.dy<0
+    s.input=nil
+    s.cobrain = cocreate(s.brain)
+    return s
+  end,
 
-  local dx, dy = 0,0
-  if (dir==1) i,dx = -1,1
-  if (dir==2) i,dx = grid.xc + 1,-1
-  if (dir==3) j,dy = -1,1
-  if (dir==4) j,dy = grid.yc + 1,-1
-  add(troggles,troggle_new(i,j,dx,dy,20))
-  end
+  gen = function ()
+    local dir=rand(1,4)
+    local i,j=rand(0,4),rand(0,5)
+    -- i,j=3,j
 
-function troggle_moving(s)
-  s.f=35+step%2
-  if s.y != s.ty then
-    dy = s.ty - s.y
-    s.y = s.y + sgn(dy)
-  elseif s.x != s.tx then
-    dx = s.tx - s.x
-    s.x = s.x + sgn(dx)
-  else
-    s.update=troggle_update
-    s.f=32
-    s.bx, s.by = grid:trans_inv(s.x, s.y)
-    -- s.bx=s.x/
-    -- s.by=(s.y/8)-1
-  end
-end
+    local dx, dy = 0,0
+    if (dir==1) i,dx = -1,1
+    if (dir==2) i,dx = grid.xc + 1,-1
+    if (dir==3) j,dy = -1,1
+    if (dir==4) j,dy = grid.yc + 1,-1
+    add(troggles,troggle:new({i=i,j=j,dx=dx,dy=dy}))
+  end,
 
-function troggle_eating(s)
-  s.eating-=1
-  if step%3==0 then
-    s.f=33+step%2
-  end
-  if s.eating==0 then
-    s.f=32
-    s.update=troggle_update
-  end
-end
+  moving = function(s)
+    player.moving(s)
+    s.i,s.j=grid:trans_inv(s.x, s.y)
+  end,
 
-function troggle_update(s)
-  s.rest-=1
-  if s.rest==0 then
-    s.update=troggle_moving
-    s.rest=s.wait
-    s.tx+=s.dx
-    s.ty+=s.dy
-  end
-  s:attack()
-end
+  rest = function(s)
+    for i=1,s.wait do
+      yield()
+    end
+  end,
 
-function troggle_attack(s)
-  if pl.x>=s.x and
-    pl.y>=s.y and
-    pl.x<=s.x+7 and
-    pl.y<=s.y+7 then
-    pl.x=s.x
-    pl.y=s.y
-    pl.update=function() end
-    pl.draw=function() end
-    pl.x=-100
-    s.update=troggle_eating
-    s.eating=20
-    gameover=true
-    sfx(2)
-    sfx(4)
-    return
-  end
-  for t in all(troggles) do
-    if t!=s and
-      t.x>=s.x and
-      t.y>=s.y and
-      t.x<=s.x+7 and
-      t.y<=s.y+7 then
-      t.x=s.x
-      t.y=s.y
-      t.update=function() end
-      t.draw=function() end
+  brain = function(s)
+    while true do
+      s:rest()
+      s.tx+=s.dx
+      s.ty+=s.dy
+      s:moving()
+      s:attack()
+    end
+  end,
+
+  update = function (s)
+    coresume(s.cobrain, s)
+    -- s.co=rest()
+
+    -- player.update(s)
+    -- s.rest-=1
+    -- if s.rest==0 then
+    --   s.co=s.moving
+    --   s.rest=s.wait
+    --   s.tx+=s.dx
+    --   s.ty+=s.dy
+    -- end
+    -- s:attack()
+  end,
+
+  attack = function (s)
+    if pl.x>=s.x and
+      pl.y>=s.y and
+      pl.x<=s.x+7 and
+      pl.y<=s.y+7 then
+      pl.x=s.x
+      pl.y=s.y
+      -- pl.update=function() end
+      -- pl.draw=function() end
+      pl.x=-100
       s.update=troggle_eating
       s.eating=20
+      gameover=true
       sfx(2)
-      del(troggles,t)
+      sfx(4)
+      return
+    end
+    for t in all(troggles) do
+      if t!=s and
+        t.x>=s.x and
+        t.y>=s.y and
+        t.x<=s.x+7 and
+        t.y<=s.y+7 then
+        t.x=s.x
+        t.y=s.y
+        -- t.update=function() end
+        -- t.draw=function() end
+        s.update=troggle_eating
+        s.eating=20
+        sfx(2)
+        del(troggles,t)
+      end
     end
   end
-end
-
-function troggle_draw(s)
-  spr(s.f,s.x,s.y,1,1,s.flip)
-end
+}
 
 __gfx__
 0000000011111111eeeeeeeeeeeeeeeeeeeeeeeee1111111e1111111ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000

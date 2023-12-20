@@ -33,7 +33,6 @@ game = scene:new {
   new = function(class, o)
     o = scene.new(class, o)
     step = 0
-    nu.topic = rand(2,9)
     -- nu=multiples:new {
     --   max = 20,
     --   topic = rand(2,9),
@@ -300,11 +299,6 @@ numbers = {
         s.nums[i]=rand(s.min,s.max)
       until not s:is_answer(s.nums[i])
     end
-    for i=1,grid.xc*grid.yc do
-      if s.nums[i]<10 then
-        -- s.nums[i]=" "..s.nums[i]
-      end
-    end
     -- shuffle
     for i=#s.nums,1,-1 do
       rn=ceil(rnd(i))
@@ -326,14 +320,14 @@ numbers = {
           print(" "..n,x,y,13)
         end
         ::continue::
-        end
+      end
     end
   end,
 
   hint = function(s)
     for n in all(nu.nums) do
       if (n!=0 and s:is_answer(n)) return n
-      end
+    end
   end
 }
 
@@ -472,6 +466,7 @@ game_menu = menu:new {
 
   selected = function(s, i)
     nu = (s.objects[i]):new()
+    if (i > 2) nu.topic = rand(2,9)
     return game:new()
   end
 }

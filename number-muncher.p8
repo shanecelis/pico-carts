@@ -130,7 +130,6 @@ title = scene:new {
 
 scene.install(title)
 
-
 grid = {
   xc = 6,
   yc = 5,
@@ -183,6 +182,13 @@ player = actor:new {
   end,
 
   input = function (s)
+    if s.co then
+      if coresume(s.co, s) then
+        return
+      else
+        s.co = nil
+      end
+    end
     if btnp(⬆️) and s.by>1 then
       s.ty-=grid.h
       s.by-=1
@@ -200,42 +206,43 @@ player = actor:new {
     end
 
     if s.x!=s.tx or s.y!=s.ty then
-      s.update=s.moving
+      s.co = cocreate(s.moving)
+      -- s.update=s.moving
       return
     end
 
     if btnp(❎) or btnp(🅾️) then
-      s.eating_time=15
-      s.update=s.eating
+      s.co=cocreate(s.eating)
       sfx(1)
     end
   end,
 
   moving = function (s)
-    s.frame=3+step%2
-    if s.y != s.ty then
+    while s.y != s.ty do
+      s.frame=3+step%2
       dy = s.ty - s.y
-      s.y = s.y + (dy/abs(dy))
-    elseif s.x != s.tx then
+      s.y = s.y + sgn(dy)
+      yield()
+    end
+    while s.x != s.tx do
+      s.frame=3+step%2
       dx = s.tx - s.x
       s.x = s.x + (dx/abs(dx))
-    else
-      s.update=s.input
-      s.frame=0
+      yield()
     end
+    s.frame=0
   end,
 
 
   eating = function (s)
-    s.eating_time-=1
-    if step%3==0 then
-      s.frame=1+step%2
+    for i=1,15 do
+      if step%3==0 then
+        s.frame=1+step%2
+      end
+      yield()
     end
-    if s.eating_time<=0 then
-      nu:eat(s.bx,s.by)
-      s.frame=0
-      s.update=s.input
-    end
+    nu:eat(s.bx,s.by)
+    s.frame=0
   end,
 }
 

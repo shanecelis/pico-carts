@@ -462,7 +462,7 @@ troggle = player:new {
 
   gen = function ()
     local dir=rand(1,4)
-    local i,j=rand(0,4),rand(0,5)
+    local i,j=rand(0,grid.xc-1),rand(0,grid.yc-1)
     -- i,j=3,j
 
     local dx, dy = 0,0
@@ -495,18 +495,14 @@ troggle = player:new {
   end,
 
   update = function (s)
+    if s.co then
+      if coresume(s.co, s) then
+        return
+      else
+        s.co = nil
+      end
+    end
     coresume(s.cobrain, s)
-    -- s.co=rest()
-
-    -- player.update(s)
-    -- s.rest-=1
-    -- if s.rest==0 then
-    --   s.co=s.moving
-    --   s.rest=s.wait
-    --   s.tx+=s.dx
-    --   s.ty+=s.dy
-    -- end
-    -- s:attack()
   end,
 
   attack = function (s)
@@ -519,8 +515,7 @@ troggle = player:new {
       -- pl.update=function() end
       -- pl.draw=function() end
       pl.x=-100
-      s.update=troggle_eating
-      s.eating=20
+      s.co=s.eating
       gameover=true
       sfx(2)
       sfx(4)
@@ -536,8 +531,7 @@ troggle = player:new {
         t.y=s.y
         -- t.update=function() end
         -- t.draw=function() end
-        s.update=troggle_eating
-        s.eating=20
+        s.co=s.eating
         sfx(2)
         del(troggles,t)
       end

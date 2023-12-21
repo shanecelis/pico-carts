@@ -1,13 +1,12 @@
 pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
+--game
 
 #include lib/scene.p8:0
 #include lib/actor.p8:0
 #include lib/menu.p8:0
 
--->8
---game
 -- globals
 step=0
 gameover=true

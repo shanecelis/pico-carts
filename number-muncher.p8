@@ -16,6 +16,7 @@ levelup=false
 hints=false
 
 -- utility
+
 -- return a random number [l,h]
 function rand(l,h)
   return l+flr(rnd(h-l+1))
@@ -62,7 +63,6 @@ hints_menu = menu_item:new {
   end
 }
 
--- menuitem(1, "toggle hints",toggle_hints)
 min_menu = menu_item:new {
   index = 2,
   value = 0,
@@ -109,7 +109,6 @@ game = scene:new {
   update = function (s)
     step+=1
     if gameover then
-      -- if (btnp(❎) or btnp(🅾️)) return game:new()
       if (btnp(❎) or btnp(🅾️)) return game_menu
       return
     end
@@ -121,10 +120,7 @@ game = scene:new {
     end
     for t in all(troggles) do
       t:update()
-      if t.x<-grid.w or t.x>64 or
-        t.y<-grid.h or t.y>64 then
-        del(troggles,t)
-      end
+      if (not t:is_visible()) del(troggles,t)
       if #troggles<min(10,level) then
         troggle.gen()
       end
@@ -216,7 +212,6 @@ grid = {
 
 -->8
 --player
-
 player = actor:new {
   sprite = 16,
   frames = 5,
@@ -229,6 +224,7 @@ player = actor:new {
     s.tx=s.x
     s.ty=s.y
     s.flip=false
+    s.co = cocreate(s.coupdate)
     return s
   end,
 
@@ -254,24 +250,22 @@ player = actor:new {
     end
 
     if btnp(❎) or btnp(🅾️) then
-      s.co=cocreate(s.eating)
       sfx(1)
+      s:eating()
+    end
+  end,
+
+  coupdate = function(s)
+    while true do
+      if (s.input) s:input()
+
+      s:moving()
+      yield()
     end
   end,
 
   update = function(s)
-    if s.co then
-      if coresume(s.co, s) then
-        return
-      else
-        s.co = nil
-      end
-    end
-    if (s.input) s:input()
-
-    if s.x!=s.tx or s.y!=s.ty then
-      s.co = cocreate(s.moving)
-    end
+    coresume(s.co, s)
   end,
 
   moving = function (s)
@@ -300,6 +294,20 @@ player = actor:new {
     nu:eat(s.i,s.j)
     s.frame=0
   end,
+
+  --box to box intersection
+  intersects = function(s, o)
+    local xd=s.x-o.x
+    local xs=(s.w+o.w)*0.5
+    if (abs(xd)>=xs) return false
+
+    local yd=s.y-o.y
+    local ys=(s.h+o.h)*0.5
+    if (abs(yd)>=ys) return false
+
+    return true
+  end
+
 }
 
 -->8
@@ -324,7 +332,6 @@ numbers = {
       s.nums[(j*grid.xc)+i+1]=0
       if (s:hint()) return
         levelup=true
-      _update=title_update
       troggles={}
       sfx(3)
       else
@@ -340,6 +347,7 @@ numbers = {
       s.nums[i]=s:gen_answer()
     end
     for i=s.answer_count+1,grid.xc*grid.yc do
+      -- add numbers that aren't answers.
       repeat
         s.nums[i]=rand(s.min,s.max)
       until not s:is_answer(s.nums[i])
@@ -357,21 +365,15 @@ numbers = {
         local n=s.nums[(j*grid.xc)+i+1]
         assert(n, "i ".. i .. "j" ..j)
         local x,y=grid:trans(i, j, 2, 3)
-        -- if (n!=0) print(n,1+x*8,18+y*8,13)
-        if (n==0) goto continue
-        if n >= 10 then
-          print(n,x,y,13)
-        else
-          print(" "..n,x,y,13)
-        end
-        ::continue::
+        -- don't print zeros. pad with a space if < 10.
+        if (n~=0) print((n >= 10) and n or " "..n,x,y,13)
       end
     end
   end,
 
   hint = function(s)
     for n in all(nu.nums) do
-      if (n!=0 and s:is_answer(n)) return n
+      if (n~=0 and s:is_answer(n)) return n
     end
   end
 }
@@ -486,7 +488,7 @@ primes = numbers:new {
       end
     end
     return true
-    end
+  end
 }
 
 game_menu = menu:new {
@@ -515,8 +517,6 @@ game_menu = menu:new {
     return game:new()
   end
 }
-
-
 
 -- equality = numbers:new {
 --   max=9,
@@ -567,23 +567,20 @@ troggle = player:new {
 
   new = function (class, s)
     s = player.new(class, s)
-    -- assert(i ~= nil)
     s.x,s.y = grid:trans(s.i, s.j, 2, 2)
-    -- s.x=x
-    -- s.y=y
     s.dx=s.dx*grid.w
     s.dy=s.dy*grid.h
     s.i=i
     s.j=j
     s.flip=s.dx<0 or s.dy<0
     s.input=nil
-    s.cobrain = cocreate(s.brain)
+    s.co = cocreate(s.brain)
     return s
   end,
 
   gen = function ()
     local dir=rand(1,4)
-    local min=(step == 0) and 1 or 0
+    local min=(step < 10) and 1 or 0
     local i,j=rand(min,grid.xc-1),rand(min,grid.yc-1)
 
     local dx, dy = 0,0
@@ -592,6 +589,10 @@ troggle = player:new {
     if (dir==3) j,dy = -1,1
     if (dir==4) j,dy = grid.yc + 1,-1
     add(troggles,troggle:new({i=i,j=j,dx=dx,dy=dy}))
+  end,
+
+  is_visible = function(s)
+    return ((s.x + s.w) > 0 and s.x < 64) and ((s.y + s.h) > 0 and s.y < 64)
   end,
 
   moving = function(s)
@@ -615,40 +616,20 @@ troggle = player:new {
     end
   end,
 
-  update = function (s)
-    if s.co then
-      if coresume(s.co, s) then
-        return
-      else
-        s.co = nil
-      end
-    end
-    coresume(s.cobrain, s)
-  end,
-
   attack = function (s)
-    if pl.x>=s.x and
-      pl.y>=s.y and
-      pl.x<=s.x+7 and
-      pl.y<=s.y+7 then
-      pl.x=s.x
-      pl.y=s.y
+    if s:intersects(pl) then
       pl.x=-100
-      s.co=s.eating
+      s:eating()
       gameover=true
       sfx(2)
       sfx(4)
       return
     end
     for t in all(troggles) do
-      if t!=s and
-        t.x>=s.x and
-        t.y>=s.y and
-        t.x<=s.x+7 and
-        t.y<=s.y+7 then
+      if t!=s and s:intersects(t) then
         t.x=s.x
         t.y=s.y
-        s.co=s.eating
+        s:eating()
         sfx(2)
         del(troggles,t)
       end

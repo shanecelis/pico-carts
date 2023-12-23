@@ -41,13 +41,13 @@ scene = {
   -- warning: do not use if those
   -- functions are already
   -- defined.
-  install = function (ascene)
+  install = function (ascene, use_60)
     function _init()
       prev_time = time()
       ascene:enter()
     end
 
-    function _update60()
+    function _update()
       -- these are for global updates.
       for e in all(ascene) do
         e:update()
@@ -63,6 +63,8 @@ scene = {
     function _draw()
       ascene:draw()
     end
+
+    if (use_60) _update60, _update = _update, nil
   end,
 }
 

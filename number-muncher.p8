@@ -9,11 +9,10 @@ __lua__
 
 -- globals
 step=0
-gameover=true
+gameover=false
 troggles={}
 level=1
 levelup=false
-hints=false
 
 -- utility
 
@@ -58,6 +57,7 @@ menu_item = {
 hints_menu = menu_item:new {
   index = 1,
   label = "hints ",
+  selected = false,
   display = function(s)
     return s.label..(s.selected and "on" or "off")
   end
@@ -156,7 +156,7 @@ game = scene:new {
       pl:draw()
     end
 
-    if(hints)print("hint: "..(nu:hint() or ""),2,59,13)
+    if(hints_menu.selected)print("hint: "..(nu:next_answer() or ""),2,59,13)
   end
 }
 
@@ -252,6 +252,7 @@ player = actor:new {
     if btnp(❎) or btnp(🅾️) then
       sfx(1)
       s:eating()
+      nu:eat(s.i, s.j)
     end
   end,
 
@@ -291,21 +292,12 @@ player = actor:new {
       end
       yield()
     end
-    nu:eat(s.i,s.j)
     s.frame=0
   end,
 
   --box to box intersection
   intersects = function(s, o)
-    local xd=s.x-o.x
-    local xs=(s.w+o.w)*0.5
-    if (abs(xd)>=xs) return false
-
-    local yd=s.y-o.y
-    local ys=(s.h+o.h)*0.5
-    if (abs(yd)>=ys) return false
-
-    return true
+    return s.x < o.x + o.w and o.x < s.x  + o.w and s.y < o.y + o.h and o.y < s.y + s.h
   end
 
 }
@@ -325,23 +317,31 @@ numbers = {
     return o
   end,
 
+  index = function(s,i,j)
+    return j*grid.xc+i+1
+  end,
+
   eat = function(s,i,j)
-    n=s.nums[(j*grid.xc)+i+1]
+    local k = s:index(i, j)
+    n=s.nums[k]
     if (n == 0) return
     if s:is_answer(n) then
-      s.nums[(j*grid.xc)+i+1]=0
-      if (s:hint()) return
-        levelup=true
+      s.nums[k]=0
+      if (s:next_answer()) return
+      -- if there's no more answers, level is complete.
+      levelup=true
       troggles={}
       sfx(3)
-      else
-        gameover=true
-        pl.x=-100
-        sfx(4)
-      end
+    else
+      -- ate the wrong thing.
+      gameover=true
+      pl.x=-100
+      sfx(4)
+    end
   end,
 
   gen = function(s)
+    if (not s.fixed_topic) s.topic = rand(2,9)
     -- generate answers
     for i=1,s.answer_count do
       s.nums[i]=s:gen_answer()
@@ -360,10 +360,10 @@ numbers = {
   end,
 
   draw = function(s)
-    for j=0,4 do
-      for i=0,5 do
-        local n=s.nums[(j*grid.xc)+i+1]
-        assert(n, "i ".. i .. "j" ..j)
+    for j=0,grid.yc - 1 do
+      for i=0,grid.xc - 1 do
+        local n=s.nums[s:index(i,j)]
+        -- assert(n, "i ".. i .. "j" ..j)
         local x,y=grid:trans(i, j, 2, 3)
         -- don't print zeros. pad with a space if < 10.
         if (n~=0) print((n >= 10) and n or " "..n,x,y,13)
@@ -371,11 +371,11 @@ numbers = {
     end
   end,
 
-  hint = function(s)
+  next_answer = function(s)
     for n in all(nu.nums) do
       if (n~=0 and s:is_answer(n)) return n
     end
-  end
+  end,
 }
 
 multiples = numbers:new {
@@ -415,6 +415,7 @@ lesser = numbers:new {
 }
 
 evens = multiples:new {
+  fixed_topic=true,
   topic=2,
   title = function(s)
     return " even numbers"
@@ -513,7 +514,6 @@ game_menu = menu:new {
 
   selected = function(s, i)
     nu = (s.objects[i]):new()
-    if (i > 2) nu.topic = rand(2,9)
     return game:new()
   end
 }
@@ -618,17 +618,19 @@ troggle = player:new {
 
   attack = function (s)
     if s:intersects(pl) then
+      printh("blah pl "..pl.x.." "..pl.y.." s "..s.x.." "..s.y)
       pl.x=-100
-      s:eating()
       gameover=true
       sfx(2)
       sfx(4)
+      s:eating()
       return
     end
     for t in all(troggles) do
       if t!=s and s:intersects(t) then
         t.x=s.x
         t.y=s.y
+        printh("blah 2")
         s:eating()
         sfx(2)
         del(troggles,t)

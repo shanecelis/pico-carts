@@ -3,20 +3,21 @@ version 41
 __lua__
 
 #include lib/actor.p8
-
+-- bug: i broke it
 pigeon = actor:new({}, 65, 0, 0)
+pigeon.sprite =45
 pigeon.width = 4
 pigeon.height = 4
 pigeon.frames = 3
-unicorn = actor:new({}, 193, 25, 0)
-unicorn.width = 2
-unicorn.height = 2
-unicorn.frames = 4
+-- unicorn = actor:new({}, 193, 25, 0)
+-- unicorn.width = 2
+-- unicorn.height = 2
+-- unicorn.frames = 4
 
 function _draw()
   cls()
   pigeon:draw()
-  unicorn:draw()
+ -- unicorn:draw()
 end
 
 function _update()
@@ -33,7 +34,7 @@ function _update()
     pigeon.y = pigeon.y + 1
   end
   pigeon.frame = pigeon.frame + 0.1
-  unicorn.frame += 0.1
+--  unicorn.frame += 0.1
 end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

@@ -21,30 +21,77 @@ function rand(l,h)
   return l+flr(rnd(h-l+1))
 end
 
-function toggle_hints()
-  hints = not hints
-end
+-- provides a numerical menu item or toggle.
+menu_item = {
+  index = 0,
+  value = 0,
+  increment = 1,
+  selected = true,
+  label = "",
 
-menuitem(1, "toggle hints",toggle_hints)
+  new = function(class, o)
+    o = o or {}
+    setmetatable(o, class)
+    class.__index = class
+    o:update()
+    return o
+  end,
+
+  update = function(s)
+    menuitem(s.index,  s:display(), function(b) return s:callback(b) end)
+  end,
+
+  callback = function(s, b)
+    if(b&1 > 0) s.value -= s.increment
+    if(b&2 > 0) s.value += s.increment
+    if(b&32 > 0) s.selected = not s.selected
+    s:update()
+    return true -- stay open
+  end,
+
+  display = function(s)
+    return s.label..s.value--..(s.selected and " on" or " off")
+  end
+}
+
+hints_menu = menu_item:new {
+  index = 1,
+  label = "hints ",
+  display = function(s)
+    return s.label..(s.selected and "on" or "off")
+  end
+}
+
+-- menuitem(1, "toggle hints",toggle_hints)
+min_menu = menu_item:new {
+  index = 2,
+  value = 0,
+  increment = 10,
+  label = "min ",
+  update = function(s)
+    if (max_menu) s.value = min(s.value, max_menu.value - s.increment)
+    menu_item.update(s)
+  end
+}
+
+max_menu = menu_item:new {
+  index = 3,
+  value = 20,
+  increment = 10,
+  label = "max ",
+  update = function(s)
+    s.value = max(s.value, min_menu.value + s.increment)
+    menu_item.update(s)
+  end
+}
 poke(0x5f2c, 3) -- small screen 64x64
 
 game = scene:new {
   new = function(class, o)
     o = scene.new(class, o)
     step = 0
-    -- nu=multiples:new {
-    --   max = 20,
-    --   topic = rand(2,9),
-    -- }
-    -- nu=evens:new()
-    -- nu=odds:new()
-    -- nu=greater:new { max=20, topic = rand(2,9) }
-    -- nu=factors:new {
-    --   max = 20,
-    -- }
-    --  nu=primes:new {
-    --    max = 20,
-    --  }
+    nu.min = min_menu.value
+    nu.max = max_menu.value
     nu:gen()
     pl=player:new()
     troggles={}
@@ -104,7 +151,6 @@ game = scene:new {
       rectfill(9,33,55,47,1)
       print("game over",15,34,7)
       print("❎ replay",15,42,13)
-      -- _update=title_update
     end
 
     if levelup then

@@ -1,6 +1,22 @@
 pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
+-- number munchers
+--
+-- original cart[1] by hinicholas
+-- modified by shane celis[2]
+--
+-- inspired by the original 1986
+-- number munchers video game by
+-- r. philip bouchard.
+--
+-- changes
+-- -------
+--
+-- * add menu and game modes:
+--   even, odd, lesser, greater,
+--   primes, factors
+
 --game
 
 #include lib/scene.p8:0
@@ -133,7 +149,7 @@ game = scene:new {
     -- title
     rectfill(0,0,64,7,1)
     print(nu:title(),0,1,6)
-    grid:draw()
+    -- grid:draw()
     nu:draw()
     pl:draw()
 
@@ -176,41 +192,6 @@ title = scene:new {
   end
 }
 
-grid = {
-  -- count
-  xc = 6,
-  yc = 5,
-  -- width and height of cells in grid
-  w = 10,
-  h = 10,
-  -- start
-  sx = 2,
-  sy = 7,
-  color = 14,
-
-  -- draw the grid
-  draw = function(self)
-    xc,yc,w,h,sx,sy,c = self.xc,self.yc,self.w,self.h,self.sx,self.sy,self.color
-    for i=0,xc do
-      line(sx + w * i, sy, sx + w * i, sy + h * yc, c)
-    end
-    for j=0,yc do
-      line(sx, sy + h * j, sx + w * xc, sy + h * j, c)
-    end
-  end,
-
-  -- return cell position + (x,y) for the ith column and jth row, zero-based
-  trans = function(self, i, j, x, y)
-    return self.sx + self.w * i + x, self.sy + self.h * j + y
-  end,
-
-  -- return the closest ith column and jth row for position (x,y).
-  trans_inv = function(self, x, y)
-    return flr((x - self.sx)/self.w), flr((y - self.sy)/self.h)
-  end,
-}
-
--->8
 --player
 player = actor:new {
   sprite = 16,
@@ -220,7 +201,7 @@ player = actor:new {
 
   new = function (class,s)
     s = actor.new(class, s)
-    if (s.i and s.j) s.x,s.y = grid:trans(s.i, s.j, 2, 2)
+    if (s.i and s.j and nu) s.x,s.y = nu.grid:trans(s.i, s.j, 2, 2)
     s.tx=s.x
     s.ty=s.y
     s.flip=false
@@ -234,17 +215,17 @@ player = actor:new {
 
   input = function (s)
     if btnp(⬆️) and s.j>0 then
-      s.ty-=grid.h
+      s.ty-=nu.grid.h
       s.j-=1
     elseif btnp(⬇️) and s.j<4 then
-      s.ty+=grid.h
+      s.ty+=nu.grid.h
       s.j+=1
     elseif btnp(➡️) and s.i<5 then
-      s.tx+=grid.w
+      s.tx+=nu.grid.w
       s.i+=1
       s.flip=false
     elseif btnp(⬅️) and s.i>0 then
-      s.tx-=grid.w
+      s.tx-=nu.grid.w
       s.i-=1
       s.flip=true
     end
@@ -302,12 +283,52 @@ player = actor:new {
 
 }
 
--->8
+grid = {
+  -- count
+  xc = 6,
+  yc = 5,
+  -- width and height of cells in grid
+  w = 10,
+  h = 10,
+  -- start
+  x = 2,
+  y = 7,
+  color = 14,
+
+  new = function(class, o)
+    o = o or {}
+    setmetatable(o, class)
+    class.__index = class
+    return o
+  end,
+
+  -- draw the grid
+  draw = function(self)
+    xc,yc,w,h,x,y,c = self.xc,self.yc,self.w,self.h,self.x,self.y,self.color
+    for i=0,xc do
+      line(x + w * i, y, x + w * i, y + h * yc, c)
+    end
+    for j=0,yc do
+      line(x, y + h * j, x + w * xc, y + h * j, c)
+    end
+  end,
+
+  -- return cell position + (x,y) for the ith column and jth row, zero-based
+  trans = function(self, i, j, x, y)
+    return self.x + self.w * i + x, self.y + self.h * j + y
+  end,
+
+  -- return the closest ith column and jth row for position (x,y).
+  trans_inv = function(self, x, y)
+    return flr((x - self.x)/self.w), flr((y - self.y)/self.h)
+  end,
+}
 
 numbers = {
   min = 1,
   max = 99,
   answer_count=6,
+  grid = grid:new(),
 
   new = function(class, o)
     o = o or {}
@@ -318,15 +339,15 @@ numbers = {
   end,
 
   index = function(s,i,j)
-    return j*grid.xc+i+1
+    return j*s.grid.xc+i+1
   end,
 
   eat = function(s,i,j)
     local k = s:index(i, j)
     n=s.nums[k]
-    if (n == 0) return
+    if (not n) return
     if s:is_answer(n) then
-      s.nums[k]=0
+      s.nums[k]=nil
       if (s:next_answer()) return
       -- if there's no more answers, level is complete.
       levelup=true
@@ -346,11 +367,9 @@ numbers = {
     for i=1,s.answer_count do
       s.nums[i]=s:gen_answer()
     end
-    for i=s.answer_count+1,grid.xc*grid.yc do
+    for i=s.answer_count+1,s.grid.xc*s.grid.yc do
       -- add numbers that aren't answers.
-      repeat
-        s.nums[i]=rand(s.min,s.max)
-      until not s:is_answer(s.nums[i])
+      s.nums[i] = s:gen_non_member()
     end
     -- shuffle
     for i=#s.nums,1,-1 do
@@ -359,21 +378,36 @@ numbers = {
     end
   end,
 
+  gen_non_member = function(s)
+    -- add numbers that aren't answers.
+    local n
+    repeat
+      n=rand(s.min,s.max)
+    until not s:is_answer(n)
+    return n
+  end,
+
+  display = function(s, n)
+    -- don't print zeros. pad with a space if < 10.
+    if (n) return (n >= 10) and n or " "..n
+  end,
+
   draw = function(s)
-    for j=0,grid.yc - 1 do
-      for i=0,grid.xc - 1 do
-        local n=s.nums[s:index(i,j)]
+    s.grid:draw()
+    for j=0,s.grid.yc - 1 do
+      for i=0,s.grid.xc - 1 do
+        local n=s:display(s.nums[s:index(i,j)])
         -- assert(n, "i ".. i .. "j" ..j)
-        local x,y=grid:trans(i, j, 2, 3)
+        local x,y=s.grid:trans(i, j, 2, 3)
         -- don't print zeros. pad with a space if < 10.
-        if (n~=0) print((n >= 10) and n or " "..n,x,y,13)
+        if (n) print(n,x,y,13)
       end
     end
   end,
 
   next_answer = function(s)
     for n in all(nu.nums) do
-      if (n~=0 and s:is_answer(n)) return n
+      if (n and s:is_answer(n)) return n
     end
   end,
 }
@@ -492,6 +526,43 @@ primes = numbers:new {
   end
 }
 
+equals = numbers:new {
+
+  grid = grid:new {
+    x = 4,
+    xc = 3,
+    yc = 5,
+    -- width and height of cells in grid
+    w = 18,
+    h = 10,
+  },
+  title = function(s)
+    return " equals "..s.topic
+  end,
+  display = function(s, n)
+    if (n) return n[2]
+  end,
+  is_answer = function(s,n)
+    if (n) return n[1] == s.topic
+  end,
+  gen_answer = function(s)
+    -- local n = rand(s.min, s.max)
+    local n = rand(1, 9)
+    local x = s.topic - n
+    if x >= 0 then
+      return {s.topic, (x >= 10 and x or " "..x).."+"..n}
+    else
+      return {s.topic, (x <= -10 and n or " "..n).."-"..abs(x)}
+    end
+  end,
+
+  gen_non_member = function(s)
+    local n = rand(s.min, s.max)
+    local x = rand(1, 9)
+    return {x + n, (n>=10 and "" or " ")..n.."+"..x}
+  end,
+}
+
 game_menu = menu:new {
   y=1,
   x=0,
@@ -500,14 +571,16 @@ game_menu = menu:new {
            "odds",
            "greater",
            "lesser",
+           "equals",
            "multiples",
            "factors",
-           "primes" },
+           "primes"},
 
   objects = { evens,
               odds,
               greater,
               lesser,
+              equals,
               multiples,
               factors,
               primes },
@@ -518,47 +591,6 @@ game_menu = menu:new {
   end
 }
 
--- equality = numbers:new {
---   max=9,
---   title = function(s)
---     return " equals "..s.topic
---   end,
---   gen = function(s)
---     for i=1,s.answer_count do
---       s.nums[i]=s:gen_answer()
---     end
---     for i=s.answer_count+1,grid.xc*grid.yc do
---       s.nums[i]=rand(s.min,s.max)
---     end
---     for i=1,grid.xc*grid.yc do
---       if s.nums[i]<10 then
---         s.nums[i]=" "..s.nums[i]
---       end
---     end
---     -- shuffle
---     for i=#s.nums,1,-1 do
---       rn=ceil(rnd(i))
---       s.nums[i],s.nums[rn]=s.nums[rn],s.nums[i]
---     end
---   end,
---   gen_answer = function(s)
---     local n = rand(s.min, s.max)
---     while not s:is_answer(n) do
---       n -= 1
---     end
---     return n
---   end,
---   is_answer = function(s,n)
---     for i = 2, n^(1/2) do
---         if (n % i) == 0 then
---             return false
---         end
---     end
---     return true
---   end
--- }
-
--->8
 --troggle
 troggle = player:new {
   sprite = 32,
@@ -567,9 +599,9 @@ troggle = player:new {
 
   new = function (class, s)
     s = player.new(class, s)
-    s.x,s.y = grid:trans(s.i, s.j, 2, 2)
-    s.dx=s.dx*grid.w
-    s.dy=s.dy*grid.h
+    s.x,s.y = nu.grid:trans(s.i, s.j, 2, 2)
+    s.dx=s.dx*nu.grid.w
+    s.dy=s.dy*nu.grid.h
     s.i=i
     s.j=j
     s.flip=s.dx<0 or s.dy<0
@@ -581,13 +613,13 @@ troggle = player:new {
   gen = function ()
     local dir=rand(1,4)
     local min=(step < 10) and 1 or 0
-    local i,j=rand(min,grid.xc-1),rand(min,grid.yc-1)
+    local i,j=rand(min,nu.grid.xc-1),rand(min,nu.grid.yc-1)
 
     local dx, dy = 0,0
     if (dir==1) i,dx = -1,1
-    if (dir==2) i,dx = grid.xc + 1,-1
+    if (dir==2) i,dx = nu.grid.xc + 1,-1
     if (dir==3) j,dy = -1,1
-    if (dir==4) j,dy = grid.yc + 1,-1
+    if (dir==4) j,dy = nu.grid.yc + 1,-1
     add(troggles,troggle:new({i=i,j=j,dx=dx,dy=dy}))
   end,
 
@@ -597,7 +629,7 @@ troggle = player:new {
 
   moving = function(s)
     player.moving(s)
-    s.i,s.j=grid:trans_inv(s.x, s.y)
+    s.i,s.j=nu.grid:trans_inv(s.x, s.y)
   end,
 
   rest = function(s)

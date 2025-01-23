@@ -75,7 +75,7 @@ shooting's ultimate text library is awesome first of all, so why change it? ther
 reasons: i wanted to integrate it with my code that has a particular style.
 
 ]]--
-- = - - =configurations==--
+--==configurations==--
 --[[
   configure your defaults
   here
@@ -286,7 +286,7 @@ fragment = {
 
 function fragment.new(class, o, message_instance)
   o = o or {}
-  if (o.color) setmetatable(o.color, { __index = (message_instance or message).color })
+  if (o.color) then setmetatable(o.color, { __index = (message_instance or message).color }) end
   setmetatable(o, class)
   class.__index = class
   return o
@@ -325,7 +325,7 @@ function message:parse(string)
   for i = 0, #fragments do
     local f = fragments[i]
     if not f.skip then
-      accum = accum +  f.delay or self.delay
+      accum = accum + (f.delay or self.delay or 0)
       f.delay_accum = accum
     end
   end

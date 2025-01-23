@@ -1,13 +1,19 @@
 pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
+
+function on_script_loaded()
+
+  world.info("We loaded")
+end
+world.info("Lua: The pooh-book.p8#lua script just got loaded")
 -- winnie the pooh: sweet bouncin'
 -- by shane celis for my five-year-old daughter ryland von hunter
 
-pages = { 
+pages = {
 
 [[
-winnie the pooh: 
+winnie the pooh:
 sweet bouncin'
 
 by shane celis
@@ -52,7 +58,7 @@ honey for his dear friend pooh."
 ]],
 
 [[
-"rabbit, say, have you had 
+"rabbit, say, have you had
 any breakfast yet?"
 
 "it's past noon, pooh."
@@ -76,7 +82,7 @@ small smackerel of something."
 
 [[
 perhaps, i'll have to get some
-honey the hard way, pooh 
+honey the hard way, pooh
 thought to himself.
 ]],
 
@@ -96,7 +102,7 @@ for: honeeeey.
 "hey there, pooh, buddy boy,
 whatcha up to?" tigger asked.
 
-"oh, just thinking very 
+"oh, just thinking very
 thinkingly about how to get that
 honey," pooh answered.
 
@@ -105,7 +111,7 @@ of course!" tigger said.
 ]],
 
 [[
-before pooh had a chance to 
+before pooh had a chance to
 explain that his bounces were
 probably not going to dislodge
 that hive, tigger had already
@@ -114,7 +120,7 @@ the tree.
 ]],
 
 [[
-pooh tried to thank tigger 
+pooh tried to thank tigger
 between mouth fulls of honey.
 
 "aw, don't sweat it, pooh boy.
@@ -175,12 +181,12 @@ function tb_update()  -- this function handles the text box on every frame updat
 	if tb.char<#tb.str[tb.i] then -- if the message has not been processed until it's last character:
 		tb.cur=tb.cur+0.5 -- increase the buffer. 0.5 is already max speed for this setup. if you want messages to show slower, set this to a lower number. this should not be lower than 0.1 and also should not be higher than 0.9
 		if tb.cur>0.9 then -- if the buffer is larger than 0.9:
-			tb.char=tb.char +1 -- set next character to be drawn.
+			tb.char=tb.char + 1 -- set next character to be drawn.
 			tb.cur=0	-- reset the buffer.
-			if (ord(tb.str[tb.i],tb.char)~=32) then sfx(tb.voice) -- play the voice sound effect.
+			if ord(tb.str[tb.i],tb.char)~=32 then sfx(tb.voice) -- play the voice sound effect.
        end
 		end
-		if tb_next_btnp() then 
+		if tb_next_btnp() then
 		  tb.char=#tb.str[tb.i] -- advance to the last character, to speed up the message.
 		  return true -- return true if you eat a button press
 		end
@@ -204,7 +210,7 @@ function tb_draw() -- this function draws the text box.
 		rect(tb.x,tb.y,tb.x+tb.w,tb.y+tb.h,tb.col2) -- draw the border.
 		print(sub(tb.str[tb.i],1,tb.char),tb.x+2,tb.y+2,tb.col3) -- draw the text.
   else
-		print(sub(tb.str[tb.i],1,tb.char),tb.x,tb.y,tb.col3) -- draw the text.  
+		print(sub(tb.str[tb.i],1,tb.char),tb.x,tb.y,tb.col3) -- draw the text.
   end
 	end
 end
@@ -221,7 +227,7 @@ function _init()
   reading=false
 --  tb_init(0, { pages[current_page] })
 end
-  
+
 
 function _update60()
   if reading then
@@ -230,7 +236,7 @@ function _update60()
   if last_page ~= current_page then
     last_page = current_page
     tb_init(0, { pages[current_page] })
-    return 
+    return
   else
   if reading or te_is_complete() then
     if btnp(1) or btnp(5) then
@@ -239,21 +245,21 @@ function _update60()
     if btnp(0) or btnp(4) then
       current_page = current_page - 1
     end
-    if current_page > #pages 
+    if current_page > #pages
     or current_page < 1 then
       sfx(1)
     end
     current_page = clamp(current_page, 1, #pages)
   end
   end
-  
-  
+
+
 end
 
 function draw_page(page)
   local i = page - 1
-		map((i % 8) * 16,flr(i / 8) * 8, 
-		0,0, 
+		map((i % 8) * 16,flr(i / 8) * 8,
+		0,0,
 		16, 8)
 		--print(pages[page], 0, 64)
 end

@@ -1757,7 +1757,7 @@ function title:draw()
 	cls()
 	-- palt(0, true)
 	camera(7 * 128, 0)
-	map()
+	map(0, 0, 0, 0, 16, 16)
 	camera(0, 0)
 	local border = 10
 	if cart_screen then
@@ -1823,7 +1823,7 @@ curr_scene = title
 curr_scene:enter()
 -- curr_scene = credits
 
-function _update()
+function _update60()
  if curr_scene.text == nil then
 	update_time()
 	coroutines:update()

@@ -1606,17 +1606,18 @@ end
 
 function control_player(pl)
 
-	accel = 0.05
+	local accel = 0.05
 	if btn(0) then pl.dx = pl.dx -  accel  end
 	if btn(1) then pl.dx = pl.dx +  accel  end
 	if btn(2) then pl.dy = pl.dy -  accel  end
 	if btn(3) then pl.dy = pl.dy +  accel  end
+    -- world.info("pl.dx "..pl.dx)
 
 end
 
 function random_actor(a)
 	if rnd(1) < 0.1  then
-		accel = 0.05
+		local accel = 0.05
 		a.dx = a.dx +  accel * (rnd(2) - 1)
 		a.dy = a.dy +  accel * (rnd(2) - 1)
 	end
@@ -1632,7 +1633,7 @@ function follow_actor(follow, accel)
 			-- 	x = 0
 			-- 	y = 0
 			-- end
-			accel = accel or 0.05
+			local accel = accel or 0.05
 			a.dx = a.dx +  accel * (x + (rnd(2) - 1))
 			a.dy = a.dy +  accel * (y + (rnd(2) - 1))
 		end
@@ -1689,7 +1690,11 @@ function collision:draw()
 	room_y=flr(pl.y/16)
 	camera(room_x*128,room_y*128)
 
-	map()
+    --map(room_x * 16, room_y * 16,0,0,16,16)
+    if my_map == nil then
+        my_map = map()
+        my_map:retain()
+    end
 	for a in all(actors) do
 		a:draw()
 	end
@@ -1756,9 +1761,11 @@ end
 function title:draw()
 	cls()
 	-- palt(0, true)
-	camera(7 * 128, 0)
-	map(0, 0, 0, 0, 16, 16)
-	camera(0, 0)
+	--camera(7 * 128, 0)
+	--camera(0, 0)
+	map(7 *16, 0, 0, 16, 16)
+    --if true then return end
+
 	local border = 10
 	if cart_screen then
 		print("by ryland von hunter", 24, 90, 7)

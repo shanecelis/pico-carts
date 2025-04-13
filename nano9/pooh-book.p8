@@ -3,7 +3,6 @@ version 41
 __lua__
 
 function on_script_loaded()
-
   world.info("We loaded")
 end
 world.info("Lua: The pooh-book.p8#lua script just got loaded")
@@ -173,7 +172,9 @@ function tb_next_btnp()
 end
 
 function te_is_complete()
-  if (te == nil) then return true end
+  if te == nil then
+    return true
+  end
   return #te.str == te.i and te.char == #te.str[te.i]
 end
 
@@ -224,14 +225,15 @@ last_page = 0
 current_page = 1
 
 function _init()
+  world.info("xxxxxxxxxxxxxxxxxxxx")
   reading=false
---  tb_init(0, { pages[current_page] })
+  tb_init(0, { pages[current_page] })
 end
 
 
-function _update60()
-  if reading then
-    if (tb_update()) then return end
+function _update()
+  if reading and tb_update() then
+    return
   end
   if last_page ~= current_page then
     last_page = current_page

@@ -41,8 +41,10 @@ dolly = {
     --follow target outside of
     --pull range.
     local delta = self.target - pos
-    pos += (delta - thresh):map(function(v) return mid(0, v, 4) end)
-    pos += (delta + thresh):map(function(v) return mid(-4, v, 0) end)
+    local dp = (delta - thresh):map(function(v) return mid(0, v, 4) end)
+    pos += dp
+    dp = (delta + thresh):map(function(v) return mid(-4, v, 0) end)
+    pos += dp
 
     --lock to edge
     pos = pos:map(max, self.pos_min)

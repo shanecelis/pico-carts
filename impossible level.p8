@@ -40,7 +40,7 @@ function _draw()
   --hud
   camera(0,0)
 
-  print("adv. micro platformer",24,4,7,0,0)
+--  print("impossible level",24,4,7,0,0)
 
 end
 __gfx__

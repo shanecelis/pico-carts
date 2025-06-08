@@ -55,33 +55,26 @@ if mouse then
   }
 end
 
-actor_with_particles = actor:new {
-  emitter = nil
-}
+-- actor_with_particles = actor:new {
+--   emitter = nil
+-- }
 
-function actor_with_particles:new(o, sprite, x, y)
-  o = actor.new(self, o, sprite, x, y)
-  if (o.emitter) o.emitter = o.emitter:clone()
-  return o
-  end
+-- function actor_with_particles:new(o, sprite, x, y)
+--   o = actor.new(self, o, sprite, x, y)
+--   if (o.emitter) o.emitter = o.emitter:clone()
+--   return o
+--   end
 
-function actor_with_particles:update()
-  actor.update(self)
-  if self.emitter then
-    self.emitter.pos.x = self.x * 8 - 4
-    self.emitter.pos.y = self.y * 8 - 4
-    self.emitter.p_angle = atan2(-self.dx, -self.dy)
-    self.emitter:update(delta_time)
-  end
-end
-function actor_with_particles:draw()
-  actor.draw(self)
-  if (self.emitter) self.emitter:draw()
-  end
-__gfx__
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00700700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00077000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00077000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00700700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+-- function actor_with_particles:update()
+--   actor.update(self)
+--   if self.emitter then
+--     self.emitter.pos.x = self.x * 8 - 4
+--     self.emitter.pos.y = self.y * 8 - 4
+--     self.emitter.p_angle = atan2(-self.dx, -self.dy)
+--     self.emitter:update(delta_time)
+--   end
+-- end
+-- function actor_with_particles:draw()
+--   actor.draw(self)
+--   if (self.emitter) self.emitter:draw()
+-- end

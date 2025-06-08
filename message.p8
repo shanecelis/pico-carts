@@ -312,7 +312,7 @@ function message:parse(string)
   for i = 0, #fragments do
     local f = fragments[i]
     if not f.skip then
-      accum += f.delay or self.delay
+      accum += (f.delay or self.delay)
       f.delay_accum = accum
     end
   end

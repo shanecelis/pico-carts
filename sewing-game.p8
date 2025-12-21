@@ -11,6 +11,11 @@ dd=0.01 -- our rotation speed
 s=0 -- our speed
 s_max=0.25 -- our max speed
 score = 0
+-- modes
+-- 0 - draw
+-- 1 - grade
+mode = 0
+
 
 -- points we've sown.
 sewn={{x,y}}
@@ -40,6 +45,7 @@ function _update()
     local pt = {flr(x),flr(y)}
     if contains(sewn, pt) then
       -- we're overlapping
+      mode = 1
       s = 0
       local percent = score_percent()
       if percent > 90 then
@@ -86,16 +92,60 @@ function _draw()
 		if not btn(5) then
 		  f = 0
 		end
+    if mode == 0 then
 		draw_needle(x,y,f)
 		--tline(10, 120,118, 120, 0, 1/8)
 		--tline(10, 30, 10, 120, 0, 1/8)
 		draw_tshirt(50,100)
+    end
+    color(7)
 		draw_line(sewn)
     print("score " .. score_percent(), 10, 110)
 
-    if grade then
-      print("\^w\^t"..grade, 80, 80, 8)
+    if mode == 1 then
+      if grade then
+        print("\^w\^t"..grade, 80, 80, 8)
+        floodfill(64,62,12)
+      end
     end
+end
+
+
+function floodfill(mx, my, c, sample, set)
+  --from: https://www.geeksforgeeks.org/dsa/flood-fill-algorithm/
+  sample = sample or pget
+  set = set or pset
+  local s = sample(mx,my)
+  local oc = s
+  if mx<0 or mx>127
+    or my < 0 or my>127 then
+    return
+  end
+  if s == c then
+    return
+  end
+
+  local steps = 0
+  local lim = 17000
+
+  q = {}
+  add(q,{mx,my})
+  set(mx, my, c)
+  local dir = {{1,0},{-1,0},{0,1},{0,-1}}
+  while #q > 0 and steps < lim do
+    steps += 1
+    local cq = deli(q)
+    for d in all(dir) do
+      local nx = cq[1]+d[1]
+      local ny = cq[2]+d[2]
+      if nx >= 0 and nx < 128 and
+        ny >= 0 and ny < 128 and
+        sample(nx,ny) == oc then
+        set(nx,ny,c)
+        add(q,{nx,ny})
+      end
+    end
+  end
 end
 
 function score_percent()

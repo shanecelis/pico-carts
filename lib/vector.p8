@@ -38,6 +38,11 @@ vector = {
     return sqrt(self.x^2+self.y^2)
   end,
 
+  --get the length of the vector
+  sqlength=function(self)
+    return self.x^2+self.y^2
+  end,
+
   --get the normal of the vector
   normalize=function(self)
     local l = self:length()
@@ -61,6 +66,10 @@ vector = {
 
   reflect = function(self, mirror)
     return 2 * self:dot(mirror) * mirror - self
+  end,
+
+  from_list = function(list)
+    return vec(list[1], list[2]) -- or table.unpack
   end,
 }
 vector.__index = vector

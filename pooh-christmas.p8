@@ -1,5 +1,5 @@
 pico-8 cartridge // http://www.pico-8.com
-version 33
+version 41
 __lua__
 -- winnie the pooh: sweet bouncin'
 -- by shane celis for my five-year-old daughter ryland von hunter

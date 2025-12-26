@@ -1,5 +1,5 @@
 pico-8 cartridge // http://www.pico-8.com
-version 33
+version 41
 __lua__
 -- christmas pickle
 -- by ryland von hunter
